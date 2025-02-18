@@ -2,6 +2,7 @@ import pytest
 from mancer.shell import Shell, shell
 from mancer.core import Command, CommandResult
 import os
+from datetime import datetime
 
 @pytest.fixture
 def shell():
@@ -40,4 +41,19 @@ class TestShell:
         # Test błędnej ścieżki
         result = shell.cd("/nieistniejacy/katalog")
         assert result.return_code == 1
-        assert result.stderr != "" 
+        assert result.stderr != ""
+
+    def test_ls_with_parsing(self, shell):
+        # Utworzenie testowego pliku
+        with open("test_file.txt", "w") as f:
+            f.write("test content")
+        
+        result = shell.ls(options="-la", parse_output=True).run()
+        assert result.return_code == 0
+        assert hasattr(result, 'parsed_files')
+        assert len(result.parsed_files) > 0
+        
+        test_file = next(f for f in result.parsed_files if f.name == "test_file.txt")
+        assert test_file.size > 0
+        assert not test_file.is_directory
+        assert isinstance(test_file.modified_time, datetime) 
