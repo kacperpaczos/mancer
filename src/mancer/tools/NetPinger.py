@@ -87,6 +87,18 @@ class NetworkScanner:
         self.local_addresses = self._get_local_addresses()
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.output_file = Path(f"network_scan_{self.timestamp}.txt")
+        
+        # Check if we have any local addresses in the target network
+        if not self.local_addresses:
+            logger.warning("""
+WARNING: No local interfaces detected in the target network!
+This might indicate that:
+1. You're scanning a remote network
+2. You don't have proper network configuration
+3. You don't have required permissions
+
+This may affect scan results and some hosts might not be detected.
+            """)
 
     def _get_local_addresses(self) -> List[str]:
         """
@@ -114,7 +126,9 @@ class NetworkScanner:
                 if ipaddress.ip_address(addr) in self.network
             ]
             
-            logger.info(f"Detected local addresses in network: {matching_addresses}")
+            if matching_addresses:
+                logger.info(f"Detected local addresses in network: {matching_addresses}")
+            
             return matching_addresses
             
         except subprocess.SubprocessError as e:
@@ -177,8 +191,10 @@ class NetworkScanner:
         file.write(f"===================\n")
         file.write(f"Target Network: {self.network}\n")
         file.write(f"Scan Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        file.write(f"Local Addresses: {', '.join(self.local_addresses)}\n\n")
-        file.write("Active Hosts:\n")
+        file.write(f"Local Addresses: {', '.join(self.local_addresses)}\n")
+        if not self.local_addresses:
+            file.write("WARNING: No local interfaces detected in the target network!\n")
+        file.write("\nActive Hosts:\n")
         file.write("-------------\n")
 
     def _process_active_host(self, ip: str, is_local: bool, file, active_hosts: List[str]) -> None:
