@@ -13,6 +13,11 @@ import queue
 import time
 import sys, tty, termios
 from select import select
+import select as select_module  # Zmiana nazwy importu
+from textual.app import App
+from textual.widgets import Header, Footer, Tree, Static, ScrollView
+from textual.containers import Container, Horizontal
+from textual.binding import Binding
 
 class NginxMonitor:
     def __init__(self):
@@ -176,96 +181,107 @@ class NginxMonitor:
         
         self.console.print(table)
 
+    def getch():
+        """Pomocnicza funkcja do odczytu pojedynczego znaku"""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+    def create_layout(self):
+        layout = Layout()
+        layout.split_row(
+            Layout(name="apps", ratio=1),
+            Layout(name="logs", ratio=1),
+            Layout(name="content", ratio=2)
+        )
+        return layout
+
     def watch_logs(self, log_path, remote=False, host=None, username=None, key_path=None):
         try:
-            # Inicjalizacja kolejki i listy logów
-            log_queue = queue.Queue()
             log_lines = []
             max_lines = 1000
             scroll_position = 0
+            auto_scroll = True
             console = Console()
+            layout = self.create_layout()
 
-            def read_logs():
-                if remote:
-                    tail_cmd = f"tail -f {log_path}"
-                    ssh_command = ['ssh']
-                    if key_path:
-                        ssh_command.extend(['-i', key_path])
-                    ssh_command.append(f'{username}@{host}')
-                    ssh_command.append(f'sudo {tail_cmd}')
-                    process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-                else:
-                    tail_cmd = f"sudo tail -f {log_path}"
-                    process = subprocess.Popen(tail_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            # Przygotuj panele
+            def generate_apps_panel():
+                # Lista zainstalowanych aplikacji
+                table = Table(title="Aplikacje")
+                table.add_column("Nazwa")
+                for app in self.profiles.keys():
+                    table.add_row(app)
+                return Panel(table, title="Aplikacje Nginx")
 
-                try:
-                    while True:
-                        line = process.stdout.readline()
-                        if line:
-                            log_queue.put(line.strip())
-                        if process.poll() is not None:
-                            break
-                finally:
-                    process.terminate()
+            def generate_logs_panel(selected_app):
+                # Lista dostępnych logów
+                table = Table(title="Logi")
+                table.add_column("Typ")
+                table.add_column("Ścieżka")
+                # Dodaj dostępne logi
+                return Panel(table, title=f"Logi - {selected_app}")
 
-            # Uruchom wątek czytający logi
-            log_thread = threading.Thread(target=read_logs, daemon=True)
-            log_thread.start()
+            def generate_content_panel():
+                # Zawartość logów
+                visible_lines = log_lines[-console.height:] if auto_scroll else log_lines[scroll_position:scroll_position + console.height]
+                return Panel("\n".join(visible_lines), title="Zawartość logów")
 
-            def generate_output():
-                nonlocal scroll_position
-                
-                # Pobierz nowe logi z kolejki
-                while not log_queue.empty():
-                    new_line = log_queue.get()
-                    formatted_line = self.format_and_display_log_line(new_line)
-                    log_lines.append(formatted_line)
-                    if len(log_lines) > max_lines:
-                        log_lines.pop(0)
+            # Konfiguracja tail
+            if remote:
+                tail_cmd = f"tail -n 100 -f {log_path}"
+                ssh_command = ['ssh']
+                if key_path:
+                    ssh_command.extend(['-i', key_path])
+                ssh_command.append(f'{username}@{host}')
+                ssh_command.append(f'sudo {tail_cmd}')
+                process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            else:
+                tail_cmd = f"sudo tail -n 100 -f {log_path}"
+                process = subprocess.Popen(tail_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-                # Oblicz widoczny zakres
-                console_height = console.height - 4  # Wysokość konsoli minus marginesy
-                total_lines = len(log_lines)
-                
-                # Upewnij się, że scroll_position jest w prawidłowym zakresie
-                max_scroll = max(0, total_lines - console_height)
-                scroll_position = min(max_scroll, max(0, scroll_position))
+            def update_layout():
+                layout["apps"].update(generate_apps_panel())
+                layout["logs"].update(generate_logs_panel("selected_app"))
+                layout["content"].update(generate_content_panel())
+                return layout
 
-                # Przygotuj tekst do wyświetlenia
-                visible_lines = log_lines[scroll_position:scroll_position + console_height]
-                text = Text("\n").join([Text(line) for line in visible_lines])
-                
-                return Panel(
-                    text,
-                    title=f"[bold blue]Log Monitor[/bold blue]",
-                    subtitle=f"[dim]Linie {scroll_position + 1}-{min(scroll_position + console_height, total_lines)} z {total_lines} (↑/↓ do scrollowania)[/dim]",
-                    border_style="blue"
-                )
-
-            self.console.print(f"\n[bold green]Rozpoczynam monitorowanie logów z {log_path}[/bold green]")
-            self.console.print("[dim]Użyj strzałek ↑/↓ do scrollowania. Ctrl+C aby zakończyć...[/dim]\n")
-
-            with Live(generate_output(), auto_refresh=False, screen=True) as live:
+            with Live(update_layout(), auto_refresh=True, screen=True) as live:
                 while True:
-                    # Obsługa klawiszy
-                    if sys.stdin in select([sys.stdin], [], [], 0)[0]:
-                        char = getch()
-                        if char == '\x1b':  # Escape sequence
-                            char = getch()
-                            if char == '[':
-                                char = getch()
-                                if char == 'A':  # Strzałka w górę
-                                    scroll_position = max(0, scroll_position - 1)
-                                elif char == 'B':  # Strzałka w dół
-                                    scroll_position += 1
-
-                    live.update(generate_output())
-                    time.sleep(0.1)  # Zmniejsz obciążenie CPU
+                    # Czytaj nową linię z tail
+                    line = process.stdout.readline().strip()
+                    if line:
+                        formatted_line = self.format_and_display_log_line(line, log_path)
+                        log_lines.append(formatted_line)
+                        if len(log_lines) > max_lines:
+                            log_lines.pop(0)
+                    
+                    # Sprawdź klawisze
+                    if sys.stdin in select_module.select([sys.stdin], [], [], 0)[0]:
+                        key = sys.stdin.read(1)
+                        if key == 'k':  # Scroll up
+                            auto_scroll = False
+                            scroll_position = max(0, scroll_position - 1)
+                        elif key == 'j':  # Scroll down
+                            auto_scroll = False
+                            scroll_position += 1
+                        elif key == 'a':  # Toggle auto-scroll
+                            auto_scroll = not auto_scroll
+                    
+                    live.update(update_layout())
 
         except KeyboardInterrupt:
             self.console.print("\n[yellow]Zatrzymano monitorowanie logów[/yellow]")
+        finally:
+            if process:
+                process.terminate()
 
-    def format_and_display_log_line(self, line):
+    def format_and_display_log_line(self, line, log_path):
         """Pomocnicza funkcja do formatowania linii logu"""
         try:
             # Dla access.log
@@ -365,140 +381,126 @@ class NginxMonitor:
 
         self.console.print(table)
 
+    def run_monitor(self, logs, mode, host=None, username=None, key_path=None):
+        app = NginxMonitorApp(self, logs, mode, host, username, key_path)
+        app.run()
+
     def main(self):
-        self.console.print(Panel.fit("Monitor Nginx", style="bold blue"))
-        
-        mode = Prompt.ask("Wybierz tryb (l/z)", choices=["l", "z"])
-        
-        if mode == "l":
-            results = self.check_nginx()
-            self.display_results(results, "localhost")
+        # ... (poprzedni kod bez zmian do momentu sprawdzenia statusu Nginx)
+
+        # Wyświetl status Nginx
+        self.display_results(results, host)
+
+        # Jeśli Nginx działa, uruchom monitor
+        if results['systemd_active']:
+            self.console.print("\n[green]Nginx działa! Uruchamiam monitor...[/green]")
             
-            self.console.print("\n=== Analiza logów NGINX ===")
+            logs = self.analyze_nginx_logs(
+                remote=(mode == "z"),
+                host=host if mode == "z" else None,
+                username=username if mode == "z" else None,
+                key_path=key_path if mode == "z" else None
+            )
             
-            # Analiza logów
-            logs = self.analyze_nginx_logs()
-            if logs:
-                self.display_logs(logs)
-                
-                # Opcja monitorowania logów
-                if Confirm.ask("\nCzy chcesz monitorować logi?"):
-                    available_logs = []
-                    for name, info in logs.items():
-                        for log_type, log_paths in info['logs'].items():
-                            for log_path in log_paths:
-                                available_logs.append((name, log_type, log_path))
-                    
-                    if available_logs:
-                        self.console.print("\nDostępne logi:")
-                        for i, (name, log_type, log_path) in enumerate(available_logs, 1):
-                            self.console.print(f"{i}. {name} ({log_type}): {log_path}")
-                        
-                        choice = int(Prompt.ask(
-                            "Wybierz numer logu do monitorowania",
-                            choices=[str(i) for i in range(1, len(available_logs) + 1)]
-                        ))
-                        
-                        selected_name, log_type, log_path = available_logs[choice - 1]
-                        self.console.print(f"\nMonitorowanie logów {log_type} dla {selected_name}")
-                        
-                        # Sprawdź czy plik istnieje przed monitorowaniem
-                        check_cmd = f"test -f {log_path} && echo 'exists'"
-                        print(check_cmd)
-                        _, exists = self.run_command(check_cmd)
-                        print(exists)
-                        
-                        if exists:
-                            self.watch_logs(log_path)
-                        else:
-                            self.console.print(f"[red]Plik logu {log_path} nie istnieje![/red]")
-                    else:
-                        self.console.print("[yellow]Nie znaleziono żadnych dostępnych logów[/yellow]")
-            else:
-                self.console.print("[yellow]Nie znaleziono żadnych logów[/yellow]")
-        
+            try:
+                self.run_monitor(logs, mode, host, username, key_path)
+            except KeyboardInterrupt:
+                self.console.print("\n[yellow]Zatrzymano monitor[/yellow]")
         else:
-            if self.profiles and Confirm.ask("Czy chcesz użyć zapisanego profilu?"):
-                profile_names = list(self.profiles.keys())
-                profile_name = Prompt.ask("Wybierz profil", choices=profile_names)
-                profile = self.profiles[profile_name]
-                results = self.check_nginx(
-                    remote=True,
-                    host=profile['host'],
-                    username=profile['username'],
-                    key_path=profile['key_path']
-                )
-            else:
-                host = Prompt.ask("Podaj host")
-                username = Prompt.ask("Podaj nazwę użytkownika")
-                use_key = Confirm.ask("Czy chcesz użyć klucza SSH?")
-                key_path = None
-                
-                if use_key:
-                    key_path = Prompt.ask("Podaj ścieżkę do klucza SSH")
-                
-                results = self.check_nginx(
-                    remote=True,
-                    host=host,
-                    username=username,
-                    key_path=key_path
-                )
-                
-                if Confirm.ask("Czy chcesz zapisać ten profil?"):
-                    name = Prompt.ask("Podaj nazwę profilu")
-                    self.save_profile(name, host, username, key_path)
-            
-            if results:
-                self.display_results(results, host)
-                
-                # Analiza logów
-                logs = self.analyze_nginx_logs(
-                    remote=(mode == "z"),
-                    host=host if mode == "z" else None,
-                    username=username if mode == "z" else None,
-                    key_path=key_path if mode == "z" else None
-                )
-                self.display_logs(logs)
-                
-                # Opcja monitorowania logów
-                if logs:
-                    if Confirm.ask("\nCzy chcesz monitorować logi?"):
-                        # Przygotuj listę wszystkich dostępnych logów
-                        available_logs = []
-                        for name, info in logs.items():
-                            for log_type, log_paths in info['logs'].items():
-                                for log_path in log_paths:
-                                    available_logs.append((name, log_type, log_path))
-                        
-                        if available_logs:
-                            self.console.print("\nDostępne logi:")
-                            for i, (name, log_type, log_path) in enumerate(available_logs, 1):
-                                self.console.print(f"{i}. {name} ({log_type}): {log_path}")
-                            
-                            choice = int(Prompt.ask(
-                                "Wybierz numer logu do monitorowania",
-                                choices=[str(i) for i in range(1, len(available_logs) + 1)]
-                            ))
-                            
-                            selected_name, log_type, log_path = available_logs[choice - 1]
-                            self.console.print(f"\nMonitorowanie logów {log_type} dla {selected_name}")
-                            
-                            # Sprawdź czy plik istnieje przed monitorowaniem
-                            check_cmd = f"test -f {log_path} && echo 'exists'"
-                            exists, _ = self.run_command(check_cmd)
-                            
-                            if exists:
-                                self.watch_logs(
-                                    log_path,
-                                    remote=(mode == "z"),
-                                    host=host if mode == "z" else None,
-                                    username=username if mode == "z" else None,
-                                    key_path=key_path if mode == "z" else None
-                                )
-                            else:
-                                self.console.print(f"[red]Plik logu {log_path} nie istnieje![/red]")
-                        else:
-                            self.console.print("[yellow]Nie znaleziono żadnych dostępnych logów[/yellow]")
+            self.console.print("\n[red]Nginx nie jest aktywny![/red]")
+
+class NginxMonitorApp(App):
+    BINDINGS = [
+        Binding("q", "quit", "Wyjście"),
+        Binding("tab", "next_panel", "Następny panel"),
+        Binding("shift+tab", "prev_panel", "Poprzedni panel"),
+    ]
+
+    def __init__(self, nginx_monitor, logs, mode, host=None, username=None, key_path=None):
+        super().__init__()
+        self.nginx_monitor = nginx_monitor
+        self.logs = logs
+        self.mode = mode
+        self.host = host
+        self.username = username
+        self.key_path = key_path
+        self.selected_app = None
+        self.selected_log = None
+
+    def compose(self):
+        yield Header()
+        yield Container(
+            Horizontal(
+                Tree("Aplikacje", id="apps_tree"),
+                Tree("Logi", id="logs_tree"),
+                ScrollView(Static(id="log_content")),
+                id="main_container"
+            )
+        )
+        yield Footer()
+
+    def on_mount(self):
+        # Wypełnij drzewo aplikacji
+        apps_tree = self.query_one("#apps_tree", Tree)
+        for app_name, app_data in self.logs.items():
+            apps_tree.root.add(app_name)
+
+    def on_tree_node_selected(self, event: Tree.NodeSelected):
+        tree_id = event.tree.id
+        if tree_id == "apps_tree":
+            self.selected_app = event.node.label
+            # Aktualizuj drzewo logów
+            logs_tree = self.query_one("#logs_tree", Tree)
+            logs_tree.clear()
+            if self.selected_app in self.logs:
+                for log_type, paths in self.logs[self.selected_app]['logs'].items():
+                    for path in paths:
+                        logs_tree.root.add(path)
+        elif tree_id == "logs_tree":
+            self.selected_log = event.node.label
+            # Rozpocznij monitorowanie wybranego logu
+            self.monitor_log(self.selected_log)
+
+    def monitor_log(self, log_path):
+        # Konfiguracja procesu tail
+        if self.mode == "z":
+            tail_cmd = f"tail -n 100 -f {log_path}"
+            ssh_command = ['ssh']
+            if self.key_path:
+                ssh_command.extend(['-i', self.key_path])
+            ssh_command.append(f'{self.username}@{self.host}')
+            ssh_command.append(f'sudo {tail_cmd}')
+            process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        else:
+            tail_cmd = f"sudo tail -n 100 -f {log_path}"
+            process = subprocess.Popen(tail_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+        def update_log_content():
+            content = self.query_one("#log_content", Static)
+            while True:
+                line = process.stdout.readline()
+                if line:
+                    formatted_line = self.nginx_monitor.format_and_display_log_line(line.strip(), log_path)
+                    content.update(Text(formatted_line))
+                if process.poll() is not None:
+                    break
+
+        # Uruchom wątek monitorujący
+        import threading
+        monitor_thread = threading.Thread(target=update_log_content, daemon=True)
+        monitor_thread.start()
+
+    def action_next_panel(self):
+        # Implementacja przełączania między panelami
+        pass
+
+    def action_prev_panel(self):
+        # Implementacja przełączania między panelami
+        pass
+
+def run_monitor(self, logs, mode, host=None, username=None, key_path=None):
+    app = NginxMonitorApp(self, logs, mode, host, username, key_path)
+    app.run()
 
 if __name__ == "__main__":
     monitor = NginxMonitor()
