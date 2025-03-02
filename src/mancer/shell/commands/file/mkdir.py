@@ -1,4 +1,4 @@
-from ..base import PlatformCommand, ShellCommand
+from ...base import PlatformCommand, ShellCommand
 from typing import Optional
 import os
 
