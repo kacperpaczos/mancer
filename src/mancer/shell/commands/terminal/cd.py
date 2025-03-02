@@ -1,4 +1,4 @@
-from ..base import ShellCommand
+from ...base import ShellCommand
 from ....core import CommandResult
 import os
 

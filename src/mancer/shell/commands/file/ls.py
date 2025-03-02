@@ -1,4 +1,4 @@
-from ..base import PlatformCommand, ShellCommand
+from ...base import PlatformCommand, ShellCommand
 from typing import Optional, List
 from datetime import datetime
 from ....core import Command, CommandResult
