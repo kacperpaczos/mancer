@@ -1,4 +1,4 @@
-from ..base import PlatformCommand, get_platform
+from ...base import PlatformCommand, get_platform
 from typing import Optional
 
 class LinuxIP(PlatformCommand):
