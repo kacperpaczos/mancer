@@ -1,4 +1,4 @@
-from .core import Command
+from ....core import Command
 from typing import List
 
 class SystemdManager:
