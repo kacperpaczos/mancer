@@ -1,5 +1,5 @@
 import pytest
-from mancer.systemd import SystemdManager
+from mancer.shell.commands.system.systemd import SystemdManager
 from mancer.core import Command
 from unittest.mock import patch
 
