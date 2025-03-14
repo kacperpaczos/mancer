@@ -1,10 +1,12 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 setup(
     name="mancer",
     version="0.1.0",
-    packages=find_packages(where="src"),
     package_dir={"": "src"},
-    install_requires=[],
-    python_requires=">=3.10",
-) 
+    packages=find_namespace_packages(where="src"),
+    description="Framework DDD dla komend systemowych",
+    author="Kacper Paczos",
+    author_email="kacperpaczos2024@proton.me",
+    python_requires=">=3.8",
+)
