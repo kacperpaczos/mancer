@@ -9,7 +9,6 @@ class SystemctlCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("systemctl")
-        self.backend = BashBackend()
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -17,8 +16,11 @@ class SystemctlCommand(BaseCommand):
         # Budujemy komendę
         cmd_str = self.build_command()
         
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
+        
         # Wykonujemy komendę
-        result = self.backend.execute_command(
+        result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )
@@ -33,7 +35,7 @@ class SystemctlCommand(BaseCommand):
     
     def _get_additional_args(self) -> List[str]:
         """Dodaje argumenty specyficzne dla systemctl"""
-        args = []
+        args = super()._get_additional_args().copy()
         
         # Dodaj operację
         if "operation" in self.parameters:

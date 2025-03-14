@@ -4,8 +4,15 @@ from ..command.file.ls_command import LsCommand
 from ..command.file.cp_command import CpCommand
 from ..command.file.cd_command import CdCommand
 from ..command.file.find_command import FindCommand
+from ..command.file.grep_command import GrepCommand
+from ..command.file.cat_command import CatCommand
+from ..command.file.tail_command import TailCommand
+from ..command.file.head_command import HeadCommand
 from ..command.system.ps_command import PsCommand
 from ..command.system.systemctl_command import SystemctlCommand
+from ..command.system.hostname_command import HostnameCommand
+from ..command.system.df_command import DfCommand
+from ..command.system.echo_command import EchoCommand
 from ..command.network.netstat_command import NetstatCommand
 
 class CommandFactory:
@@ -24,10 +31,17 @@ class CommandFactory:
         self._command_types["cp"] = CpCommand
         self._command_types["cd"] = CdCommand
         self._command_types["find"] = FindCommand
+        self._command_types["grep"] = GrepCommand
+        self._command_types["cat"] = CatCommand
+        self._command_types["tail"] = TailCommand
+        self._command_types["head"] = HeadCommand
         
         # Komendy systemowe
         self._command_types["ps"] = PsCommand
         self._command_types["systemctl"] = SystemctlCommand
+        self._command_types["hostname"] = HostnameCommand
+        self._command_types["df"] = DfCommand
+        self._command_types["echo"] = EchoCommand
         
         # Komendy sieciowe
         self._command_types["netstat"] = NetstatCommand

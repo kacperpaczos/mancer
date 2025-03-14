@@ -10,7 +10,6 @@ class CdCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("cd")
-        self.backend = BashBackend()
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -39,15 +38,33 @@ class CdCommand(BaseCommand):
         else:
             full_path = target_path
         
-        # Sprawdzamy, czy katalog istnieje
-        if not os.path.isdir(full_path):
-            return CommandResult(
-                raw_output="",
-                success=False,
-                structured_output=[],
-                exit_code=1,
-                error_message=f"cd: {target_path}: Nie ma takiego pliku ani katalogu"
-            )
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
+        
+        # W przypadku zdalnego wykonania, musimy sprawdzić, czy katalog istnieje
+        if context.is_remote():
+            # Wykonujemy komendę "test -d <path>" na zdalnym hoście
+            test_cmd = f"test -d {full_path} && echo 'exists' || echo 'not_exists'"
+            test_result = backend.execute_command(test_cmd)
+            
+            if "not_exists" in test_result.raw_output:
+                return CommandResult(
+                    raw_output="",
+                    success=False,
+                    structured_output=[],
+                    exit_code=1,
+                    error_message=f"cd: {target_path}: Nie ma takiego pliku ani katalogu"
+                )
+        else:
+            # Lokalnie sprawdzamy, czy katalog istnieje
+            if not os.path.isdir(full_path):
+                return CommandResult(
+                    raw_output="",
+                    success=False,
+                    structured_output=[],
+                    exit_code=1,
+                    error_message=f"cd: {target_path}: Nie ma takiego pliku ani katalogu"
+                )
         
         # Aktualizujemy kontekst
         context.change_directory(full_path)

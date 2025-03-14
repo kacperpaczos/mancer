@@ -9,7 +9,6 @@ class LsCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("ls")
-        self.backend = BashBackend()  # Domyślnie używamy backendu bash
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -21,8 +20,11 @@ class LsCommand(BaseCommand):
         if "path" not in self.parameters:
             cmd_str = f"{cmd_str} {context.current_directory}"
         
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
+        
         # Wykonujemy komendę
-        result = self.backend.execute_command(
+        result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )

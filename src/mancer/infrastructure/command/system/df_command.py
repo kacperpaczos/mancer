@@ -4,15 +4,15 @@ from ...backend.bash_backend import BashBackend
 from ....domain.model.command_result import CommandResult
 from ....domain.model.command_context import CommandContext
 
-class PsCommand(BaseCommand):
-    """Komenda ps - wyświetla informacje o procesach"""
+class DfCommand(BaseCommand):
+    """Komenda df - wyświetla informacje o systemie plików"""
     
     def __init__(self):
-        super().__init__("ps")
+        super().__init__("df")
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
-        """Wykonuje komendę ps"""
+        """Wykonuje komendę df"""
         # Budujemy komendę
         cmd_str = self.build_command()
         
@@ -32,11 +32,11 @@ class PsCommand(BaseCommand):
         return result
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parsuje wynik ps do listy słowników z informacjami o procesach"""
+        """Parsuje wynik df do listy słowników z informacjami o systemie plików"""
         result = []
         lines = raw_output.strip().split('\n')
         
-        if len(lines) < 2:  # Musi być co najmniej nagłówek i jeden proces
+        if len(lines) < 2:  # Musi być co najmniej nagłówek i jeden system plików
             return result
         
         # Parsujemy nagłówek, aby znaleźć pozycje kolumn
@@ -67,7 +67,7 @@ class PsCommand(BaseCommand):
             if not line.strip():
                 continue
                 
-            process_info = {}
+            fs_info = {}
             
             # Dla każdej kolumny, wyodrębnij jej wartość
             for j in range(len(col_positions)):
@@ -77,38 +77,31 @@ class PsCommand(BaseCommand):
                 # Przytnij białe znaki
                 value = line[start:end].strip()
                 
-                # Dodaj do informacji o procesie
-                process_info[col_names[j].lower()] = value
+                # Dodaj do informacji o systemie plików
+                fs_info[col_names[j].lower()] = value
             
-            result.append(process_info)
+            result.append(fs_info)
         
         return result
     
-    # Metody specyficzne dla ps
+    # Metody specyficzne dla df
     
-    def all(self) -> 'PsCommand':
-        """Opcja -e - pokazuje wszystkie procesy"""
-        return self.with_option("-e")
+    def human_readable(self) -> 'DfCommand':
+        """Opcja -h - pokazuje rozmiary w formacie czytelnym dla człowieka"""
+        return self.with_option("-h")
     
-    def full_format(self) -> 'PsCommand':
-        """Opcja -f - pełny format wyświetlania"""
-        return self.with_option("-f")
+    def inodes(self) -> 'DfCommand':
+        """Opcja -i - pokazuje informacje o i-węzłach zamiast o blokach"""
+        return self.with_option("-i")
     
-    def long_format(self) -> 'PsCommand':
-        """Opcja -l - długi format wyświetlania"""
-        return self.with_option("-l")
+    def type(self, fs_type: str) -> 'DfCommand':
+        """Opcja -t - pokazuje tylko systemy plików określonego typu"""
+        return self.with_param("t", fs_type)
     
-    def user(self, username: str) -> 'PsCommand':
-        """Opcja -u - pokazuje procesy określonego użytkownika"""
-        return self.with_param("u", username)
+    def exclude_type(self, fs_type: str) -> 'DfCommand':
+        """Opcja -x - wyklucza systemy plików określonego typu"""
+        return self.with_param("x", fs_type)
     
-    def search(self, pattern: str) -> 'PsCommand':
-        """Wyszukuje procesy według wzorca, wykorzystując grep"""
-        new_instance = self.clone()
-        # Dodanie opcji do komendy ps, która przekazuje wynik do grep
-        new_instance.pipeline = f"grep {pattern}"
-        return new_instance
-        
-    def aux(self) -> 'PsCommand':
-        """Opcja aux - pokazuje wszystkie procesy dla wszystkich użytkowników z dodatkowymi informacjami"""
-        return self.with_option("aux")
+    def filesystem(self, filesystem: str) -> 'DfCommand':
+        """Określa konkretny system plików do wyświetlenia"""
+        return self.add_arg(filesystem) 

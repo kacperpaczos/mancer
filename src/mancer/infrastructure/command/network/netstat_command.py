@@ -9,7 +9,6 @@ class NetstatCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("netstat")
-        self.backend = BashBackend()
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -17,8 +16,11 @@ class NetstatCommand(BaseCommand):
         # Budujemy komendę
         cmd_str = self.build_command()
         
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
+        
         # Wykonujemy komendę
-        result = self.backend.execute_command(
+        result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )

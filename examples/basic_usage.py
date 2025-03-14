@@ -7,7 +7,7 @@ def main():
     # Tworzenie komend
     ls = runner.create_command("ls").long().all()
     cd = runner.create_command("cd").to_directory("/tmp")
-    cp = runner.create_command("cp").recursive().to_destination("/backup")
+    cp = runner.create_command("cp").recursive().from_source("*.conf").to_destination("/backup")
     
     # Rejestracja prekonfigurowanych komend
     runner.register_command("ls_all", ls)
@@ -32,12 +32,12 @@ def main():
     print(result)
     
     # Przykład pełnego łańcucha: cd /etc, znajdź pliki .conf, skopiuj je do /backup
-    find = runner.create_command("find").with_param("name", "*.conf")
+    # Używamy exec_command, aby bezpośrednio wykonać cp dla każdego znalezionego pliku
+    find = runner.create_command("find").with_name("*.conf").exec_command("cp -r {} /backup")
     
     complex_chain = (
         runner.create_command("cd").to_directory("/etc")
             .then(find)
-            .pipe(runner.get_command("backup"))
     )
     
     print("\nUruchamianie złożonego łańcucha komend:")

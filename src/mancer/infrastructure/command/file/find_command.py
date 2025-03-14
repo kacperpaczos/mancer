@@ -9,20 +9,23 @@ class FindCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("find")
-        self.backend = BashBackend()
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę find"""
-        # Budujemy komendę z uwzględnieniem kontekstu
+        # Budujemy komendę
         cmd_str = self.build_command()
         
         # Jeśli nie ma ścieżki w parametrach, używamy bieżącego katalogu z kontekstu
-        if "path" not in self.parameters:
-            cmd_str = f"{cmd_str} {context.current_directory}"
+        path = self.parameters.get("path", context.current_directory)
+        # Ścieżka musi być na początku komendy
+        cmd_str = f"find {path} {' '.join(cmd_str.split()[1:])}"
+        
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
         
         # Wykonujemy komendę
-        result = self.backend.execute_command(
+        result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )
@@ -36,7 +39,7 @@ class FindCommand(BaseCommand):
     def _format_parameter(self, name: str, value: Any) -> str:
         """Specjalne formatowanie dla find"""
         if name == "path":
-            return ""  # Ścieżka jest obsługiwana przez _get_additional_args
+            return ""  # Ścieżka jest obsługiwana przez execute
         elif name == "name":
             return f"-name \"{value}\""
         elif name == "type":
@@ -45,6 +48,9 @@ class FindCommand(BaseCommand):
             return f"-size {value}"
         elif name == "mtime":
             return f"-mtime {value}"
+        elif name == "exec":
+            # Komenda exec musi być w formacie: -exec command {} \;
+            return f"-exec {value} \\;"
         return super()._format_parameter(name, value)
     
     def _get_additional_args(self) -> List[str]:
@@ -85,7 +91,9 @@ class FindCommand(BaseCommand):
     
     def exec_command(self, command: str) -> 'FindCommand':
         """Dodaje opcję wykonania komendy dla każdego znalezionego pliku"""
-        return self.with_param("exec", f"{command} {{}} \\;")
+        # Komenda exec musi być w formacie: -exec command {} \;
+        # Gdzie {} jest zastępowane przez znaleziony plik
+        return self.with_param("exec", command)
     
     def with_param(self, name: str, value: Any) -> 'FindCommand':
         """Nadpisana metoda with_param dla lepszej obsługi łańcuchów"""

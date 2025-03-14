@@ -9,7 +9,6 @@ class CpCommand(BaseCommand):
     
     def __init__(self):
         super().__init__("cp")
-        self.backend = BashBackend()
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -31,8 +30,11 @@ class CpCommand(BaseCommand):
                         sources = input_result.structured_output
                         cmd_str = f"{cmd_str} {' '.join(sources)}"
         
+        # Pobieramy odpowiedni backend
+        backend = self._get_backend(context)
+        
         # Wykonujemy komendę
-        result = self.backend.execute_command(
+        result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )
@@ -47,7 +49,7 @@ class CpCommand(BaseCommand):
     
     def _get_additional_args(self) -> List[str]:
         """Dodaje źródło i cel, jeśli są ustawione"""
-        args = []
+        args = super()._get_additional_args().copy()
         if "source" in self.parameters:
             if isinstance(self.parameters["source"], list):
                 args.extend(self.parameters["source"])
