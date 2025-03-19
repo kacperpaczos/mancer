@@ -1,6 +1,6 @@
 import subprocess
 import shlex
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
@@ -46,6 +46,45 @@ class BashBackend(BackendInterface):
                 exit_code=-1,
                 error_message=str(e)
             )
+    
+    def execute(self, command: str, input_data: Optional[str] = None, 
+               working_dir: Optional[str] = None) -> Tuple[int, str, str]:
+        """
+        Executes a command and returns exit code, stdout, and stderr.
+        This method is used by Command classes.
+        
+        Args:
+            command: The command to execute
+            input_data: Optional input data to pass to stdin
+            working_dir: Optional working directory
+            
+        Returns:
+            Tuple of (exit_code, stdout, stderr)
+        """
+        try:
+            # Prepare stdin if provided
+            stdin = None
+            if input_data:
+                stdin = subprocess.PIPE
+            
+            # Execute the command
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=stdin,
+                cwd=working_dir
+            )
+            
+            # Send input data if provided
+            stdout, stderr = process.communicate(input=input_data)
+            exit_code = process.returncode
+            
+            return exit_code, stdout, stderr
+        except Exception as e:
+            return -1, "", str(e)
     
     def parse_output(self, command: str, raw_output: str, exit_code: int, 
                     error_output: str = "") -> CommandResult:
