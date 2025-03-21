@@ -40,10 +40,10 @@ class CommandChain:
         """Zwraca historię wykonania łańcucha komend"""
         return self.history
     
-    def execute(self, context: CommandContext) -> CommandResult:
+    def execute(self, context: CommandContext) -> Optional[CommandResult]:
         """Wykonuje cały łańcuch komend"""
         if not self.commands:
-            raise ValueError("Łańcuch komend jest pusty")
+            return None
         
         result = None
         current_context = context
@@ -61,7 +61,9 @@ class CommandChain:
                     
                     if result and prev_format != curr_format and hasattr(result, 'to_format'):
                         # Konwertuj wynik do preferowanego formatu bieżącej komendy
-                        result = result.to_format(curr_format)
+                        converted_result = result.to_format(curr_format)
+                        if converted_result:
+                            result = converted_result
                     
                     result = command.execute(current_context, result)
                 else:

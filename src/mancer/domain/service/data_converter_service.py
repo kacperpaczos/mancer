@@ -6,7 +6,7 @@ class DataFormatConverter:
     """Serwis do konwersji danych między różnymi formatami"""
     
     @staticmethod
-    def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Any:
+    def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Optional[Any]:
         """Konwertuje dane z jednego formatu do drugiego"""
         # Jeśli formaty są takie same, zwróć dane bez zmian
         if source_format == target_format:
@@ -14,7 +14,10 @@ class DataFormatConverter:
             
         # Najpierw konwertuj do formatu pośredniego (LIST)
         if source_format != DataFormat.LIST:
-            data = DataFormatConverter._to_list(data, source_format)
+            intermediate_data = DataFormatConverter._to_list(data, source_format)
+            if intermediate_data is None:
+                return None
+            data = intermediate_data
             
         # Następnie konwertuj z listy do docelowego formatu
         if target_format != DataFormat.LIST:
@@ -23,18 +26,18 @@ class DataFormatConverter:
         return data
     
     @staticmethod
-    def _to_list(data: Any, source_format: DataFormat) -> List[Dict[str, Any]]:
+    def _to_list(data: Any, source_format: DataFormat) -> Optional[List[Dict[str, Any]]]:
         """Konwertuje dane z określonego formatu na listę słowników"""
         if source_format == DataFormat.LIST:
             return data
             
         elif source_format == DataFormat.JSON:
-            try:
-                if isinstance(data, str):
+            if isinstance(data, str):
+                try:
                     return json.loads(data)
-                return data  # Zakładamy, że dane są już zdekodowane
-            except Exception as e:
-                raise ValueError(f"Błąd konwersji z JSON: {str(e)}")
+                except Exception:
+                    return None
+            return data  # Zakładamy, że dane są już zdekodowane
                 
         elif source_format == DataFormat.DATAFRAME:
             try:
@@ -43,7 +46,7 @@ class DataFormatConverter:
                     return data.to_dict(orient='records')
                 return data  # Jeśli to nie DataFrame, zwróć dane bez zmian
             except ImportError:
-                raise ImportError("Biblioteka pandas jest wymagana do konwersji DataFrame")
+                return None
                 
         elif source_format == DataFormat.NDARRAY:
             try:
@@ -54,15 +57,15 @@ class DataFormatConverter:
                     elif data.ndim == 2:
                         return [dict(zip(range(data.shape[1]), row)) for row in data]
                     else:
-                        raise ValueError(f"Konwersja z ndarray o wymiarze {data.ndim} nie jest obsługiwana")
+                        return None
                 return data
             except ImportError:
-                raise ImportError("Biblioteka numpy jest wymagana do konwersji ndarray")
+                return None
                 
-        raise ValueError(f"Nieobsługiwany format źródłowy: {source_format}")
+        return None
     
     @staticmethod
-    def _from_list(data: List[Dict[str, Any]], target_format: DataFormat) -> Any:
+    def _from_list(data: List[Dict[str, Any]], target_format: DataFormat) -> Optional[Any]:
         """Konwertuje listę słowników do określonego formatu"""
         if target_format == DataFormat.LIST:
             return data
@@ -70,23 +73,21 @@ class DataFormatConverter:
         elif target_format == DataFormat.JSON:
             try:
                 return json.dumps(data)
-            except Exception as e:
-                raise ValueError(f"Błąd konwersji do JSON: {str(e)}")
+            except Exception:
+                return None
                 
         elif target_format == DataFormat.DATAFRAME:
             try:
                 import pandas as pd
                 return pd.DataFrame(data)
             except ImportError:
-                raise ImportError("Biblioteka pandas jest wymagana do konwersji do DataFrame")
+                return None
                 
         elif target_format == DataFormat.NDARRAY:
             try:
                 import numpy as np
                 return np.array([list(item.values()) for item in data])
-            except ImportError:
-                raise ImportError("Biblioteka numpy jest wymagana do konwersji do ndarray")
-            except Exception as e:
-                raise ValueError(f"Błąd konwersji do ndarray: {str(e)}")
+            except (ImportError, Exception):
+                return None
                 
-        raise ValueError(f"Nieobsługiwany format docelowy: {target_format}")
+        return None

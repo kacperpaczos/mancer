@@ -57,13 +57,13 @@ class CommandResult:
             
         return [item.get(field_name) for item in self.structured_output if field_name in item]
     
-    def to_format(self, target_format: DataFormat) -> 'CommandResult':
+    def to_format(self, target_format: DataFormat) -> Optional['CommandResult']:
         """Konwertuje wynik do innego formatu danych"""
         if self.data_format == target_format:
             return self
             
         if not DataFormat.is_convertible(self.data_format, target_format):
-            raise ValueError(f"Konwersja z {self.data_format} do {target_format} nie jest możliwa")
+            return None
             
         # Implementacja konwersji będzie dodana w DataFormatConverter
         from ..service.data_format_converter import DataFormatConverter
@@ -72,6 +72,9 @@ class CommandResult:
             source_format=self.data_format,
             target_format=target_format
         )
+        
+        if converted_data is None:
+            return None
         
         # Tworzymy nowy CommandResult z skonwertowanymi danymi
         result = CommandResult(

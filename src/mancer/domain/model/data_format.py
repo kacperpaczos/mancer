@@ -10,7 +10,7 @@ class DataFormat(Enum):
     JSON = auto()  # JSON string
     
     @staticmethod
-    def from_string(format_name: str) -> 'DataFormat':
+    def from_string(format_name: str) -> Optional['DataFormat']:
         """Konwertuje string na enum DataFormat"""
         format_map = {
             "list": DataFormat.LIST,
@@ -20,7 +20,7 @@ class DataFormat(Enum):
         }
         
         if format_name.lower() not in format_map:
-            raise ValueError(f"Nieznany format danych: {format_name}")
+            return None
             
         return format_map[format_name.lower()]
     
