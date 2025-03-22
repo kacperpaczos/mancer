@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union, Callable
 import json
+import re
 from ..model.data_format import DataFormat
 
 class DataFormatConverter:
@@ -72,14 +73,87 @@ class DataFormatConverter:
             
         elif target_format == DataFormat.JSON:
             try:
-                return json.dumps(data)
+                return json.dumps(data, ensure_ascii=False)
             except Exception:
                 return None
                 
         elif target_format == DataFormat.DATAFRAME:
             try:
                 import pandas as pd
-                return pd.DataFrame(data)
+                
+                def convert_size(value):
+                    """
+                    Konwertuje wartość tekstową, która może zawierać jednostki i różne separatory
+                    dziesiętne (kropki, przecinki, średniki) na wartość liczbową.
+                    """
+                    if not isinstance(value, str):
+                        return value
+                    
+                    # Usuwamy wszystkie spacje
+                    cleaned_value = value.strip()
+                    
+                    # Wykrywamy jednostki miary (K, M, G, T)
+                    multipliers = {'K': 1024, 'k': 1024, 'M': 1024**2, 'm': 1024**2, 
+                                   'G': 1024**3, 'g': 1024**3, 'T': 1024**4, 't': 1024**4}
+                    
+                    unit_multiplier = 1
+                    for unit, mult in multipliers.items():
+                        if cleaned_value.endswith(unit):
+                            cleaned_value = cleaned_value[:-1].strip()
+                            unit_multiplier = mult
+                            break
+                    
+                    # Zamiana separatorów (najpierw wykrywamy jaki to format)
+                    # Usuwamy znaki procentu i inne znaki specjalne
+                    cleaned_value = cleaned_value.replace('%', '').replace('€', '')
+                    
+                    # Próbujemy wykryć format liczby
+                    decimal_separator = '.'
+                    thousand_separator = None
+                    
+                    # Sprawdzamy czy zawiera przecinek
+                    if ',' in cleaned_value:
+                        # Jeśli jest kropka i przecinek, zakładamy format angielski (1,234.56)
+                        if '.' in cleaned_value:
+                            decimal_separator = '.'
+                            thousand_separator = ','
+                        else:
+                            # Jeśli jest tylko przecinek, to prawdopodobnie format europejski (1234,56)
+                            decimal_separator = ','
+                    
+                    # Sprawdzamy czy zawiera średnik
+                    if ';' in cleaned_value:
+                        decimal_separator = ';'
+                    
+                    # Zastępujemy separator tysięczny na pusty string
+                    if thousand_separator:
+                        cleaned_value = cleaned_value.replace(thousand_separator, '')
+                    
+                    # Zastępujemy separator dziesiętny na kropkę
+                    if decimal_separator != '.':
+                        cleaned_value = cleaned_value.replace(decimal_separator, '.')
+                    
+                    # Próbujemy przekonwertować
+                    try:
+                        # Jeśli string wygląda na liczbę, konwertujemy
+                        if re.match(r'^-?\d+\.?\d*$', cleaned_value):
+                            return float(cleaned_value) * unit_multiplier
+                        # Jeśli nie, zwracamy oryginalną wartość
+                        return value
+                    except:
+                        # W przypadku błędu, zwracamy oryginalną wartość
+                        return value
+                
+                # Konwertuj dane
+                converted_data = []
+                for item in data:
+                    converted_item = {}
+                    for key, value in item.items():
+                        # Próbuj przekonwertować wartości na liczby
+                        converted_item[key] = convert_size(value)
+                    converted_data.append(converted_item)
+                
+                return pd.DataFrame(converted_data)
             except ImportError:
                 return None
                 

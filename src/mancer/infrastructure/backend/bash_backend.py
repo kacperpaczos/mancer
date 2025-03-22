@@ -48,7 +48,7 @@ class BashBackend(BackendInterface):
             )
     
     def execute(self, command: str, input_data: Optional[str] = None, 
-               working_dir: Optional[str] = None) -> Tuple[int, str, str]:
+               working_dir: Optional[str] = None, timeout: Optional[int] = 10) -> Tuple[int, str, str]:
         """
         Executes a command and returns exit code, stdout, and stderr.
         This method is used by Command classes.
@@ -57,11 +57,17 @@ class BashBackend(BackendInterface):
             command: The command to execute
             input_data: Optional input data to pass to stdin
             working_dir: Optional working directory
+            timeout: Optional timeout in seconds (default 10)
             
         Returns:
             Tuple of (exit_code, stdout, stderr)
         """
         try:
+            # Log the execution
+            import time
+            start_time = time.time()
+            print(f"Executing command: {command[:100]}{' ...' if len(command) > 100 else ''}")
+            
             # Prepare stdin if provided
             stdin = None
             if input_data:
@@ -75,15 +81,34 @@ class BashBackend(BackendInterface):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=stdin,
-                cwd=working_dir
+                cwd=working_dir,
+                bufsize=1  # Line buffered
             )
             
-            # Send input data if provided
-            stdout, stderr = process.communicate(input=input_data)
-            exit_code = process.returncode
+            # Send input data if provided and wait for completion with timeout
+            try:
+                stdout, stderr = process.communicate(input=input_data, timeout=timeout)
+                exit_code = process.returncode
+                
+                # Log completion
+                duration = time.time() - start_time
+                print(f"Command completed in {duration:.2f}s with exit code {exit_code}")
+                
+            except subprocess.TimeoutExpired:
+                # Kill the process if it times out
+                print(f"Command timed out after {timeout}s: {command[:50]}...")
+                process.kill()
+                stdout, stderr = process.communicate()
+                return -1, stdout, f"Command timed out after {timeout} seconds: {command}"
+            except KeyboardInterrupt:
+                # Handle keyboard interrupt gracefully
+                print("Command interrupted by user")
+                process.kill()
+                return -1, "", "Command interrupted by user"
             
             return exit_code, stdout, stderr
         except Exception as e:
+            print(f"Error executing command: {str(e)}")
             return -1, "", str(e)
     
     def parse_output(self, command: str, raw_output: str, exit_code: int, 

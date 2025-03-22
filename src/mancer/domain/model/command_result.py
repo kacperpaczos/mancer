@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Union
 from .data_format import DataFormat
 from .execution_history import ExecutionHistory
+from ..service.data_converter_service import DataFormatConverter
 
 @dataclass
 class CommandResult:
@@ -57,35 +58,32 @@ class CommandResult:
             
         return [item.get(field_name) for item in self.structured_output if field_name in item]
     
-    def to_format(self, target_format: DataFormat) -> Optional['CommandResult']:
-        """Konwertuje wynik do innego formatu danych"""
+    def to_format(self, target_format: DataFormat) -> 'CommandResult':
+        """Konwertuje dane do innego formatu"""
         if self.data_format == target_format:
             return self
             
-        if not DataFormat.is_convertible(self.data_format, target_format):
-            return None
-            
-        # Implementacja konwersji będzie dodana w DataFormatConverter
-        from ..service.data_format_converter import DataFormatConverter
         converted_data = DataFormatConverter.convert(
             self.structured_output, 
-            source_format=self.data_format,
-            target_format=target_format
+            self.data_format, 
+            target_format
         )
         
         if converted_data is None:
-            return None
-        
-        # Tworzymy nowy CommandResult z skonwertowanymi danymi
-        result = CommandResult(
+            return CommandResult(
+                raw_output=self.raw_output,
+                structured_output=None,
+                data_format=target_format,
+                exit_code=1,
+                history=self.history,
+                success=False
+            )
+            
+        return CommandResult(
             raw_output=self.raw_output,
-            success=self.success,
             structured_output=converted_data,
-            exit_code=self.exit_code,
-            error_message=self.error_message,
-            metadata=self.metadata,
             data_format=target_format,
-            history=self.history  # Historia zostaje zachowana
+            exit_code=self.exit_code,
+            history=self.history,
+            success=self.success
         )
-        
-        return result
