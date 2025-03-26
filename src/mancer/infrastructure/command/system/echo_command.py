@@ -7,8 +7,16 @@ from ....domain.model.command_context import CommandContext
 class EchoCommand(BaseCommand):
     """Komenda echo - wyświetla tekst"""
     
-    def __init__(self):
+    def __init__(self, message: str = ""):
+        """
+        Inicjalizuje komendę echo.
+        
+        Args:
+            message: Opcjonalny tekst do wyświetlenia
+        """
         super().__init__("echo")
+        if message:
+            self.add_arg(message)
     
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:

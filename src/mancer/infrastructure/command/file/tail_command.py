@@ -25,17 +25,27 @@ class TailCommand(BaseCommand):
         backend = self._get_backend(context)
         
         # Wykonujemy komendę
-        result = backend.execute_command(
+        exit_code, output, error = backend.execute(
             cmd_str, 
-            working_dir=context.current_directory,
-            stdin_data=stdin_data
+            input_data=stdin_data,
+            working_dir=context.current_directory
         )
         
-        # Parsujemy wynik
-        if result.success:
-            result.structured_output = self._parse_output(result.raw_output)
+        # Sprawdzamy, czy komenda zakończyła się sukcesem
+        success = exit_code == 0
+        error_message = error if error and not success else None
         
-        return result
+        # Parsujemy wynik
+        structured_output = self._parse_output(output)
+        
+        # Tworzymy i zwracamy wynik
+        return CommandResult(
+            raw_output=output,
+            success=success,
+            structured_output=structured_output,
+            exit_code=exit_code,
+            error_message=error_message
+        )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parsuje wynik tail do listy słowników z liniami pliku"""
@@ -76,6 +86,14 @@ class TailCommand(BaseCommand):
         
         return result
     
+    def _format_parameter(self, name: str, value: Any) -> str:
+        """Specjalne formatowanie dla tail"""
+        if name == "n":
+            return f"-n{value}"  # Format -n5 zamiast --n=5
+        if name == "c":
+            return f"-c{value}"  # Format -c5 zamiast --c=5
+        return super()._format_parameter(name, value)
+    
     # Metody specyficzne dla tail
     
     def file(self, file_path: str) -> 'TailCommand':
@@ -94,23 +112,19 @@ class TailCommand(BaseCommand):
         """Opcja -c - określa liczbę bajtów do wyświetlenia"""
         return self.with_param("c", str(num_bytes))
     
-    def follow(self, follow_descriptor: bool = False) -> 'TailCommand':
-        """
-        Opcja -f lub -F - śledzi zmiany w pliku
-        
-        Args:
-            follow_descriptor: Jeśli True, używa -F (śledzi deskryptor pliku),
-                              jeśli False, używa -f (śledzi nazwę pliku)
-        """
-        if follow_descriptor:
-            return self.with_option("-F")
-        else:
-            return self.with_option("-f")
+    def follow(self) -> 'TailCommand':
+        """Opcja -f - śledzi zmiany w pliku"""
+        return self.with_option("-f")
     
     def quiet(self) -> 'TailCommand':
-        """Opcja -q - nie wyświetla nagłówków plików"""
+        """Opcja -q - nie wyświetla nagłówków przy wielu plikach"""
         return self.with_option("-q")
     
     def verbose(self) -> 'TailCommand':
         """Opcja -v - zawsze wyświetla nagłówki plików"""
-        return self.with_option("-v") 
+        return self.with_option("-v")
+    
+    def clone(self) -> 'TailCommand':
+        """Tworzy kopię komendy z tą samą konfiguracją"""
+        new_instance = super().clone()
+        return new_instance 

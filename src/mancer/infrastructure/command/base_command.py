@@ -4,6 +4,7 @@ from copy import deepcopy
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_result import CommandResult
 from ...domain.model.command_context import CommandContext, ExecutionMode
+from ...domain.model.data_format import DataFormat
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
 
@@ -21,6 +22,7 @@ class BaseCommand(CommandInterface):
         self.pipeline = None  # Opcjonalny pipeline (np. | grep)
         self.requires_sudo = False  # Czy komenda wymaga sudo
         self._args: List[str] = []  # Lista dodatkowych argumentów
+        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferowany format danych
     
     def with_option(self, option: str) -> T:
         """Dodaje opcję do komendy"""
@@ -53,70 +55,84 @@ class BaseCommand(CommandInterface):
         return new_instance
     
     def add_args(self, args: List[str]) -> T:
-        """Dodaje wiele argumentów do komendy"""
+        """Dodaje listę argumentów do komendy"""
         new_instance = self.clone()
         new_instance._args.extend(args)
         return new_instance
     
+    def with_data_format(self, format_type: DataFormat) -> T:
+        """Ustawia preferowany format danych wyjściowych komendy"""
+        new_instance = self.clone()
+        new_instance.preferred_data_format = format_type
+        return new_instance
+    
     def clone(self) -> T:
-        """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance = self.__class__()
+        """Tworzy kopię instancji komendy"""
+        new_instance = type(self)()  # Wywołaj bezargumentowy konstruktor
+        new_instance.name = self.name  # Przepisz nazwę komendy
         new_instance.options = deepcopy(self.options)
         new_instance.parameters = deepcopy(self.parameters)
         new_instance.flags = deepcopy(self.flags)
+        new_instance.backend = self.backend
         new_instance.pipeline = self.pipeline
         new_instance.requires_sudo = self.requires_sudo
         new_instance._args = deepcopy(self._args)
+        new_instance.preferred_data_format = self.preferred_data_format
         return new_instance
     
     def build_command(self) -> str:
-        """Buduje string komendy na podstawie konfiguracji"""
-        cmd_parts = [self.name]
+        """Buduje string komendy"""
+        cmd_parts = []
         
-        # Dodajemy opcje (np. -l, -a)
+        # Dodaj sudo jeśli wymagane
+        if self.requires_sudo:
+            cmd_parts.append("sudo")
+            
+        # Dodaj nazwę komendy
+        cmd_parts.append(self.name)
+        
+        # Dodaj opcje
         cmd_parts.extend(self.options)
         
-        # Dodajemy flagi (np. --recursive)
-        cmd_parts.extend(self.flags)
-        
-        # Dodajemy parametry
+        # Dodaj parametry
         for name, value in self.parameters.items():
-            # Sprawdzamy, czy parametr ma specjalną obsługę
-            param_str = self._format_parameter(name, value)
-            if param_str:
-                cmd_parts.append(param_str)
+            cmd_parts.append(self._format_parameter(name, value))
+            
+        # Dodaj flagi
+        cmd_parts.extend([f"--{flag}" for flag in self.flags])
         
-        # Dodajemy pozostałe argumenty specyficzne dla danej komendy
-        additional_args = self._get_additional_args()
-        if additional_args:
-            cmd_parts.extend(additional_args)
+        # Dodaj dodatkowe argumenty
+        cmd_parts.extend(self._get_additional_args())
         
-        cmd_str = " ".join(cmd_parts)
-        
-        # Dodajemy pipeline, jeśli istnieje
+        # Dodaj pipeline jeśli istnieje
         if self.pipeline:
-            cmd_str = f"{cmd_str} | {self.pipeline}"
-        
-        return cmd_str
+            cmd_parts.append(self.pipeline)
+            
+        return " ".join(cmd_parts)
     
     def _get_backend(self, context: CommandContext):
-        """Zwraca odpowiedni backend na podstawie kontekstu"""
-        if context.is_remote():
-            # Jeśli wykonujemy zdalnie, tworzymy backend SSH
+        """
+        Wybiera odpowiedni backend na podstawie kontekstu.
+        """
+        # Jeśli kontekst wskazuje na tryb zdalny, użyj SSH
+        if (context.execution_mode == ExecutionMode.REMOTE 
+            and context.remote_host is not None):
+            
             remote_host = context.remote_host
+            
             return SshBackend(
-                host=remote_host.host,
-                user=remote_host.user,
-                port=remote_host.port,
-                key_file=remote_host.key_file,
+                hostname=remote_host.hostname,
+                username=remote_host.username,
                 password=remote_host.password,
-                use_sudo=remote_host.use_sudo or self.requires_sudo,
-                sudo_password=remote_host.sudo_password,
-                use_agent=remote_host.use_agent,
-                certificate_file=remote_host.certificate_file,
-                identity_only=remote_host.identity_only,
+                port=remote_host.port,
+                key_filename=remote_host.key_filename,
+                passphrase=remote_host.passphrase,
+                allow_agent=remote_host.allow_agent,
+                look_for_keys=remote_host.look_for_keys,
+                compress=remote_host.compress, 
+                timeout=remote_host.timeout,
                 gssapi_auth=remote_host.gssapi_auth,
-                gssapi_keyex=remote_host.gssapi_keyex,
+                gssapi_kex=remote_host.gssapi_kex,
                 gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
                 ssh_options=remote_host.ssh_options
             )
@@ -150,6 +166,39 @@ class BaseCommand(CommandInterface):
         Do nadpisania w podklasach.
         """
         return [raw_output]
+    
+    def _prepare_result(self, raw_output: str, success: bool, exit_code: int = 0, 
+                       error_message: Optional[str] = None, 
+                       metadata: Optional[Dict[str, Any]] = None) -> CommandResult:
+        """
+        Przygotowuje wynik komendy z uwzględnieniem preferowanego formatu danych i historii.
+        """
+        # Parsuj dane wyjściowe
+        structured_output = self._parse_output(raw_output)
+        
+        # Utwórz obiekt wyniku
+        result = CommandResult(
+            raw_output=raw_output,
+            success=success,
+            structured_output=structured_output,
+            exit_code=exit_code,
+            error_message=error_message,
+            metadata=metadata,
+            data_format=self.preferred_data_format
+        )
+        
+        # Dodaj krok do historii
+        result.add_to_history(
+            command_string=self.build_command(),
+            command_type=self.__class__.__name__,
+            structured_sample=structured_output[:5] if structured_output else None
+        )
+        
+        # Jeśli format danych jest inny niż LIST, dokonaj konwersji
+        if self.preferred_data_format != DataFormat.LIST:
+            return result.to_format(self.preferred_data_format)
+            
+        return result
     
     def then(self, next_command: CommandInterface) -> 'CommandChain':
         """Tworzy łańcuch komend"""
