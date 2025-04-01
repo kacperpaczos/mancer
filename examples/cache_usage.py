@@ -17,7 +17,7 @@ def main():
     # Tworzenie komend (używamy wszystkich dostępnych komend)
     ls = runner.create_command("ls").long().all()
     ps = runner.create_command("ps").aux()
-    hostname = runner.create_command("hostname")
+    hostname = runner.create_command("hostname").fqdn()
     df = runner.create_command("df").human_readable()
     echo = runner.create_command("echo").text("Hello from cache example!")
     cat = runner.create_command("cat").file("/etc/hostname")
@@ -28,7 +28,7 @@ def main():
     # Wykonanie komendy - wynik zostanie zapisany w cache
     print("Wykonanie komendy 'ls -la':")
     result1 = runner.execute(ls)
-    print(f"Status: {'Sukces' if result1.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result1.success else 'Błąd'}")
     print(f"Liczba linii wyniku: {len(result1.raw_output.splitlines())}")
     
     # Pobranie statystyk cache
@@ -42,27 +42,27 @@ def main():
     result2 = runner.execute(ls)
     end_time = time.time()
     print(f"Czas wykonania: {(end_time - start_time)*1000:.2f} ms")
-    print(f"Status: {'Sukces' if result2.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result2.success else 'Błąd'}")
     
     # Wykonanie nowych komend
     print("\nWykonanie komendy 'df -h':")
     result3 = runner.execute(df)
-    print(f"Status: {'Sukces' if result3.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result3.success else 'Błąd'}")
     print(f"Wynik: {result3.raw_output[:200]}...")  # Pokazujemy tylko początek wyniku
     
     print("\nWykonanie komendy 'echo Hello from cache example!':")
     result4 = runner.execute(echo)
-    print(f"Status: {'Sukces' if result4.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result4.success else 'Błąd'}")
     print(f"Wynik: {result4.raw_output}")
     
     print("\nWykonanie komendy 'cat /etc/hostname':")
     result5 = runner.execute(cat)
-    print(f"Status: {'Sukces' if result5.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result5.success else 'Błąd'}")
     print(f"Wynik: {result5.raw_output}")
     
     print("\nWykonanie komendy 'head -n 5 /etc/passwd':")
     result_head = runner.execute(head)
-    print(f"Status: {'Sukces' if result_head.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result_head.success else 'Błąd'}")
     print(f"Wynik: {result_head.raw_output}")
     
     # Wykonanie łańcucha komend
@@ -70,7 +70,7 @@ def main():
     grep_py = runner.create_command("grep").pattern("py")
     chain = ls.pipe(grep_py)
     result6 = runner.execute(chain)
-    print(f"Status: {'Sukces' if result6.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result6.success else 'Błąd'}")
     print(f"Wynik: {result6.raw_output}")
     
     # Pobranie historii wykonanych komend
@@ -97,14 +97,14 @@ def main():
     
     print("Wykonanie komendy z wyłączonym cache:")
     result7 = runner.execute(ls)
-    print(f"Status: {'Sukces' if result7.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result7.success else 'Błąd'}")
     
     print("\nWłączanie cache ponownie...")
     runner.enable_cache(auto_refresh=False)
     
     print("Wykonanie komendy z włączonym cache:")
     result8 = runner.execute(ls)
-    print(f"Status: {'Sukces' if result8.is_success() else 'Błąd'}")
+    print(f"Status: {'Sukces' if result8.success else 'Błąd'}")
     
     # Pobranie statystyk cache
     print("\nStatystyki cache na koniec:")

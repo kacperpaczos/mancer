@@ -2,161 +2,147 @@ import subprocess
 import shlex
 import os
 import tempfile
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 class SshBackend(BackendInterface):
     """Backend wykonujący komendy przez SSH na zdalnym hoście"""
     
-    def __init__(self, host: str, user: Optional[str] = None, port: int = 22, 
-                key_file: Optional[str] = None, password: Optional[str] = None,
-                use_sudo: bool = False, sudo_password: Optional[str] = None,
-                use_agent: bool = False, certificate_file: Optional[str] = None,
-                identity_only: bool = False, gssapi_auth: bool = False,
-                gssapi_keyex: bool = False, gssapi_delegate_creds: bool = False,
+    def __init__(self, hostname: str = "", username: Optional[str] = None, 
+                port: int = 22, key_filename: Optional[str] = None, 
+                password: Optional[str] = None, passphrase: Optional[str] = None,
+                allow_agent: bool = True, look_for_keys: bool = True, 
+                compress: bool = False, timeout: Optional[int] = None,
+                gssapi_auth: bool = False, gssapi_kex: bool = False, 
+                gssapi_delegate_creds: bool = False,
                 ssh_options: Optional[Dict[str, str]] = None):
         """
         Inicjalizuje backend SSH
         
         Args:
-            host: Nazwa hosta lub adres IP zdalnego serwera
-            user: Nazwa użytkownika (opcjonalnie)
+            hostname: Nazwa hosta lub adres IP zdalnego serwera
+            username: Nazwa użytkownika (opcjonalnie)
             port: Port SSH (domyślnie 22)
-            key_file: Ścieżka do pliku klucza prywatnego (opcjonalnie)
+            key_filename: Ścieżka do pliku klucza prywatnego (opcjonalnie)
             password: Hasło (opcjonalnie, niezalecane - lepiej używać kluczy)
-            use_sudo: Czy automatycznie używać sudo dla komend, które tego wymagają
-            sudo_password: Hasło do sudo (opcjonalnie)
-            use_agent: Czy używać agenta SSH do uwierzytelniania
-            certificate_file: Ścieżka do pliku certyfikatu SSH
-            identity_only: Czy używać tylko podanego klucza/certyfikatu (IdentitiesOnly=yes)
+            passphrase: Hasło do klucza prywatnego (opcjonalnie)
+            allow_agent: Czy używać agenta SSH do uwierzytelniania
+            look_for_keys: Czy szukać kluczy w ~/.ssh
+            compress: Czy kompresować dane
+            timeout: Timeout połączenia w sekundach
             gssapi_auth: Czy używać uwierzytelniania GSSAPI (Kerberos)
-            gssapi_keyex: Czy używać wymiany kluczy GSSAPI
+            gssapi_kex: Czy używać wymiany kluczy GSSAPI
             gssapi_delegate_creds: Czy delegować poświadczenia GSSAPI
             ssh_options: Dodatkowe opcje SSH jako słownik
         """
-        self.host = host
-        self.user = user
+        self.hostname = hostname
+        self.username = username
         self.port = port
-        self.key_file = key_file
+        self.key_filename = key_filename
         self.password = password
-        self.use_sudo = use_sudo
-        self.sudo_password = sudo_password
-        self.use_agent = use_agent
-        self.certificate_file = certificate_file
-        self.identity_only = identity_only
+        self.passphrase = passphrase
+        self.allow_agent = allow_agent
+        self.look_for_keys = look_for_keys
+        self.compress = compress
+        self.timeout = timeout
         self.gssapi_auth = gssapi_auth
-        self.gssapi_keyex = gssapi_keyex
+        self.gssapi_kex = gssapi_kex
         self.gssapi_delegate_creds = gssapi_delegate_creds
         self.ssh_options = ssh_options or {}
     
     def execute_command(self, command: str, working_dir: Optional[str] = None, 
-                       env_vars: Optional[Dict[str, str]] = None,
-                       force_sudo: bool = False) -> CommandResult:
+                       env_vars: Optional[Dict[str, str]] = None) -> CommandResult:
         """Wykonuje komendę przez SSH na zdalnym hoście"""
+        # Budujemy komendę SSH
+        ssh_command = ["ssh"]
+        
+        # Dodajemy opcje SSH
+        if self.port != 22:
+            ssh_command.extend(["-p", str(self.port)])
+        
+        # Obsługa różnych metod uwierzytelniania
+        
+        # 1. Klucz prywatny
+        if self.key_filename:
+            ssh_command.extend(["-i", self.key_filename])
+        
+        # 2. Używanie tylko podanych tożsamości
+        if not self.look_for_keys:
+            ssh_command.extend(["-o", "IdentitiesOnly=yes"])
+        
+        # 3. Agent SSH
+        if self.allow_agent:
+            ssh_command.extend(["-o", "ForwardAgent=yes"])
+        
+        # 4. Kompresja
+        if self.compress:
+            ssh_command.append("-C")
+            
+        # 5. Timeout
+        if self.timeout:
+            ssh_command.extend(["-o", f"ConnectTimeout={self.timeout}"])
+        
+        # 6. Uwierzytelnianie GSSAPI (Kerberos)
+        if self.gssapi_auth:
+            ssh_command.extend(["-o", "GSSAPIAuthentication=yes"])
+        
+        if self.gssapi_kex:
+            ssh_command.extend(["-o", "GSSAPIKeyExchange=yes"])
+        
+        if self.gssapi_delegate_creds:
+            ssh_command.extend(["-o", "GSSAPIDelegateCredentials=yes"])
+        
+        # Dodajemy opcje dla automatycznego odpowiadania na pytania (non-interactive)
+        ssh_command.extend(["-o", "BatchMode=no"])
+        ssh_command.extend(["-o", "StrictHostKeyChecking=no"])
+        
+        # Dodajemy dodatkowe opcje SSH
+        for key, value in self.ssh_options.items():
+            ssh_command.extend(["-o", f"{key}={value}"])
+        
+        # Dodajemy użytkownika i hosta
+        target = self.hostname
+        if self.username:
+            target = f"{self.username}@{self.hostname}"
+        
+        ssh_command.append(target)
+        
+        # Przygotowanie środowiska
+        env_prefix = ""
+        if env_vars:
+            env_parts = []
+            for key, value in env_vars.items():
+                env_parts.append(f"export {key}={shlex.quote(value)}")
+            if env_parts:
+                env_prefix = "; ".join(env_parts) + "; "
+        
+        # Przygotowanie katalogu roboczego
+        cd_prefix = ""
+        if working_dir:
+            cd_prefix = f"cd {shlex.quote(working_dir)} && "
+        
+        # Łączymy wszystko w jedną komendę
+        remote_command = f"{env_prefix}{cd_prefix}{command}"
+        
+        # Dodajemy komendę do wykonania na zdalnym hoście
+        ssh_command.append(remote_command)
+        
+        # Jeśli mamy hasło do SSH, musimy użyć sshpass
+        if self.password:
+            # Używamy sshpass do podania hasła
+            final_command = ["sshpass", "-p", self.password]
+            final_command.extend(ssh_command)
+        else:
+            final_command = ssh_command
+        
         try:
-            # Budujemy komendę SSH
-            ssh_command = ["ssh"]
-            
-            # Dodajemy opcje SSH
-            if self.port != 22:
-                ssh_command.extend(["-p", str(self.port)])
-            
-            # Obsługa różnych metod uwierzytelniania
-            
-            # 1. Klucz prywatny
-            if self.key_file:
-                ssh_command.extend(["-i", self.key_file])
-            
-            # 2. Certyfikat SSH
-            if self.certificate_file:
-                ssh_command.extend(["-i", self.certificate_file])
-            
-            # 3. Używanie tylko podanych tożsamości
-            if self.identity_only:
-                ssh_command.extend(["-o", "IdentitiesOnly=yes"])
-            
-            # 4. Agent SSH
-            if self.use_agent:
-                ssh_command.extend(["-o", "ForwardAgent=yes"])
-            
-            # 5. Uwierzytelnianie GSSAPI (Kerberos)
-            if self.gssapi_auth:
-                ssh_command.extend(["-o", "GSSAPIAuthentication=yes"])
-            
-            if self.gssapi_keyex:
-                ssh_command.extend(["-o", "GSSAPIKeyExchange=yes"])
-            
-            if self.gssapi_delegate_creds:
-                ssh_command.extend(["-o", "GSSAPIDelegateCredentials=yes"])
-            
-            # Dodajemy opcje dla automatycznego odpowiadania na pytania (non-interactive)
-            ssh_command.extend(["-o", "BatchMode=no"])
-            ssh_command.extend(["-o", "StrictHostKeyChecking=no"])
-            
-            # Dodajemy dodatkowe opcje SSH
-            for key, value in self.ssh_options.items():
-                ssh_command.extend(["-o", f"{key}={value}"])
-            
-            # Dodajemy użytkownika i hosta
-            target = self.host
-            if self.user:
-                target = f"{self.user}@{self.host}"
-            
-            ssh_command.append(target)
-            
-            # Przygotowanie środowiska
-            env_prefix = ""
-            if env_vars:
-                env_parts = []
-                for key, value in env_vars.items():
-                    env_parts.append(f"export {key}={shlex.quote(value)}")
-                if env_parts:
-                    env_prefix = "; ".join(env_parts) + "; "
-            
-            # Przygotowanie katalogu roboczego
-            cd_prefix = ""
-            if working_dir:
-                cd_prefix = f"cd {shlex.quote(working_dir)} && "
-            
-            # Sprawdzamy, czy używać sudo
-            use_sudo_for_command = force_sudo or self.use_sudo
-            
-            # Łączymy wszystko w jedną komendę
-            remote_command = f"{env_prefix}{cd_prefix}{command}"
-            
-            # Jeśli używamy sudo, dodajemy je do komendy
-            if use_sudo_for_command:
-                # Jeśli mamy hasło do sudo, używamy go
-                if self.sudo_password:
-                    # Używamy echo i pipe do sudo -S (czytaj hasło ze standardowego wejścia)
-                    remote_command = f"echo {shlex.quote(self.sudo_password)} | sudo -S {remote_command}"
-                else:
-                    # Bez hasła, po prostu używamy sudo
-                    remote_command = f"sudo {remote_command}"
-            
-            # Dodajemy komendę do wykonania na zdalnym hoście
-            ssh_command.append(remote_command)
-            
-            # Jeśli mamy hasło do SSH, musimy użyć sshpass
-            if self.password:
-                # Używamy sshpass do podania hasła
-                final_command = ["sshpass", "-p", self.password]
-                final_command.extend(ssh_command)
-            else:
-                final_command = ssh_command
-            
             # Wykonanie komendy
             process = subprocess.run(
                 final_command,
                 text=True,
                 capture_output=True
             )
-            
-            # Sprawdzamy, czy komenda nie wymaga sudo (jeśli nie używaliśmy go wcześniej)
-            if not use_sudo_for_command and process.returncode == 1 and "permission denied" in process.stderr.lower():
-                # Próbujemy ponownie z sudo
-                return self.execute_command(command, working_dir, env_vars, force_sudo=True)
             
             # Parsowanie wyniku
             return self.parse_output(
@@ -165,16 +151,112 @@ class SshBackend(BackendInterface):
                 process.returncode,
                 process.stderr
             )
-            
-        except Exception as e:
+        except Exception:
             # Obsługa błędów
             return CommandResult(
                 raw_output="",
                 success=False,
                 structured_output=[],
                 exit_code=-1,
-                error_message=f"Błąd SSH: {str(e)}"
+                error_message="SSH Error occurred"
             )
+    
+    def execute(self, command: str, input_data: Optional[str] = None, 
+               working_dir: Optional[str] = None) -> Tuple[int, str, str]:
+        """
+        Executes a command via SSH and returns exit code, stdout, and stderr.
+        This method is used by Command classes.
+        
+        Args:
+            command: The command to execute
+            input_data: Optional input data to pass to stdin
+            working_dir: Optional working directory
+            
+        Returns:
+            Tuple of (exit_code, stdout, stderr)
+        """
+        try:
+            # Build SSH command
+            ssh_command = ["ssh"]
+            
+            # Add SSH options
+            if self.port != 22:
+                ssh_command.extend(["-p", str(self.port)])
+            
+            # Handle authentication methods
+            if self.key_filename:
+                ssh_command.extend(["-i", self.key_filename])
+            
+            if not self.look_for_keys:
+                ssh_command.extend(["-o", "IdentitiesOnly=yes"])
+            
+            if self.allow_agent:
+                ssh_command.extend(["-o", "ForwardAgent=yes"])
+            
+            if self.compress:
+                ssh_command.append("-C")
+                
+            if self.timeout:
+                ssh_command.extend(["-o", f"ConnectTimeout={self.timeout}"])
+            
+            if self.gssapi_auth:
+                ssh_command.extend(["-o", "GSSAPIAuthentication=yes"])
+            
+            if self.gssapi_kex:
+                ssh_command.extend(["-o", "GSSAPIKeyExchange=yes"])
+            
+            if self.gssapi_delegate_creds:
+                ssh_command.extend(["-o", "GSSAPIDelegateCredentials=yes"])
+            
+            # Add options for non-interactive mode
+            ssh_command.extend(["-o", "BatchMode=no"])
+            ssh_command.extend(["-o", "StrictHostKeyChecking=no"])
+            
+            # Add additional SSH options
+            for key, value in self.ssh_options.items():
+                ssh_command.extend(["-o", f"{key}={value}"])
+            
+            # Add username and host
+            target = self.hostname
+            if self.username:
+                target = f"{self.username}@{self.hostname}"
+            
+            ssh_command.append(target)
+            
+            # Prepare working directory
+            cd_prefix = ""
+            if working_dir:
+                cd_prefix = f"cd {shlex.quote(working_dir)} && "
+            
+            # Combine command
+            remote_command = f"{cd_prefix}{command}"
+            
+            # Add command to execute on remote host
+            ssh_command.append(remote_command)
+            
+            # If we have an SSH password, use sshpass
+            final_command = ssh_command
+            if self.password:
+                final_command = ["sshpass", "-p", self.password] + ssh_command
+            
+            # Execute the command
+            stdin_pipe = subprocess.PIPE if input_data else None
+            process = subprocess.Popen(
+                final_command,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=stdin_pipe
+            )
+            
+            # Send input data if provided
+            stdout, stderr = process.communicate(input=input_data)
+            exit_code = process.returncode
+            
+            return exit_code, stdout, stderr
+            
+        except Exception as e:
+            return -1, "", str(e)
     
     def parse_output(self, command: str, raw_output: str, exit_code: int, 
                     error_output: str = "") -> CommandResult:
