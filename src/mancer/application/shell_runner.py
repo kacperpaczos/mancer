@@ -15,12 +15,14 @@ class ShellRunner:
     
     def __init__(self, backend_type: str = "bash", working_dir: str = ".", 
                 enable_cache: bool = False, cache_max_size: int = 100,
-                cache_auto_refresh: bool = False, cache_refresh_interval: int = 5):
+                cache_auto_refresh: bool = False, cache_refresh_interval: int = 5,
+                enable_live_output: bool = False):
         self.backend_type = backend_type
         self.factory = CommandFactory(backend_type)
         self.context = CommandContext(current_directory=working_dir)
         self.local_backend = BashBackend()
         self.remote_backend = None
+        self.enable_live_output = enable_live_output
         
         # Inicjalizacja cache'a
         self._cache_enabled = enable_cache
@@ -36,13 +38,21 @@ class ShellRunner:
     
     def execute(self, command: CommandInterface, 
                context_params: Optional[Dict[str, Any]] = None,
-               cache_id: Optional[str] = None) -> CommandResult:
+               cache_id: Optional[str] = None,
+               live_output: bool = False) -> CommandResult:
         """Wykonuje pojedynczą komendę lub łańcuch komend"""
         # Kopiujemy kontekst, aby nie modyfikować globalnego
         context = self._prepare_context(context_params)
         
+        # Określamy, czy używamy wyjścia na żywo (live output)
+        use_live_output = live_output or self.enable_live_output
+        
+        # Dla komend, które mają refresh w nazwie, zawsze włączamy live output
+        if "refresh" in str(command).lower():
+            use_live_output = True
+        
         # Generujemy unikalny identyfikator komendy, jeśli nie podano
-        if self._cache_enabled and cache_id is None:
+        if self._cache_enabled and cache_id is None and not use_live_output:
             cache_id = self._generate_command_id(command, context)
             
             # Sprawdzamy, czy wynik jest w cache'u
@@ -52,13 +62,23 @@ class ShellRunner:
         
         # Wykonujemy komendę
         result = None
+        
+        # Dla komend, które używają live output, dodajemy specjalne parametry kontekstu
+        if use_live_output:
+            context.set_parameter("live_output", True)
+            context.set_parameter("live_output_interval", 0.1)  # Odświeżanie co 0.1 sekundy
+            
+            # Ustawiamy buforowanie na None, aby uzyskać niebufowane wyjście
+            context.set_parameter("stdout_buffering", None)
+            context.set_parameter("stderr_buffering", None)
+        
         if isinstance(command, CommandChain):
             result = command.execute(context)
         else:
             result = command.execute(context)
             
-        # Zapisujemy wynik w cache'u, jeśli cache jest włączony
-        if self._cache_enabled and result:
+        # Zapisujemy wynik w cache'u, jeśli cache jest włączony (ale nie dla live output)
+        if self._cache_enabled and result and not use_live_output:
             command_str = str(command)
             metadata = {
                 'context': {
@@ -288,3 +308,32 @@ class ShellRunner:
         if self._cache_enabled and self._command_cache:
             return self._command_cache.export_data(include_results)
         return {}
+
+    def execute_live(self, command: CommandInterface, 
+                   context_params: Optional[Dict[str, Any]] = None) -> CommandResult:
+        """
+        Wykonuje komendę z wyświetlaniem wyjścia w czasie rzeczywistym.
+        Jest to skrót dla execute(command, context_params, live_output=True).
+        
+        Args:
+            command: Komenda do wykonania
+            context_params: Dodatkowe parametry kontekstu (opcjonalnie)
+            
+        Returns:
+            CommandResult: Wynik wykonania komendy
+        """
+        return self.execute(command, context_params, live_output=True)
+        
+    def create_bash_command(self, command_str: str) -> CommandInterface:
+        """
+        Tworzy komendę bash z podanego stringa.
+        Jest to pomocnicza metoda ułatwiająca tworzenie komend shell.
+        
+        Args:
+            command_str: Komenda bash do wykonania
+            
+        Returns:
+            CommandInterface: Obiekt komendy
+        """
+        from ..domain.model.shell_command import ShellCommand
+        return ShellCommand(command_str, self.get_backend())
