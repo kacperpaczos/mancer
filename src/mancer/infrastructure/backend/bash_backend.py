@@ -8,7 +8,9 @@ class BashBackend(BackendInterface):
     """Backend wykonujący komendy w bashu"""
     
     def execute_command(self, command: str, working_dir: Optional[str] = None, 
-                       env_vars: Optional[Dict[str, str]] = None) -> CommandResult:
+                       env_vars: Optional[Dict[str, str]] = None, 
+                       context_params: Optional[Dict[str, Any]] = None,
+                       stdin: Optional[str] = None) -> CommandResult:
         """Wykonuje komendę w bashu"""
         try:
             # Przygotowanie środowiska
@@ -19,32 +21,136 @@ class BashBackend(BackendInterface):
                 process_env = os.environ.copy()
                 process_env.update(env_vars)
             
-            # Wykonanie komendy
-            process = subprocess.run(
-                command,
-                shell=True,
-                text=True,
-                capture_output=True,
-                cwd=working_dir,
-                env=process_env
-            )
+            # Sprawdź, czy używamy live output
+            use_live_output = False
+            live_output_interval = 0.1  # domyślnie odświeżaj co 0.1 sekundy
             
-            # Parsowanie wyniku
-            return self.parse_output(
-                command,
-                process.stdout,
-                process.returncode,
-                process.stderr
-            )
+            if context_params:
+                use_live_output = context_params.get("live_output", False)
+                live_output_interval = context_params.get("live_output_interval", 0.1)
+            
+            # Wykonanie komendy
+            if use_live_output:
+                import time
+                import sys
+                import threading
+                import queue
+                
+                # Utwórz kolejkę dla wyjścia
+                output_queue = queue.Queue()
+                error_queue = queue.Queue()
+                
+                # Uruchom proces z pipe'ami
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdin=subprocess.PIPE if stdin else None,
+                    cwd=working_dir,
+                    env=process_env,
+                    bufsize=1,  # line buffered
+                    universal_newlines=True
+                )
+                
+                # Jeśli mamy dane wejściowe, przekazujemy je do procesu
+                if stdin:
+                    process.stdin.write(stdin)
+                    process.stdin.flush()
+                    process.stdin.close()
+                
+                # Flagi do sygnalizacji zakończenia wątków
+                stdout_done = threading.Event()
+                stderr_done = threading.Event()
+                
+                # Funkcja do odczytu wyjścia
+                def read_output(pipe, done_event, output_queue):
+                    for line in iter(pipe.readline, ''):
+                        output_queue.put(line)
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
+                    done_event.set()
+                
+                # Funkcja do odczytu błędów
+                def read_error(pipe, done_event, error_queue):
+                    for line in iter(pipe.readline, ''):
+                        error_queue.put(line)
+                        sys.stderr.write(line)
+                        sys.stderr.flush()
+                    done_event.set()
+                
+                # Uruchom wątki do odczytu wyjścia
+                stdout_thread = threading.Thread(
+                    target=read_output,
+                    args=(process.stdout, stdout_done, output_queue)
+                )
+                stderr_thread = threading.Thread(
+                    target=read_error,
+                    args=(process.stderr, stderr_done, error_queue)
+                )
+                
+                stdout_thread.daemon = True
+                stderr_thread.daemon = True
+                stdout_thread.start()
+                stderr_thread.start()
+                
+                # Poczekaj na zakończenie procesu
+                exit_code = process.wait()
+                
+                # Poczekaj na zakończenie wątków
+                stdout_done.wait()
+                stderr_done.wait()
+                
+                # Zbierz całe wyjście
+                raw_output = ""
+                while not output_queue.empty():
+                    raw_output += output_queue.get()
+                
+                error_output = ""
+                while not error_queue.empty():
+                    error_output += error_queue.get()
+                
+                # Zamknij pipe'y
+                process.stdout.close()
+                process.stderr.close()
+                
+                # Parsowanie wyniku
+                return self.parse_output(
+                    command,
+                    raw_output,
+                    exit_code,
+                    error_output
+                )
+            else:
+                # Standardowe wykonanie bez live output
+                process = subprocess.run(
+                    command,
+                    shell=True,
+                    text=True,
+                    capture_output=True,
+                    cwd=working_dir,
+                    env=process_env,
+                    input=stdin
+                )
+                
+                # Parsowanie wyniku
+                return self.parse_output(
+                    command,
+                    process.stdout,
+                    process.returncode,
+                    process.stderr
+                )
             
         except Exception as e:
             # Obsługa błędów
+            import traceback
             return CommandResult(
                 raw_output="",
                 success=False,
                 structured_output=[],
                 exit_code=-1,
-                error_message=str(e)
+                error_message=f"{str(e)}\n{traceback.format_exc()}"
             )
     
     def execute(self, command: str, input_data: Optional[str] = None, 
