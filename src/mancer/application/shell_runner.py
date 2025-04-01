@@ -10,6 +10,78 @@ from .command_cache import CommandCache
 import uuid
 import hashlib
 
+# Definicje typów komend w różnych językach
+COMMAND_TYPES_TRANSLATION = {
+    "pl": {
+        "ls": "Lista plików",
+        "ps": "Procesy systemowe",
+        "hostname": "Nazwa hosta",
+        "netstat": "Status sieci",
+        "systemctl": "Kontrola usług",
+        "df": "Użycie dysku",
+        "echo": "Wyświetlanie tekstu",
+        "cat": "Wyświetlanie pliku",
+        "grep": "Wyszukiwanie wzorca",
+        "tail": "Koniec pliku",
+        "head": "Początek pliku",
+        "find": "Wyszukiwanie plików",
+        "cp": "Kopiowanie plików",
+        "mv": "Przenoszenie plików",
+        "rm": "Usuwanie plików",
+        "mkdir": "Tworzenie katalogów",
+        "chmod": "Zmiana uprawnień",
+        "chown": "Zmiana właściciela",
+        "tar": "Archiwizacja",
+        "zip": "Kompresja",
+        "unzip": "Dekompresja",
+        "ssh": "Połączenie SSH",
+        "scp": "Kopiowanie przez SSH",
+        "wget": "Pobieranie plików",
+        "curl": "Klient HTTP",
+        "apt": "Zarządzanie pakietami",
+        "yum": "Zarządzanie pakietami",
+        "dnf": "Zarządzanie pakietami",
+        "ping": "Test połączenia",
+        "traceroute": "Śledzenie trasy",
+        "ifconfig": "Konfiguracja sieci",
+        "ip": "Zarządzanie IP"
+    },
+    "en": {
+        "ls": "File listing",
+        "ps": "Process status",
+        "hostname": "Host name",
+        "netstat": "Network status",
+        "systemctl": "Service control",
+        "df": "Disk usage",
+        "echo": "Text display",
+        "cat": "File display",
+        "grep": "Pattern search",
+        "tail": "File end",
+        "head": "File beginning",
+        "find": "File search",
+        "cp": "Copy files",
+        "mv": "Move files",
+        "rm": "Remove files",
+        "mkdir": "Create directories",
+        "chmod": "Change permissions",
+        "chown": "Change owner",
+        "tar": "Archive",
+        "zip": "Compress",
+        "unzip": "Decompress",
+        "ssh": "SSH connection",
+        "scp": "SSH copy",
+        "wget": "Download files",
+        "curl": "HTTP client",
+        "apt": "Package management",
+        "yum": "Package management",
+        "dnf": "Package management",
+        "ping": "Connection test",
+        "traceroute": "Trace route",
+        "ifconfig": "Network configuration",
+        "ip": "IP management"
+    }
+}
+
 class ShellRunner:
     """Główna klasa aplikacji do uruchamiania komend"""
     
@@ -17,12 +89,15 @@ class ShellRunner:
                 enable_cache: bool = False, cache_max_size: int = 100,
                 cache_auto_refresh: bool = False, cache_refresh_interval: int = 5,
                 enable_live_output: bool = False):
+                language: str = "pl"):
+
         self.backend_type = backend_type
         self.factory = CommandFactory(backend_type)
         self.context = CommandContext(current_directory=working_dir)
         self.local_backend = BashBackend()
         self.remote_backend = None
         self.enable_live_output = enable_live_output
+        self.language = language
         
         # Inicjalizacja cache'a
         self._cache_enabled = enable_cache
@@ -80,13 +155,24 @@ class ShellRunner:
         # Zapisujemy wynik w cache'u, jeśli cache jest włączony (ale nie dla live output)
         if self._cache_enabled and result and not use_live_output:
             command_str = str(command)
+            
+            # Pobieramy typ komendy (nazwę klasy lub nazwę komendy)
+            command_type = command.__class__.__name__
+            if hasattr(command, 'name'):
+                command_type = command.name
+                
+            # Pobieramy pełne polecenie
+            command_string = command.build_command() if hasattr(command, 'build_command') else str(command)
+            
             metadata = {
                 'context': {
                     'current_directory': context.current_directory,
                     'execution_mode': str(context.execution_mode),
                     'remote_host': str(context.remote_host) if context.remote_host else None
                 },
-                'params': context_params
+                'params': context_params,
+                'command_type': command_type,
+                'command_string': command_string
             }
             self._command_cache.store(cache_id, command_str, result, metadata)
             
@@ -289,11 +375,26 @@ class ShellRunner:
             command_id: Identyfikator komendy
             
         Returns:
-            Wynik komendy lub None, jeśli nie znaleziono lub cache jest wyłączony
+            Wynik komendy lub None, jeśli nie znaleziono lub cache wyłączony
         """
-        if self._cache_enabled and self._command_cache:
-            return self._command_cache.get(command_id)
-        return None
+        if not self._cache_enabled or not self._command_cache:
+            return None
+            
+        result = self._command_cache.get(command_id)
+        
+        # Pobierz również metadane z cache i dodaj je do wyniku
+        if result:
+            metadata_entry = self._command_cache.get_with_metadata(command_id)
+            if metadata_entry and len(metadata_entry) > 2:
+                _, _, meta_dict = metadata_entry
+                if meta_dict and 'metadata' in meta_dict:
+                    # Zaktualizuj metadane w wyniku, zachowując istniejące
+                    if result.metadata is None:
+                        result.metadata = meta_dict['metadata']
+                    else:
+                        result.metadata.update(meta_dict['metadata'])
+                        
+        return result
     
     def export_cache_data(self, include_results: bool = True) -> Dict[str, Any]:
         """
@@ -337,3 +438,43 @@ class ShellRunner:
         """
         from ..domain.model.shell_command import ShellCommand
         return ShellCommand(command_str, self.get_backend())
+
+    def get_command_type_name(self, command_type: str, language: Optional[str] = None) -> str:
+        """
+        Zwraca nazwę typu komendy w określonym języku.
+        
+        Args:
+            command_type: Typ komendy (np. 'ls', 'ps')
+            language: Kod języka ('pl', 'en'), domyślnie używa języka ustawionego w instancji
+            
+        Returns:
+            Nazwa typu komendy lub command_type jeśli brak tłumaczenia
+        """
+        lang = language or self.language
+        if lang not in COMMAND_TYPES_TRANSLATION:
+            return command_type
+            
+        translations = COMMAND_TYPES_TRANSLATION[lang]
+        return translations.get(command_type, command_type)
+    
+    def set_language(self, language: str) -> None:
+        """
+        Ustawia język dla nazw komend.
+        
+        Args:
+            language: Kod języka ('pl', 'en')
+        """
+        if language in COMMAND_TYPES_TRANSLATION:
+            self.language = language
+        else:
+            raise ValueError(f"Nieobsługiwany język: {language}")
+            
+    def get_available_languages(self) -> List[str]:
+        """
+        Zwraca listę dostępnych języków.
+        
+        Returns:
+            Lista kodów języków
+        """
+        return list(COMMAND_TYPES_TRANSLATION.keys())
+

@@ -25,17 +25,27 @@ class CatCommand(BaseCommand):
         backend = self._get_backend(context)
         
         # Wykonujemy komendę
-        result = backend.execute_command(
+        exit_code, output, error = backend.execute(
             cmd_str, 
-            working_dir=context.current_directory,
-            stdin_data=stdin_data
+            input_data=stdin_data,
+            working_dir=context.current_directory
         )
         
-        # Parsujemy wynik
-        if result.success:
-            result.structured_output = self._parse_output(result.raw_output)
+        # Sprawdzamy, czy komenda zakończyła się sukcesem
+        success = exit_code == 0
+        error_message = error if error and not success else None
         
-        return result
+        # Parsujemy wynik
+        structured_output = self._parse_output(output)
+        
+        # Tworzymy i zwracamy wynik
+        return CommandResult(
+            raw_output=output,
+            success=success,
+            structured_output=structured_output,
+            exit_code=exit_code,
+            error_message=error_message
+        )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parsuje wynik cat do listy słowników z liniami pliku"""

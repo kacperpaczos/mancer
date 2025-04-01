@@ -58,15 +58,12 @@ class FileManager:
             
     def get_file_info(self, file_path: Path) -> Optional[FileInfo]:
         """Pobiera informacje o pliku"""
-        try:
-            content = self.load_json(file_path)
-            if content is None:
-                return None
-                
-            return FileInfo(
-                path=file_path,
-                hash=self.calculate_hash(file_path),
-                content=content
-            )
-        except Exception:
-            return None 
+        content = self.load_json(file_path)
+        if content is None:
+            return None
+            
+        return FileInfo(
+            path=file_path,
+            hash=self.calculate_hash(file_path),
+            content=content
+        ) 

@@ -25,17 +25,27 @@ class HeadCommand(BaseCommand):
         backend = self._get_backend(context)
         
         # Wykonujemy komendę
-        result = backend.execute_command(
+        exit_code, output, error = backend.execute(
             cmd_str, 
-            working_dir=context.current_directory,
-            stdin_data=stdin_data
+            input_data=stdin_data,
+            working_dir=context.current_directory
         )
         
-        # Parsujemy wynik
-        if result.success:
-            result.structured_output = self._parse_output(result.raw_output)
+        # Sprawdzamy, czy komenda zakończyła się sukcesem
+        success = exit_code == 0
+        error_message = error if error and not success else None
         
-        return result
+        # Parsujemy wynik
+        structured_output = self._parse_output(output)
+        
+        # Tworzymy i zwracamy wynik
+        return CommandResult(
+            raw_output=output,
+            success=success,
+            structured_output=structured_output,
+            exit_code=exit_code,
+            error_message=error_message
+        )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parsuje wynik head do listy słowników z liniami pliku"""
@@ -76,6 +86,12 @@ class HeadCommand(BaseCommand):
         
         return result
     
+    def _format_parameter(self, name: str, value: Any) -> str:
+        """Specjalne formatowanie dla head"""
+        if name == "n":
+            return f"-n{value}"  # Format -n5 zamiast --n=5
+        return super()._format_parameter(name, value)
+    
     # Metody specyficzne dla head
     
     def file(self, file_path: str) -> 'HeadCommand':
@@ -95,9 +111,14 @@ class HeadCommand(BaseCommand):
         return self.with_param("c", str(num_bytes))
     
     def quiet(self) -> 'HeadCommand':
-        """Opcja -q - nie wyświetla nagłówków plików"""
+        """Opcja -q - nie wyświetla nagłówków przy wyświetlaniu wielu plików"""
         return self.with_option("-q")
     
     def verbose(self) -> 'HeadCommand':
-        """Opcja -v - zawsze wyświetla nagłówki plików"""
-        return self.with_option("-v") 
+        """Opcja -v - zawsze wyświetla nagłówki przy wyświetlaniu plików"""
+        return self.with_option("-v")
+    
+    def clone(self) -> 'HeadCommand':
+        """Tworzy kopię komendy z tą samą konfiguracją"""
+        new_instance = super().clone()
+        return new_instance 

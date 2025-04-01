@@ -46,10 +46,10 @@ class CommandFactory:
         # Komendy sieciowe
         self._command_types["netstat"] = NetstatCommand
     
-    def create_command(self, command_name: str) -> CommandInterface:
+    def create_command(self, command_name: str) -> Optional[CommandInterface]:
         """Tworzy nową instancję komendy"""
         if command_name not in self._command_types:
-            raise ValueError(f"Nieznana komenda: {command_name}")
+            return None
             
         # Tworzymy nową instancję
         return self._command_types[command_name]()
@@ -58,10 +58,10 @@ class CommandFactory:
         """Rejestruje prekonfigurowaną komendę pod aliasem"""
         self._configured_commands[alias] = command
     
-    def get_command(self, alias: str) -> CommandInterface:
+    def get_command(self, alias: str) -> Optional[CommandInterface]:
         """Pobiera prekonfigurowaną komendę według aliasu"""
         if alias not in self._configured_commands:
-            raise ValueError(f"Nie znaleziono komendy o aliasie: {alias}")
+            return None
             
         # Zwracamy kopię, aby uniknąć modyfikacji oryginalnej komendy
         return self._configured_commands[alias].clone()
