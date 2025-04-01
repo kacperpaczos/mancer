@@ -5,6 +5,7 @@ import time
 import getpass
 from typing import Optional
 
+## WIP
 def check_and_install_chronyd(runner: ShellRunner, sudo_password: Optional[str] = None) -> bool:
     """
     Sprawdza czy chronyd jest zainstalowany i instaluje go jeśli nie jest.
