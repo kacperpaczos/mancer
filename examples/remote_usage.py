@@ -1,67 +1,67 @@
 from mancer.application.shell_runner import ShellRunner
 
 def main():
-    # Inicjalizacja runnera
+    # Initialize runner
     runner = ShellRunner(backend_type="bash")
     
-    # Przykład wykonania lokalnego
-    print("=== Wykonanie lokalne ===")
+    # Local execution example
+    print("=== Local Execution ===")
     ls = runner.create_command("ls").long().all()
     result = runner.execute(ls)
-    print("Wynik ls lokalnie:")
+    print("Local ls result:")
     print(result.raw_output)
     
-    # Konfiguracja wykonania zdalnego
-    # Uwaga: Podaj właściwe dane do połączenia SSH
-    print("\n=== Konfiguracja wykonania zdalnego ===")
+    # Remote execution configuration
+    # Note: Provide proper SSH connection details
+    print("\n=== Remote Execution Configuration ===")
     runner.set_remote_execution(
-        host="example.com",  # Zmień na właściwy host
-        user="username",     # Zmień na właściwą nazwę użytkownika
-        # port=22,           # Opcjonalnie, domyślnie 22
-        # key_file="~/.ssh/id_rsa"  # Opcjonalnie, ścieżka do klucza
+        host="example.com",  # Change to proper host
+        user="username",     # Change to proper username
+        # port=22,           # Optional, default is 22
+        # key_file="~/.ssh/id_rsa"  # Optional, path to key file
     )
     
-    # Przykład wykonania zdalnego
-    print("\n=== Wykonanie zdalne ===")
+    # Remote execution example
+    print("\n=== Remote Execution ===")
     remote_ls = runner.create_command("ls").long().all()
     try:
         remote_result = runner.execute(remote_ls)
-        print("Wynik ls zdalnie:")
+        print("Remote ls result:")
         print(remote_result.raw_output)
     except Exception as e:
-        print(f"Błąd wykonania zdalnego: {e}")
+        print(f"Remote execution error: {e}")
     
-    # Przykład łańcucha komend zdalnych
-    print("\n=== Łańcuch komend zdalnych ===")
+    # Remote command chain example
+    print("\n=== Remote Command Chain ===")
     cd = runner.create_command("cd").to_directory("/tmp")
     find = runner.create_command("find").with_name("*.log")
     
     try:
         chain_result = runner.execute(cd.then(find))
-        print("Wynik cd /tmp | find -name \"*.log\" zdalnie:")
+        print("Remote result of cd /tmp | find -name \"*.log\":")
         print(chain_result.raw_output)
     except Exception as e:
-        print(f"Błąd wykonania łańcucha zdalnego: {e}")
+        print(f"Remote chain execution error: {e}")
     
-    # Przełączenie z powrotem na wykonanie lokalne
-    print("\n=== Przełączenie na wykonanie lokalne ===")
+    # Switch back to local execution
+    print("\n=== Switching Back to Local Execution ===")
     runner.set_local_execution()
     
     local_result = runner.execute(ls)
-    print("Wynik ls lokalnie po przełączeniu:")
+    print("Local ls result after switching back:")
     print(local_result.raw_output)
     
-    # Przykład mieszanego wykonania - niektóre komendy lokalne, niektóre zdalne
-    print("\n=== Mieszane wykonanie (lokalne/zdalne) ===")
-    print("Wykonanie lokalne:")
+    # Mixed execution example - some commands local, some remote
+    print("\n=== Mixed Execution (Local/Remote) ===")
+    print("Local execution:")
     local_ps = runner.create_command("ps").all()
     local_ps_result = runner.execute(local_ps)
     print(local_ps_result.raw_output[:200] + "..." if len(local_ps_result.raw_output) > 200 else local_ps_result.raw_output)
     
-    print("\nPrzełączenie na zdalne:")
+    print("\nSwitching to remote:")
     runner.set_remote_execution(
-        host="example.com",  # Zmień na właściwy host
-        user="username"      # Zmień na właściwą nazwę użytkownika
+        host="example.com",  # Change to proper host
+        user="username"      # Change to proper username
     )
     
     try:
@@ -69,7 +69,7 @@ def main():
         remote_ps_result = runner.execute(remote_ps)
         print(remote_ps_result.raw_output[:200] + "..." if len(remote_ps_result.raw_output) > 200 else remote_ps_result.raw_output)
     except Exception as e:
-        print(f"Błąd wykonania zdalnego: {e}")
+        print(f"Remote execution error: {e}")
 
 if __name__ == "__main__":
     main() 

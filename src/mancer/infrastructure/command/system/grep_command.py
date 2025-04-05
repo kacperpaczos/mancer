@@ -7,70 +7,66 @@ from ....domain.model.command_result import CommandResult
 class GrepCommand(BaseCommand):
     """Command implementation for the 'grep' command"""
     
-    def __init__(self, pattern: str = ""):
+    # Zdefiniuj nazwę narzędzia
+    tool_name = "grep"
+    
+    def __init__(self, pattern=None):
         super().__init__("grep")
+        
         if pattern:
             self._args.append(pattern)
     
     def execute(self, context: CommandContext, 
-                input_result: Optional[CommandResult] = None) -> CommandResult:
+               input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the grep command"""
-        # Build the command string
+        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
+        super().execute(context, input_result)
+        
+        # Build command string based on provided parameters
         command_str = self.build_command()
         
-        # Get the appropriate backend
-        backend = self._get_backend(context)
-        
-        # If we have input from a previous command, use it
-        input_data = None
+        # Handle pipeline input
         if input_result and input_result.raw_output:
-            input_data = input_result.raw_output
-        
-        # Execute the command
-        exit_code, output, error = backend.execute(command_str, input_data=input_data)
-        
-        # Check if command was successful
+            backend = self._get_backend(context)
+            exit_code, output, error = backend.execute_with_input(
+                command_str, input_result.raw_output)
+        else:
+            # Execute the command with the appropriate backend
+            backend = self._get_backend(context)
+            exit_code, output, error = backend.execute(command_str)
+            
+        # Determine success
         success = exit_code == 0
         error_message = error if error and not success else None
         
-        # Parse the output
-        structured_output = self._parse_output(output)
+        # Dodaj ostrzeżenia o wersji do metadanych
+        metadata = {}
+        warnings = context.get_parameter("warnings", [])
+        if warnings:
+            metadata["version_warnings"] = warnings
         
-        # Create and return the result
+        # Create and return result
         return self._prepare_result(
             raw_output=output,
             success=success,
             exit_code=exit_code,
-            error_message=error_message
+            error_message=error_message,
+            metadata=metadata
         )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parse grep command output into structured format"""
-        if not raw_output.strip():
-            return []
-        
         lines = raw_output.strip().split('\n')
         results = []
-        
-        line_number_regex = re.compile(r'^(\d+):(.*)$')
         
         for line in lines:
             if not line.strip():
                 continue
+                
+            # Basic parsing - each line is a match
+            results.append({
+                'line': line,
+                'text': line  # For compatibility with other commands
+            })
             
-            # Check if output includes line numbers (grep -n)
-            line_num_match = line_number_regex.match(line)
-            if line_num_match:
-                line_number = int(line_num_match.group(1))
-                content = line_num_match.group(2)
-                results.append({
-                    'line_number': line_number,
-                    'content': content
-                })
-            else:
-                # Regular grep output without line numbers
-                results.append({
-                    'content': line
-                })
-        
         return results 

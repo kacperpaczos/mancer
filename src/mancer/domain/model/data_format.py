@@ -8,6 +8,7 @@ class DataFormat(Enum):
     DATAFRAME = auto()  # Pandas DataFrame
     NDARRAY = auto()  # NumPy ndarray
     JSON = auto()  # JSON string
+    TABLE = auto()  # Format tabeli (dla komend jak df, ps)
     
     @staticmethod
     def from_string(format_name: str) -> Optional['DataFormat']:
@@ -16,7 +17,8 @@ class DataFormat(Enum):
             "list": DataFormat.LIST,
             "dataframe": DataFormat.DATAFRAME,
             "ndarray": DataFormat.NDARRAY,
-            "json": DataFormat.JSON
+            "json": DataFormat.JSON,
+            "table": DataFormat.TABLE
         }
         
         if format_name.lower() not in format_map:
@@ -31,7 +33,8 @@ class DataFormat(Enum):
             DataFormat.LIST: "list",
             DataFormat.DATAFRAME: "dataframe", 
             DataFormat.NDARRAY: "ndarray",
-            DataFormat.JSON: "json"
+            DataFormat.JSON: "json",
+            DataFormat.TABLE: "table"
         }
         
         return format_map.get(format_type, "list")

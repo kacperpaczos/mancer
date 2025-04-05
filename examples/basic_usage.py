@@ -38,8 +38,8 @@ def display_result_info(result, title="Command Result"):
         if history and history.get_steps_count() > 0:
             last_step = history.get_last_step()
             if last_step:
-                print(f"Wykonana komenda: {last_step.command_string}")
-                print(f"Typ komendy: {last_step.command_type}")
+                print(f"Executed command: {last_step.command_string}")
+                print(f"Command type: {last_step.command_type}")
         
         # Display a sample of the output
         print("\nOutput sample:")
@@ -98,7 +98,7 @@ def main():
         result = df_command.execute(context)
         display_result_info(result, "Disk Usage Information")
         
-        print("\nTest zakończony pomyślnie!")
+        print("\nTest completed successfully!")
         sys.stdout.flush()
     
     except KeyboardInterrupt:

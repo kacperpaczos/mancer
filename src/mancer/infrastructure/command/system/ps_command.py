@@ -1,35 +1,54 @@
 from typing import List, Any, Optional, Dict
+import re
 from ..base_command import BaseCommand
 from ...backend.bash_backend import BashBackend
 from ....domain.model.command_result import CommandResult
 from ....domain.model.command_context import CommandContext
+from ....domain.model.data_format import DataFormat
 
 class PsCommand(BaseCommand):
     """Komenda ps - wyświetla informacje o procesach"""
     
+    # Zdefiniuj nazwę narzędzia
+    tool_name = "ps"
+    
     def __init__(self):
         super().__init__("ps")
+        self.preferred_data_format = DataFormat.TABLE
     
     def execute(self, context: CommandContext, 
-               input_result: Optional[CommandResult] = None) -> CommandResult:
+                input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę ps"""
-        # Budujemy komendę
-        cmd_str = self.build_command()
+        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
+        super().execute(context, input_result)
         
-        # Pobieramy odpowiedni backend
+        # Zbuduj string komendy
+        command_str = self.build_command()
+        
+        # Pobierz odpowiedni backend
         backend = self._get_backend(context)
         
-        # Wykonujemy komendę
-        result = backend.execute_command(
-            cmd_str, 
-            working_dir=context.current_directory
+        # Wykonaj komendę
+        exit_code, output, error = backend.execute(command_str)
+        
+        # Sprawdź czy komenda się powiodła
+        success = exit_code == 0
+        error_message = error if error and not success else None
+        
+        # Dodaj ostrzeżenia o wersji do metadanych
+        metadata = {}
+        warnings = context.get_parameter("warnings", [])
+        if warnings:
+            metadata["version_warnings"] = warnings
+        
+        # Utwórz i zwróć wynik
+        return self._prepare_result(
+            raw_output=output,
+            success=success,
+            exit_code=exit_code,
+            error_message=error_message,
+            metadata=metadata
         )
-        
-        # Parsujemy wynik
-        if result.success:
-            result.structured_output = self._parse_output(result.raw_output)
-        
-        return result
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parsuje wynik ps do listy słowników z informacjami o procesach"""
