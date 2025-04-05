@@ -1,0 +1,22 @@
+# Ustawienia globalne frameworka Mancer
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(message)s"
+  file: null  # Domyślnie log do stdout/stderr
+
+version_checking:
+  enabled: true
+  warn_on_missing: true
+  warn_on_mismatch: true
+  
+paths:
+  temp_dir: "/tmp/mancer"
+  
+execution:
+  timeout: 30  # Domyślny timeout dla komend (sekundy)
+  default_shell: "/bin/bash"
+  
+cache:
+  enabled: true
+  max_size: 1024  # MB
+  ttl: 3600  # Czas życia cache w sekundach 
