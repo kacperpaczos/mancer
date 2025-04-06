@@ -6,12 +6,18 @@ from ....domain.model.command_result import CommandResult
 class LsCommand(BaseCommand):
     """Command implementation for the 'ls' command"""
     
+    # Zdefiniuj nazwę narzędzia
+    tool_name = "ls"
+    
     def __init__(self):
         super().__init__("ls")
     
     def execute(self, context: CommandContext, 
                 input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""
+        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
+        super().execute(context, input_result)
+        
         # Build the command string
         command_str = self.build_command()
         
@@ -25,6 +31,12 @@ class LsCommand(BaseCommand):
         success = exit_code == 0
         error_message = error if error and not success else None
         
+        # Dodaj ostrzeżenia o wersji do metadanych
+        metadata = {}
+        warnings = context.get_parameter("warnings", [])
+        if warnings:
+            metadata["version_warnings"] = warnings
+        
         # Parse the output
         structured_output = self._parse_output(output)
         
@@ -33,7 +45,8 @@ class LsCommand(BaseCommand):
             raw_output=output,
             success=success,
             exit_code=exit_code,
-            error_message=error_message
+            error_message=error_message,
+            metadata=metadata
         )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
