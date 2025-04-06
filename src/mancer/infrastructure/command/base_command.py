@@ -7,10 +7,11 @@ from ...domain.model.command_context import CommandContext, ExecutionMode
 from ...domain.model.data_format import DataFormat
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
+from .loggable_command_mixin import LoggableCommandMixin
 
 T = TypeVar('T', bound='BaseCommand')
 
-class BaseCommand(CommandInterface):
+class BaseCommand(CommandInterface, LoggableCommandMixin):
     """Bazowa implementacja komendy"""
     
     def __init__(self, name: str):
@@ -143,8 +144,28 @@ class BaseCommand(CommandInterface):
     @abstractmethod
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
-        """Implementacja wykonania komendy - do zaimplementowania w podklasach"""
+        """
+        Implementacja wykonania komendy - do zaimplementowania w podklasach.
+        Ta metoda powinna zostać nadpisana w klasach potomnych, ale nie powinna być
+        wywoływana bezpośrednio. Zamiast tego należy używać execute_with_logging().
+        """
         pass
+    
+    def __call__(self, context: CommandContext, 
+                input_result: Optional[CommandResult] = None) -> CommandResult:
+        """
+        Wykonuje komendę z pełnym logowaniem.
+        Ta metoda jest głównym punktem wejścia do wykonania komendy.
+        
+        Args:
+            context: Kontekst wykonania komendy
+            input_result: Opcjonalny wynik poprzedniej komendy
+            
+        Returns:
+            Wynik wykonania komendy
+        """
+        # Wywołujemy execute z logowaniem
+        return self.execute_with_logging(self.execute, context, input_result)
     
     def _format_parameter(self, name: str, value: Any) -> str:
         """
