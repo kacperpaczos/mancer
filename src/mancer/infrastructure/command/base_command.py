@@ -7,72 +7,70 @@ from ...domain.model.command_context import CommandContext, ExecutionMode
 from ...domain.model.data_format import DataFormat
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
-from .versioned_command_mixin import VersionedCommandMixin
+from .loggable_command_mixin import LoggableCommandMixin
 
 T = TypeVar('T', bound='BaseCommand')
 
-class BaseCommand(CommandInterface, VersionedCommandMixin):
-    """Base command implementation"""
+class BaseCommand(CommandInterface, LoggableCommandMixin):
+    """Bazowa implementacja komendy"""
     
     def __init__(self, name: str):
         self.name = name
         self.options: List[str] = []
         self.parameters: Dict[str, Any] = {}
         self.flags: List[str] = []
-        self.backend = BashBackend()  # Default backend
-        self.pipeline = None  # Optional pipeline (e.g., | grep)
-        self.requires_sudo = False  # Whether the command requires sudo
-        self._args: List[str] = []  # List of additional arguments
-        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
-        self.tool_name = name  # By default, tool name is the same as command name
-        self.detected_version = None  # Will store the detected version after checking
+        self.backend = BashBackend()  # Domyślny backend
+        self.pipeline = None  # Opcjonalny pipeline (np. | grep)
+        self.requires_sudo = False  # Czy komenda wymaga sudo
+        self._args: List[str] = []  # Lista dodatkowych argumentów
+        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferowany format danych
     
     def with_option(self, option: str) -> T:
-        """Adds an option to the command"""
+        """Dodaje opcję do komendy"""
         new_instance = self.clone()
         new_instance.options.append(option)
         return new_instance
     
     def with_param(self, name: str, value: Any) -> T:
-        """Sets a command parameter"""
+        """Ustawia parametr komendy"""
         new_instance = self.clone()
         new_instance.parameters[name] = value
         return new_instance
     
     def with_flag(self, flag: str) -> T:
-        """Adds a flag to the command"""
+        """Dodaje flagę do komendy"""
         new_instance = self.clone()
         new_instance.flags.append(flag)
         return new_instance
     
     def with_sudo(self) -> T:
-        """Marks that the command requires sudo"""
+        """Oznacza, że komenda wymaga sudo"""
         new_instance = self.clone()
         new_instance.requires_sudo = True
         return new_instance
     
     def add_arg(self, arg: str) -> T:
-        """Adds an argument to the command"""
+        """Dodaje argument do komendy"""
         new_instance = self.clone()
         new_instance._args.append(arg)
         return new_instance
     
     def add_args(self, args: List[str]) -> T:
-        """Adds a list of arguments to the command"""
+        """Dodaje listę argumentów do komendy"""
         new_instance = self.clone()
         new_instance._args.extend(args)
         return new_instance
     
     def with_data_format(self, format_type: DataFormat) -> T:
-        """Sets the preferred output data format for the command"""
+        """Ustawia preferowany format danych wyjściowych komendy"""
         new_instance = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
     
     def clone(self) -> T:
-        """Creates a copy of the command instance"""
-        new_instance = type(self)()  # Call zero-argument constructor
-        new_instance.name = self.name  # Copy command name
+        """Tworzy kopię instancji komendy"""
+        new_instance = type(self)()  # Wywołaj bezargumentowy konstruktor
+        new_instance.name = self.name  # Przepisz nazwę komendy
         new_instance.options = deepcopy(self.options)
         new_instance.parameters = deepcopy(self.parameters)
         new_instance.flags = deepcopy(self.flags)
@@ -81,34 +79,33 @@ class BaseCommand(CommandInterface, VersionedCommandMixin):
         new_instance.requires_sudo = self.requires_sudo
         new_instance._args = deepcopy(self._args)
         new_instance.preferred_data_format = self.preferred_data_format
-        new_instance.tool_name = self.tool_name  # Copy tool name
         return new_instance
     
     def build_command(self) -> str:
-        """Builds the command string"""
+        """Buduje string komendy"""
         cmd_parts = []
         
-        # Add sudo if required
+        # Dodaj sudo jeśli wymagane
         if self.requires_sudo:
             cmd_parts.append("sudo")
             
-        # Add command name
+        # Dodaj nazwę komendy
         cmd_parts.append(self.name)
         
-        # Add options
+        # Dodaj opcje
         cmd_parts.extend(self.options)
         
-        # Add parameters
+        # Dodaj parametry
         for name, value in self.parameters.items():
             cmd_parts.append(self._format_parameter(name, value))
             
-        # Add flags
+        # Dodaj flagi
         cmd_parts.extend([f"--{flag}" for flag in self.flags])
         
-        # Add additional arguments
+        # Dodaj dodatkowe argumenty
         cmd_parts.extend(self._get_additional_args())
         
-        # Add pipeline if it exists
+        # Dodaj pipeline jeśli istnieje
         if self.pipeline:
             cmd_parts.append(self.pipeline)
             
@@ -116,9 +113,9 @@ class BaseCommand(CommandInterface, VersionedCommandMixin):
     
     def _get_backend(self, context: CommandContext):
         """
-        Selects the appropriate backend based on the context.
+        Wybiera odpowiedni backend na podstawie kontekstu.
         """
-        # If context indicates remote mode, use SSH
+        # Jeśli kontekst wskazuje na tryb zdalny, użyj SSH
         if (context.execution_mode == ExecutionMode.REMOTE 
             and context.remote_host is not None):
             
@@ -141,37 +138,53 @@ class BaseCommand(CommandInterface, VersionedCommandMixin):
                 ssh_options=remote_host.ssh_options
             )
         else:
-            # Otherwise use the default backend
+            # W przeciwnym razie używamy domyślnego backendu
             return self.backend
     
     @abstractmethod
     def execute(self, context: CommandContext, 
                input_result: Optional[CommandResult] = None) -> CommandResult:
-        """Command execution implementation - to be implemented in subclasses"""
-        # Check tool version before executing the command
-        self.detected_version = self.check_tool_version(context)
-        
-        # Subclasses should call this base method before executing the command
+        """
+        Implementacja wykonania komendy - do zaimplementowania w podklasach.
+        Ta metoda powinna zostać nadpisana w klasach potomnych, ale nie powinna być
+        wywoływana bezpośrednio. Zamiast tego należy używać execute_with_logging().
+        """
         pass
+    
+    def __call__(self, context: CommandContext, 
+                input_result: Optional[CommandResult] = None) -> CommandResult:
+        """
+        Wykonuje komendę z pełnym logowaniem.
+        Ta metoda jest głównym punktem wejścia do wykonania komendy.
+        
+        Args:
+            context: Kontekst wykonania komendy
+            input_result: Opcjonalny wynik poprzedniej komendy
+            
+        Returns:
+            Wynik wykonania komendy
+        """
+        # Wywołujemy execute z logowaniem
+        return self.execute_with_logging(self.execute, context, input_result)
     
     def _format_parameter(self, name: str, value: Any) -> str:
         """
-        Formats a single command parameter.
-        Can be overridden in subclasses for special formatting.
+        Formatuje pojedynczy parametr komendy.
+        Można nadpisać w podklasach dla specjalnego formatowania.
         """
         return f"--{name}={value}"
     
     def _get_additional_args(self) -> List[str]:
         """
-        Returns additional arguments specific to the subclass.
-        To be overridden in subclasses.
+        Zwraca dodatkowe argumenty specyficzne dla podklasy.
+        Do nadpisania w podklasach.
         """
         return self._args
     
     def _parse_output(self, raw_output: str) -> List[Any]:
         """
-        Parses raw command output into a structure.
-        To be overridden in subclasses.
+        Parsuje surowe wyjście komendy do struktury.
+        Do nadpisania w podklasach.
         """
         return [raw_output]
     
@@ -179,34 +192,12 @@ class BaseCommand(CommandInterface, VersionedCommandMixin):
                        error_message: Optional[str] = None, 
                        metadata: Optional[Dict[str, Any]] = None) -> CommandResult:
         """
-        Prepares the command result with the preferred data format and history.
+        Przygotowuje wynik komendy z uwzględnieniem preferowanego formatu danych i historii.
         """
-        # Parse output using version-specific method if available
-        if hasattr(self, 'version_adapters') and self.version_adapters and self.detected_version:
-            structured_output = self.adapt_to_version(
-                self.detected_version,
-                '_parse_output',
-                raw_output
-            )
-            # If version-specific parsing failed, fall back to default
-            if structured_output is None:
-                structured_output = self._parse_output(raw_output)
-        else:
-            # Use default parsing method
-            structured_output = self._parse_output(raw_output)
+        # Parsuj dane wyjściowe
+        structured_output = self._parse_output(raw_output)
         
-        # Prepare metadata
-        if metadata is None:
-            metadata = {}
-            
-        # Add version information to metadata
-        if self.detected_version:
-            metadata["tool_version"] = {
-                "name": self.detected_version.name,
-                "version": self.detected_version.version
-            }
-        
-        # Create result object
+        # Utwórz obiekt wyniku
         result = CommandResult(
             raw_output=raw_output,
             success=success,
@@ -217,27 +208,27 @@ class BaseCommand(CommandInterface, VersionedCommandMixin):
             data_format=self.preferred_data_format
         )
         
-        # Add step to history
+        # Dodaj krok do historii
         result.add_to_history(
             command_string=self.build_command(),
             command_type=self.__class__.__name__,
             structured_sample=structured_output[:5] if structured_output else None
         )
         
-        # If data format is different from LIST, perform conversion
+        # Jeśli format danych jest inny niż LIST, dokonaj konwersji
         if self.preferred_data_format != DataFormat.LIST:
             return result.to_format(self.preferred_data_format)
             
         return result
     
     def then(self, next_command: CommandInterface) -> 'CommandChain':
-        """Creates a command chain"""
+        """Tworzy łańcuch komend"""
         from ...domain.service.command_chain_service import CommandChain
         chain = CommandChain(self)
         return chain.then(next_command)
     
     def pipe(self, next_command: CommandInterface) -> 'CommandChain':
-        """Creates a command chain with output redirection"""
+        """Tworzy łańcuch komend z przekierowaniem wyjścia"""
         from ...domain.service.command_chain_service import CommandChain
         chain = CommandChain(self)
         return chain.pipe(next_command)

@@ -7,6 +7,7 @@ from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.backend.bash_backend import BashBackend
 from ..infrastructure.backend.ssh_backend import SshBackend
 from .command_cache import CommandCache
+from ..domain.service.command_logger_service import CommandLoggerService
 import uuid
 import hashlib
 
@@ -85,27 +86,41 @@ COMMAND_TYPES_TRANSLATION = {
 class ShellRunner:
     """Główna klasa aplikacji do uruchamiania komend"""
     
-    def __init__(self, backend_type: str = "bash", working_dir: str = ".", 
-                enable_cache: bool = False, cache_max_size: int = 100,
-                cache_auto_refresh: bool = False, cache_refresh_interval: int = 5,
-                enable_live_output: bool = False):
-                language: str = "pl"):
-
-        self.backend_type = backend_type
-        self.factory = CommandFactory(backend_type)
-        self.context = CommandContext(current_directory=working_dir)
-        self.local_backend = BashBackend()
-        self.remote_backend = None
-        self.enable_live_output = enable_live_output
-        self.language = language
+    def __init__(self, backend_type: str = "bash", 
+                context: Optional[CommandContext] = None, 
+                cache_size: int = 100,
+                enable_cache: bool = True,
+                enable_live_output: bool = False,
+                enable_command_logging: bool = True,
+                log_to_file: bool = False,
+                log_level: str = "info"):
+        """
+        Inicjalizuje runner komend.
         
-        # Inicjalizacja cache'a
+        Args:
+            backend_type: Typ backendu ("bash" lub "ssh")
+            context: Opcjonalny kontekst wykonania
+            cache_size: Rozmiar pamięci podręcznej komend
+            enable_cache: Czy włączyć cache komend
+            enable_live_output: Czy domyślnie pokazywać wyjście komend na żywo
+            enable_command_logging: Czy włączyć logowanie komend
+            log_to_file: Czy zapisywać logi do pliku
+            log_level: Poziom logowania ("debug", "info", "warning", "error", "critical")
+        """
+        self.factory = CommandFactory(backend_type)
+        self._context = context or self._create_default_context()
+        self._command_cache = CommandCache(max_size=cache_size)
         self._cache_enabled = enable_cache
-        self._command_cache = CommandCache(
-            max_size=cache_max_size,
-            auto_refresh=cache_auto_refresh,
-            refresh_interval=cache_refresh_interval
-        ) if enable_cache else None
+        self.enable_live_output = enable_live_output
+        
+        # Inicjalizacja podsystemu logowania komend
+        if enable_command_logging:
+            command_logger = CommandLoggerService.get_instance()
+            command_logger.initialize(
+                log_level=log_level,
+                file_enabled=log_to_file,
+                console_enabled=True
+            )
     
     def create_command(self, command_name: str) -> CommandInterface:
         """Tworzy nową instancję komendy"""
@@ -135,22 +150,17 @@ class ShellRunner:
             if cached_result:
                 return cached_result
         
-        # Wykonujemy komendę
-        result = None
-        
-        # Dla komend, które używają live output, dodajemy specjalne parametry kontekstu
+        # Ustawiamy parametr live_output w kontekście
         if use_live_output:
             context.set_parameter("live_output", True)
             context.set_parameter("live_output_interval", 0.1)  # Odświeżanie co 0.1 sekundy
-            
-            # Ustawiamy buforowanie na None, aby uzyskać niebufowane wyjście
-            context.set_parameter("stdout_buffering", None)
-            context.set_parameter("stderr_buffering", None)
         
+        # Wykonujemy komendę - używamy metody __call__, która zapewnia logowanie
         if isinstance(command, CommandChain):
             result = command.execute(context)
         else:
-            result = command.execute(context)
+            # Używamy __call__ zamiast bezpośredniego execute, aby zapewnić logowanie
+            result = command(context) if hasattr(command, '__call__') else command.execute(context)
             
         # Zapisujemy wynik w cache'u, jeśli cache jest włączony (ale nie dla live output)
         if self._cache_enabled and result and not use_live_output:
@@ -190,10 +200,10 @@ class ShellRunner:
         """Przygotowuje kontekst wykonania komendy"""
         # Tworzymy kopię głównego kontekstu
         context = CommandContext(
-            current_directory=self.context.current_directory,
-            environment_variables=self.context.environment_variables.copy(),
-            execution_mode=self.context.execution_mode,
-            remote_host=self.context.remote_host
+            current_directory=self._context.current_directory,
+            environment_variables=self._context.environment_variables.copy(),
+            execution_mode=self._context.execution_mode,
+            remote_host=self._context.remote_host
         )
         
         # Dodajemy parametry kontekstu, jeśli są
@@ -240,7 +250,7 @@ class ShellRunner:
             gssapi_delegate_creds: Czy delegować poświadczenia GSSAPI
             ssh_options: Dodatkowe opcje SSH jako słownik
         """
-        self.context.set_remote_execution(
+        self._context.set_remote_execution(
             host=host,
             user=user,
             port=port,
@@ -277,14 +287,14 @@ class ShellRunner:
     
     def set_local_execution(self) -> None:
         """Ustawia tryb wykonania lokalnego"""
-        self.context.set_local_execution()
+        self._context.set_local_execution()
     
     def get_backend(self):
         """Zwraca odpowiedni backend na podstawie trybu wykonania"""
-        if self.context.is_remote():
+        if self._context.is_remote():
             if not self.remote_backend:
                 # Jeśli nie mamy jeszcze backendu SSH, tworzymy go
-                remote_host = self.context.remote_host
+                remote_host = self._context.remote_host
                 self.remote_backend = SshBackend(
                     host=remote_host.host,
                     user=remote_host.user,
