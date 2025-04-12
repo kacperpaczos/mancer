@@ -1,5 +1,2 @@
-from .base import Tool
-from .network import NetworkScanner, Ping
-
-TODO
-__all__ = ['Tool', 'NetworkScanner', 'Ping'] 
+# Plik inicjalizacyjny katalogu tools
+# Ten katalog zawiera narzędzia pomocnicze do pracy z projektem 
