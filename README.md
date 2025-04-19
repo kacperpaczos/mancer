@@ -51,6 +51,103 @@ mancer/
 └── tools/                    # Utility tools
 ```
 
+## DDD Architecture Overview
+
+Mancer implements a Domain-Driven Design architecture, organizing code into distinct layers with clear responsibilities. Here's a diagram showing the flow of control and key components:
+
+```
+                           ┌─────────────────────────────────────────────┐
+                           │               USER CODE                     │
+                           └───────────────┬─────────────────────────────┘
+                                           │
+                                           ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  INTERFACE LAYER                                         │
+│                                                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐ │
+│  │ CLI         │  │ API         │  │ CommandFactory          │  │ ResultFormatter     │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  └─────────────────────┘ │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                APPLICATION LAYER                                         │
+│                                                                                         │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────────────────┐  │
+│  │ CommandExecutor     │  │ CommandChain        │  │ VersionManager                  │  │
+│  └─────────────────────┘  └─────────────────────┘  └─────────────────────────────────┘  │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  DOMAIN LAYER                                            │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Models                                                                          │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
+│  │  │ CommandContext  │  │ CommandResult   │  │ VersionInfo     │                 │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Interfaces                                                                      │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
+│  │  │ ICommand        │  │ IExecutionBackend│  │ IResultParser   │                 │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Services                                                                        │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
+│  │  │ VersionService  │  │ FormatService   │  │ CacheService    │                 │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 INFRASTRUCTURE LAYER                                     │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────┐  ┌─────────────────────────────────┐   │
+│  │ Command Implementations                     │  │ Execution Backends              │   │
+│  │                                             │  │                                 │   │
+│  │  ┌─────────────┐  ┌─────────────┐          │  │  ┌─────────────┐ ┌────────────┐ │   │
+│  │  │ BaseCommand │  │ SystemCommand│          │  │  │ LocalBackend│ │ SSHBackend │ │   │
+│  │  └─────┬───────┘  └─────────────┘          │  │  └─────────────┘ └────────────┘ │   │
+│  │        │                                    │  │                                 │   │
+│  │        ▼                                    │  └─────────────────────────────────┘   │
+│  │  ┌─────────────┐  ┌─────────────┐          │                                        │
+│  │  │ DFCommand   │  │ LSCommand   │  ...     │  ┌─────────────────────────────────┐   │
+│  │  └─────────────┘  └─────────────┘          │  │ Configuration                   │   │
+│  │                                             │  │                                 │   │
+│  └─────────────────────────────────────────────┘  │  ┌─────────────┐ ┌────────────┐ │   │
+│                                                   │  │ ConfigLoader│ │VersionStore│ │   │
+│                                                   │  └─────────────┘ └────────────┘ │   │
+│                                                   └─────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Flow of Control
+
+1. User code interacts with the Interface Layer
+2. Interface Layer creates and configures commands
+3. Application Layer orchestrates command execution
+4. Domain Layer contains business logic and interfaces
+5. Infrastructure Layer implements concrete commands, backends and external services
+
+### Key Responsibilities by Layer
+
+- **Interface Layer**: User-facing APIs, command factories, and result formatters
+- **Application Layer**: Orchestration of command execution, command chaining, and version management
+- **Domain Layer**:
+  - **Models**: Core domain entities (CommandContext, CommandResult, VersionInfo)
+  - **Interfaces**: Abstractions for commands, backends and parsers
+  - **Services**: Domain-specific logic for versions, formatting, and caching
+- **Infrastructure Layer**: Concrete implementations of commands, execution backends, and external services
+
 ## Available Tools
 
 The framework provides several tools to facilitate work:
@@ -374,3 +471,84 @@ When adding version-specific behavior:
 ## License
 
 This project is available under the [add your chosen license].
+
+## Development Lifecycle for Adding New Features
+
+The complete development lifecycle in Mancer follows these steps:
+
+```
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│                │     │                │     │                │     │                │
+│  1. Planning   │────►│ 2. Development │────►│   3. Testing   │────►│  4. Versioning │
+│                │     │                │     │                │     │                │
+└────────────────┘     └────────────────┘     └────────────────┘     └────────────────┘
+        │                                                                     │
+        │                                                                     ▼
+┌────────────────┐                                                   ┌────────────────┐
+│                │                                                   │                │
+│ 7. Maintenance │◄────────────────────────────────────────────────►│  5. Building   │
+│                │                                                   │                │
+└────────────────┘                                                   └────────────────┘
+        ▲                                                                     │
+        │                                                                     ▼
+        │                                                             ┌────────────────┐
+        │                                                             │                │
+        └─────────────────────────────────────────────────────────────┤  6. Publishing │
+                                                                      │                │
+                                                                      └────────────────┘
+```
+
+### 1. Planning
+
+- Define requirements for a new feature or command
+- Document expected behavior
+- Create Interfaces in `domain/interface/`
+- Design the domain model in `domain/model/`
+
+### 2. Development
+
+- Implement the domain services in `domain/service/`
+- Create concrete command implementations in `infrastructure/command/`
+- Implement backend adapters if needed in `infrastructure/backend/`
+- Add application services in `application/`
+- Create examples in `examples/`
+
+### 3. Testing
+
+- Write unit tests in `tests/unit/`
+- Add integration tests in `tests/integration/`
+- Run tests with coverage:
+  ```bash
+  ./dev_tools/run_tests.py --coverage --html
+  ```
+- Fix any bugs found during testing
+
+### 4. Versioning
+
+- Update version number in `setup.py`
+- For minor changes, `install_dev.py` will automatically increment the Z version
+- For significant changes, manually update X or Y version
+- Document version-specific behaviors if applicable
+
+### 5. Building
+
+- Build package distribution:
+  ```bash
+  ./dev_tools/build_package.py
+  ```
+- Test the built package locally:
+  ```bash
+  ./dev_tools/build_package.py --install
+  ```
+
+### 6. Publishing
+
+- Publish to PyPI or internal repository
+- Update documentation
+- Create release notes
+
+### 7. Maintenance
+
+- Monitor for bug reports
+- Implement version-specific adapters for backward compatibility
+- Update tool version configurations
