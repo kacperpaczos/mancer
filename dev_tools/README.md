@@ -158,4 +158,47 @@ If you encounter problems:
    - Activation: `source .venv/bin/activate` (Linux/macOS) or `.venv\Scripts\activate` (Windows)
    - Deactivation: `deactivate` (all systems)
 
-For questions or issues, contact the author: kacperpaczos2024@proton.me 
+For questions or issues, contact the author: kacperpaczos2024@proton.me
+
+## DDD Architecture Visualization
+
+The `visualize_ddd.sh` script generates a graphical representation of the Domain-Driven Design (DDD) architecture of the Mancer project, using the `tach` tool for dependency analysis and Graphviz for diagram creation.
+
+### Requirements
+
+- Python 3
+- `tach` library (automatically installed by the script)
+- Graphviz (`dot` command)
+
+### Usage
+
+```bash
+./dev_tools/visualize_ddd.sh [options]
+```
+
+### Options
+
+- `--output-dir PATH` - Output directory for files (default: ./diagrams)
+- `--format FORMAT` - Output format (dot, png, svg, pdf) (default: png)
+- `--detailed` - Generate detailed diagram
+- `--help` - Show help
+
+### Examples
+
+```bash
+# Generate standard diagram
+./dev_tools/visualize_ddd.sh
+
+# Generate detailed diagram
+./dev_tools/visualize_ddd.sh --detailed
+
+# Generate diagram in SVG format
+./dev_tools/visualize_ddd.sh --format svg
+
+# Generate diagram to a specific directory
+./dev_tools/visualize_ddd.sh --output-dir ./ddd_arch
+```
+
+The generated diagram shows DDD layers, modules, and dependencies between them. When using the `--detailed` option, the diagram includes additional information about subdomains and more precise dependencies.
+
+The script is interactive and will prompt for format and detail level if not specified as command-line arguments. 

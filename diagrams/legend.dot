@@ -1,0 +1,30 @@
+digraph "Mancer DDD Legend" {
+  node [shape=box, style=filled, fontname="Arial"];
+  rankdir="TB";
+
+  label="Mancer DDD Architecture - Legend";
+  fontsize=20;
+  labelloc="t";
+
+  subgraph cluster_layers {
+    label="DDD Layers";
+    style="rounded";
+
+    layer_0 [label="Interface Layer", fillcolor="#8dd3c7", tooltip="User-facing components (CLI, API, etc.)"];
+    layer_1 [label="Application Layer", fillcolor="#ffffb3", tooltip="Orchestration, command execution, workflow"];
+    layer_2 [label="Domain Layer", fillcolor="#bebada", tooltip="Core business logic, models, interfaces"];
+    layer_3 [label="Infrastructure Layer", fillcolor="#fb8072", tooltip="External systems, concrete implementations"];
+  }
+
+  subgraph cluster_subdomains {
+    label="Subdomains";
+    style="rounded";
+
+    subdomain_0 [label="Domain Interfaces", fillcolor="#80b1d3", tooltip="Contracts between components"];
+    subdomain_1 [label="Domain Models", fillcolor="#fdb462", tooltip="Core business entities"];
+    subdomain_2 [label="Domain Services", fillcolor="#b3de69", tooltip="Business operations on models"];
+    subdomain_3 [label="Execution Backends", fillcolor="#fccde5", tooltip="Command execution environments"];
+    subdomain_4 [label="Command Implementations", fillcolor="#d9d9d9", tooltip="Concrete command implementations"];
+    subdomain_5 [label="Factories", fillcolor="#bc80bd", tooltip="Object creation services"];
+  }
+}
