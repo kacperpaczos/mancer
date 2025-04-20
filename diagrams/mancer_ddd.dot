@@ -1,0 +1,287 @@
+digraph "Mancer DDD Architecture" {
+  rankdir="TB";
+  node [shape=box, style=filled, fontname="Arial"];
+  edge [fontname="Arial", fontsize=10];
+  compound=true;
+
+  subgraph "cluster_interface" {
+    label="Interface Layer";
+    style=filled;
+    color="#8dd3c7";
+    fontsize=16;
+    tooltip="User-facing components (CLI, API, etc.)";
+  }
+
+  subgraph "cluster_application" {
+    label="Application Layer";
+    style=filled;
+    color="#ffffb3";
+    fontsize=16;
+    tooltip="Orchestration, command execution, workflow";
+    "src_mancer_application_commands_systemctl_command_py" [label="systemctl_command.py", tooltip="src/mancer/application/commands/systemctl_command.py"];
+    "src_mancer_application_shell_runner_py" [label="shell_runner.py", tooltip="src/mancer/application/shell_runner.py"];
+    "src_mancer_application_commands_base_command_py" [label="base_command.py", tooltip="src/mancer/application/commands/base_command.py"];
+    "src_mancer_application_commands___init___py" [label="__init__.py", tooltip="src/mancer/application/commands/__init__.py"];
+    "src_mancer_application_commands_apt_command_py" [label="apt_command.py", tooltip="src/mancer/application/commands/apt_command.py"];
+    "src_mancer_application_command_cache_py" [label="command_cache.py", tooltip="src/mancer/application/command_cache.py"];
+  }
+
+  subgraph "cluster_domain" {
+    label="Domain Layer";
+    style=filled;
+    color="#bebada";
+    fontsize=16;
+    tooltip="Core business logic, models, interfaces";
+    subgraph "cluster_src_mancer_domain_interface" {
+      label="Domain Interfaces";
+      style=filled;
+      color="#80b1d3";
+      fontsize=14;
+      tooltip="Contracts between components";
+      "src_mancer_domain_interface_backend_interface_py" [label="backend_interface.py", tooltip="src/mancer/domain/interface/backend_interface.py"];
+      "src_mancer_domain_interface_command_interface_py" [label="command_interface.py", tooltip="src/mancer/domain/interface/command_interface.py"];
+    }
+
+    subgraph "cluster_src_mancer_domain_model" {
+      label="Domain Models";
+      style=filled;
+      color="#fdb462";
+      fontsize=14;
+      tooltip="Core business entities";
+      "src_mancer_domain_model_execution_step_py" [label="execution_step.py", tooltip="src/mancer/domain/model/execution_step.py"];
+      "src_mancer_domain_model___init___py" [label="__init__.py", tooltip="src/mancer/domain/model/__init__.py"];
+      "src_mancer_domain_model_command_result_py" [label="command_result.py", tooltip="src/mancer/domain/model/command_result.py"];
+      "src_mancer_domain_model_execution_history_py" [label="execution_history.py", tooltip="src/mancer/domain/model/execution_history.py"];
+    }
+
+    subgraph "cluster_src_mancer_domain_service" {
+      label="Domain Services";
+      style=filled;
+      color="#b3de69";
+      fontsize=14;
+      tooltip="Business operations on models";
+      "src_mancer_domain_service_tool_version_service_py" [label="tool_version_service.py", tooltip="src/mancer/domain/service/tool_version_service.py"];
+      "src_mancer_domain_service_data_converter_service_py" [label="data_converter_service.py", tooltip="src/mancer/domain/service/data_converter_service.py"];
+      "src_mancer_domain_service_command_chain_service_py" [label="command_chain_service.py", tooltip="src/mancer/domain/service/command_chain_service.py"];
+    }
+
+    "src_mancer_domain___init___py" [label="__init__.py", tooltip="src/mancer/domain/__init__.py"];
+  }
+
+  subgraph "cluster_infrastructure" {
+    label="Infrastructure Layer";
+    style=filled;
+    color="#fb8072";
+    fontsize=16;
+    tooltip="External systems, concrete implementations";
+    subgraph "cluster_src_mancer_infrastructure_backend" {
+      label="Execution Backends";
+      style=filled;
+      color="#fccde5";
+      fontsize=14;
+      tooltip="Command execution environments";
+      "src_mancer_infrastructure_backend_bash_backend_py" [label="bash_backend.py", tooltip="src/mancer/infrastructure/backend/bash_backend.py"];
+      "src_mancer_infrastructure_backend_ssh_backend_py" [label="ssh_backend.py", tooltip="src/mancer/infrastructure/backend/ssh_backend.py"];
+    }
+
+    subgraph "cluster_src_mancer_infrastructure_command" {
+      label="Command Implementations";
+      style=filled;
+      color="#d9d9d9";
+      fontsize=14;
+      tooltip="Concrete command implementations";
+      "src_mancer_infrastructure_command_system_echo_command_py" [label="echo_command.py", tooltip="src/mancer/infrastructure/command/system/echo_command.py"];
+      "src_mancer_infrastructure_command_file_cat_command_py" [label="cat_command.py", tooltip="src/mancer/infrastructure/command/file/cat_command.py"];
+      "src_mancer_infrastructure_command_system_hostname_command_py" [label="hostname_command.py", tooltip="src/mancer/infrastructure/command/system/hostname_command.py"];
+      "src_mancer_infrastructure_command_loggable_command_mixin_py" [label="loggable_command_mixin.py", tooltip="src/mancer/infrastructure/command/loggable_command_mixin.py"];
+      "src_mancer_infrastructure_command_file_cp_command_py" [label="cp_command.py", tooltip="src/mancer/infrastructure/command/file/cp_command.py"];
+      "src_mancer_infrastructure_command_file_cd_command_py" [label="cd_command.py", tooltip="src/mancer/infrastructure/command/file/cd_command.py"];
+      "src_mancer_infrastructure_command_versioned_command_mixin_py" [label="versioned_command_mixin.py", tooltip="src/mancer/infrastructure/command/versioned_command_mixin.py"];
+      "src_mancer_infrastructure_command_system_find_command_py" [label="find_command.py", tooltip="src/mancer/infrastructure/command/system/find_command.py"];
+      "src_mancer_infrastructure_command_base_command_py" [label="base_command.py", tooltip="src/mancer/infrastructure/command/base_command.py"];
+      "src_mancer_infrastructure_command_system_ps_command_py" [label="ps_command.py", tooltip="src/mancer/infrastructure/command/system/ps_command.py"];
+      "src_mancer_infrastructure_command_file_grep_command_py" [label="grep_command.py", tooltip="src/mancer/infrastructure/command/file/grep_command.py"];
+      "src_mancer_infrastructure_command_network_netstat_command_py" [label="netstat_command.py", tooltip="src/mancer/infrastructure/command/network/netstat_command.py"];
+      "src_mancer_infrastructure_command_system_cat_command_py" [label="cat_command.py", tooltip="src/mancer/infrastructure/command/system/cat_command.py"];
+      "src_mancer_infrastructure_command_file_tail_command_py" [label="tail_command.py", tooltip="src/mancer/infrastructure/command/file/tail_command.py"];
+      "src_mancer_infrastructure_command_custom_custom_command_py" [label="custom_command.py", tooltip="src/mancer/infrastructure/command/custom/custom_command.py"];
+      "src_mancer_infrastructure_command_file_find_command_py" [label="find_command.py", tooltip="src/mancer/infrastructure/command/file/find_command.py"];
+      "src_mancer_infrastructure_command_system_grep_command_py" [label="grep_command.py", tooltip="src/mancer/infrastructure/command/system/grep_command.py"];
+      "src_mancer_infrastructure_command_system_systemctl_command_py" [label="systemctl_command.py", tooltip="src/mancer/infrastructure/command/system/systemctl_command.py"];
+      "src_mancer_infrastructure_command_system_ls_command_py" [label="ls_command.py", tooltip="src/mancer/infrastructure/command/system/ls_command.py"];
+      "src_mancer_infrastructure_command_file_ls_command_py" [label="ls_command.py", tooltip="src/mancer/infrastructure/command/file/ls_command.py"];
+      "src_mancer_infrastructure_command_file_head_command_py" [label="head_command.py", tooltip="src/mancer/infrastructure/command/file/head_command.py"];
+      "src_mancer_infrastructure_command_system_df_command_py" [label="df_command.py", tooltip="src/mancer/infrastructure/command/system/df_command.py"];
+      "src_mancer_infrastructure_command_system_wc_command_py" [label="wc_command.py", tooltip="src/mancer/infrastructure/command/system/wc_command.py"];
+    }
+
+    subgraph "cluster_src_mancer_infrastructure_factory" {
+      label="Factories";
+      style=filled;
+      color="#bc80bd";
+      fontsize=14;
+      tooltip="Object creation services";
+      "src_mancer_infrastructure_factory_command_factory_py" [label="command_factory.py", tooltip="src/mancer/infrastructure/factory/command_factory.py"];
+    }
+
+  }
+
+  "src_mancer_infrastructure_command_system_echo_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_echo_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_echo_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_echo_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cat_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cat_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cat_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cat_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_hostname_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_hostname_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_hostname_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_application_commands_systemctl_command_py" -> "src_mancer_application_commands_base_command_py" [label="1", weight=1];
+  "src_mancer_domain_service_tool_version_service_py" -> "src_mancer_domain_model_tool_version_py" [label="1", weight=1];
+  "src_mancer_domain_service_tool_version_service_py" -> "src_mancer_domain_model_config_manager_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_loggable_command_mixin_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_loggable_command_mixin_py" -> "src_mancer_domain_service_command_logger_service_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_loggable_command_mixin_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_backend_bash_backend_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_backend_bash_backend_py" -> "src_mancer_domain_interface_backend_interface_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cp_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cp_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cp_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cp_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cd_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cd_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cd_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_cd_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_domain_interface_command_interface_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_infrastructure_backend_ssh_backend_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_infrastructure_factory_command_factory_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_domain_service_command_logger_service_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_domain_service_command_chain_service_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_application_command_cache_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_application_shell_runner_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_domain_service_data_converter_service_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_versioned_command_mixin_py" -> "src_mancer_domain_model_tool_version_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_versioned_command_mixin_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_versioned_command_mixin_py" -> "src_mancer_domain_service_tool_version_service_py" [label="1", weight=1];
+  "src_mancer_domain___init___py" -> "src_mancer_domain_model_version_info_py" [label="1", weight=1];
+  "src_mancer_domain_model_execution_step_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_find_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_find_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_find_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_application_commands_base_command_py" -> "src_mancer_infrastructure_backend_ssh_backend_py" [label="1", weight=1];
+  "src_mancer_application_commands_base_command_py" -> "src_mancer_domain_interface_command_interface_py" [label="1", weight=1];
+  "src_mancer_application_commands_base_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_application_commands_base_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_application_commands_base_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_application_commands___init___py" -> "src_mancer_application_commands_apt_command_py" [label="1", weight=1];
+  "src_mancer_application_commands___init___py" -> "src_mancer_application_commands_systemctl_command_py" [label="1", weight=1];
+  "src_mancer_application_commands___init___py" -> "src_mancer_application_commands_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_find_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_tail_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_cat_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_system_systemctl_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_grep_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_cp_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_ls_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_system_echo_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_head_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_domain_interface_command_interface_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_system_hostname_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_network_netstat_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_file_cd_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_system_ps_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_factory_command_factory_py" -> "src_mancer_infrastructure_command_system_df_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_domain_interface_command_interface_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_domain_service_command_chain_service_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_infrastructure_backend_ssh_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_base_command_py" -> "src_mancer_infrastructure_command_loggable_command_mixin_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ps_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ps_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ps_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ps_command_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ps_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_domain_model___init___py" -> "src_mancer_domain_model_version_info_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_grep_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_grep_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_grep_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_grep_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_network_netstat_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_network_netstat_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_network_netstat_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_network_netstat_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_domain_interface_backend_interface_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_application_commands_apt_command_py" -> "src_mancer_application_commands_base_command_py" [label="1", weight=1];
+  "src_mancer_domain_model_command_result_py" -> "src_mancer_domain_model_execution_history_py" [label="1", weight=1];
+  "src_mancer_domain_model_command_result_py" -> "src_mancer_domain_service_data_converter_service_py" [label="1", weight=1];
+  "src_mancer_domain_model_command_result_py" -> "src_mancer_domain_model_execution_step_py" [label="1", weight=1];
+  "src_mancer_domain_model_command_result_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_cat_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_cat_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_cat_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_tail_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_tail_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_tail_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_tail_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_domain_interface_command_interface_py" -> "src_mancer_domain_service_command_chain_service_py" [label="1", weight=1];
+  "src_mancer_domain_interface_command_interface_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_domain_interface_command_interface_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_custom_custom_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_custom_custom_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_custom_custom_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_backend_ssh_backend_py" -> "src_mancer_domain_interface_backend_interface_py" [label="1", weight=1];
+  "src_mancer_infrastructure_backend_ssh_backend_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_domain_model_execution_history_py" -> "src_mancer_domain_model_execution_step_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_find_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_find_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_find_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_find_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_domain_service_command_chain_service_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_domain_service_command_chain_service_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_domain_service_command_chain_service_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_domain_service_command_chain_service_py" -> "src_mancer_domain_model_execution_history_py" [label="1", weight=1];
+  "src_mancer_domain_service_command_chain_service_py" -> "src_mancer_domain_interface_command_interface_py" [label="1", weight=1];
+  "src_mancer___init___py" -> "src_mancer_domain_model_version_info_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_grep_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_grep_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_grep_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_systemctl_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_systemctl_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_systemctl_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_systemctl_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ls_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ls_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_ls_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_ls_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_ls_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_ls_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_ls_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_head_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_head_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_head_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_file_head_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_df_command_py" -> "src_mancer_domain_model_data_format_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_df_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_df_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_df_command_py" -> "src_mancer_infrastructure_backend_bash_backend_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_df_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_application_command_cache_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_wc_command_py" -> "src_mancer_infrastructure_command_base_command_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_wc_command_py" -> "src_mancer_domain_model_command_context_py" [label="1", weight=1];
+  "src_mancer_infrastructure_command_system_wc_command_py" -> "src_mancer_domain_model_command_result_py" [label="1", weight=1];
+
+  # DDD pattern dependencies
+  "interface_placeholder" [label="Interface Layer", style="invis"];
+  "application_placeholder" [label="Application Layer", style="invis"];
+  "domain_placeholder" [label="Domain Layer", style="invis"];
+  "infrastructure_placeholder" [label="Infrastructure Layer", style="invis"];
+  "interface_placeholder" -> "application_placeholder" [color="#1f78b4", style=dashed, penwidth=2];
+  "application_placeholder" -> "domain_placeholder" [color="#1f78b4", style=dashed, penwidth=2];
+  "domain_placeholder" -> "infrastructure_placeholder" [color="#1f78b4", style=dashed, penwidth=2];
+}
