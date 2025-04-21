@@ -8,6 +8,7 @@ from ...domain.model.data_format import DataFormat
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
 from .loggable_command_mixin import LoggableCommandMixin
+from ...domain.service.command_chain_service import CommandChain
 
 T = TypeVar('T', bound='BaseCommand')
 
@@ -223,12 +224,10 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
     
     def then(self, next_command: CommandInterface) -> 'CommandChain':
         """Tworzy łańcuch komend"""
-        from ...domain.service.command_chain_service import CommandChain
         chain = CommandChain(self)
         return chain.then(next_command)
     
     def pipe(self, next_command: CommandInterface) -> 'CommandChain':
         """Tworzy łańcuch komend z przekierowaniem wyjścia"""
-        from ...domain.service.command_chain_service import CommandChain
         chain = CommandChain(self)
         return chain.pipe(next_command)

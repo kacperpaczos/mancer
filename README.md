@@ -51,6 +51,103 @@ mancer/
 └── tools/                    # Utility tools
 ```
 
+## DDD Architecture Overview
+
+Mancer implements a Domain-Driven Design architecture, organizing code into distinct layers with clear responsibilities. Here's a diagram showing the flow of control and key components:
+
+```
+                           ┌─────────────────────────────────────────────┐
+                           │               USER CODE                     │
+                           └───────────────┬─────────────────────────────┘
+                                           │
+                                           ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  INTERFACE LAYER                                        │
+│                                                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐ │
+│  │ CLI         │  │ API         │  │ CommandFactory          │  │ ResultFormatter     │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  └─────────────────────┘ │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                APPLICATION LAYER                                        │
+│                                                                                         │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────────────────┐  │
+│  │ CommandExecutor     │  │ CommandChain        │  │ VersionManager                  │  │
+│  └─────────────────────┘  └─────────────────────┘  └─────────────────────────────────┘  │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  DOMAIN LAYER                                           │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Models                                                                          │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
+│  │  │ CommandContext  │  │ CommandResult   │  │ VersionInfo     │                  │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Interfaces                                                                      │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
+│  │  │ ICommand        │  │ IExecutionBackend│  │ IResultParser   │                 │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
+│  │ Services                                                                        │    │
+│  │                                                                                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
+│  │  │ VersionService  │  │ FormatService   │  │ CacheService    │                  │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 INFRASTRUCTURE LAYER                                    │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────┐  ┌─────────────────────────────────┐   │
+│  │ Command Implementations                     │  │ Execution Backends              │   │
+│  │                                             │  │                                 │   │
+│  │  ┌─────────────┐  ┌─────────────┐           │  │  ┌─────────────┐ ┌────────────┐ │   │
+│  │  │ BaseCommand │  │ SystemCommand│          │  │  │ LocalBackend│ │ SSHBackend │ │   │
+│  │  └─────┬───────┘  └─────────────┘           │  │  └─────────────┘ └────────────┘ │   │
+│  │        │                                    │  │                                 │   │
+│  │        ▼                                    │  └─────────────────────────────────┘   │
+│  │  ┌─────────────┐  ┌─────────────┐           │                                        │
+│  │  │ DFCommand   │  │ LSCommand   │  ...      │  ┌─────────────────────────────────┐   │
+│  │  └─────────────┘  └─────────────┘           │  │ Configuration                   │   │
+│  │                                             │  │                                 │   │
+│  └─────────────────────────────────────────────┘  │  ┌─────────────┐ ┌────────────┐ │   │
+│                                                   │  │ ConfigLoader│ │VersionStore│ │   │
+│                                                   │  └─────────────┘ └────────────┘ │   │
+│                                                   └─────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Flow of Control
+
+1. User code interacts with the Interface Layer
+2. Interface Layer creates and configures commands
+3. Application Layer orchestrates command execution
+4. Domain Layer contains business logic and interfaces
+5. Infrastructure Layer implements concrete commands, backends and external services
+
+### Key Responsibilities by Layer
+
+- **Interface Layer**: User-facing APIs, command factories, and result formatters
+- **Application Layer**: Orchestration of command execution, command chaining, and version management
+- **Domain Layer**:
+  - **Models**: Core domain entities (CommandContext, CommandResult, VersionInfo)
+  - **Interfaces**: Abstractions for commands, backends and parsers
+  - **Services**: Domain-specific logic for versions, formatting, and caching
+- **Infrastructure Layer**: Concrete implementations of commands, execution backends, and external services
+
 ## Available Tools
 
 The framework provides several tools to facilitate work:
@@ -375,79 +472,160 @@ When adding version-specific behavior:
 
 This project is available under the [add your chosen license].
 
-## Nowy System Logowania
+## New Logging System
 
-Od wersji 0.2.0 Mancer zawiera nowy, zaawansowany system logowania oparty na bibliotece Icecream, który znacznie ułatwia debugowanie i monitorowanie komend.
+Since version 0.2.0, Mancer includes a new, advanced logging system based on the Icecream library, which significantly simplifies debugging and monitoring commands.
 
-### Główne Cechy
+### Main Features
 
-- **Automatyczne wykrywanie Icecream** - jeśli biblioteka Icecream jest dostępna, system używa jej do formatowania logów, w przeciwnym razie używa standardowego loggera Pythona
-- **Hierarchiczne logowanie** - jasno zorganizowane logi na różnych poziomach (debug, info, warning, error, critical)
-- **Śledzenie pipeline'ów** - automatyczne logowanie danych wejściowych i wyjściowych komend w łańcuchach
-- **Historia wykonania** - pełna historia wykonanych komend z czasami wykonania i statusami
-- **Logowanie łańcuchów komend** - wizualizacja struktury łańcuchów komend
-- **Wsparcie dla wielu formatów danych** - formatowanie strukturalne wyników komend
+- **Automatic Icecream detection** - if the Icecream library is available, the system uses it for log formatting; otherwise, it uses the standard Python logger
+- **Hierarchical logging** - clearly organized logs at different levels (debug, info, warning, error, critical)
+- **Pipeline tracking** - automatic logging of command input and output data in chains
+- **Execution history** - complete history of executed commands with execution times and statuses
+- **Command chain logging** - visualization of command chain structures
+- **Support for multiple data formats** - structural formatting of command results
 
-### Przykład Użycia
+### Usage Example
 
 ```python
 from src.mancer.infrastructure.logging.mancer_logger import MancerLogger
 from src.mancer.domain.service.log_backend_interface import LogLevel
 
-# Pobierz singleton instancję loggera
+# Get singleton logger instance
 logger = MancerLogger.get_instance()
 
-# Skonfiguruj logger
+# Configure logger
 logger.initialize(
-    log_level=LogLevel.DEBUG,  # Poziom logowania
-    console_enabled=True,      # Logowanie do konsoli
-    file_enabled=True,         # Logowanie do pliku
-    log_file="mancer.log"      # Nazwa pliku logu
+    log_level=LogLevel.DEBUG,   # Logging level
+    console_enabled=True,       # Console logging
+    file_enabled=True,          # File logging
+    log_file="mancer.log"       # Log file name
 )
 
-# Logowanie na różnych poziomach
-logger.debug("Szczegółowe informacje debugowania")
-logger.info("Informacja o postępie")
-logger.warning("Ostrzeżenie o potencjalnym problemie")
-logger.error("Błąd podczas wykonania")
+# Logging at different levels
+logger.debug("Detailed debugging information")
+logger.info("Progress information")
+logger.warning("Warning about a potential problem")
+logger.error("Error during execution")
 
-# Logowanie z kontekstem (dodatkowymi danymi)
-logger.info("Połączenie z hostem", {
+# Logging with context (additional data)
+logger.info("Connecting to host", {
     "host": "example.com",
     "port": 22,
     "user": "admin"
 })
 ```
 
-### Zaawansowane Funkcje
+### Advanced Features
 
-Nowy system logowania obsługuje również zaawansowane scenariusze:
+The new logging system also supports advanced scenarios:
 
-- **Śledzenie pipeline'ów komend**:
+- **Command pipeline tracking**:
   ```python
-  # Loguj dane wejściowe
+  # Log input data
   logger.log_command_input("grep", input_data)
   
-  # Loguj dane wyjściowe
+  # Log output data
   logger.log_command_output("grep", output_data)
   ```
 
-- **Eksport historii komend**:
+- **Command history export**:
   ```python
-  # Eksportuj historię do pliku JSON
+  # Export history to JSON file
   history_file = logger.export_history()
-  print(f"Historia wyeksportowana do: {history_file}")
+  print(f"History exported to: {history_file}")
   ```
 
-- **Wizualizacja łańcucha komend**:
+- **Command chain visualization**:
   ```python
-  # Łańcuch komend będzie automatycznie logowany podczas wykonania
+  # Command chain will be automatically logged during execution
   chain = ls_command.pipe(grep_command).then(wc_command)
   result = chain.execute(context)
   ```
 
-Bardziej szczegółowe przykłady znajdują się w pliku `examples/new_logger_example.py`.
+More detailed examples can be found in the `examples/new_logger_example.py` file.
 
-### Kompatybilność Wsteczna
+### Backward Compatibility
 
-Nowy system został zintegrowany z istniejącym mechanizmem logowania bez naruszania kompatybilności wstecznej. Stary `CommandLoggerService` działa jako adapter, który wewnętrznie korzysta z nowego `MancerLogger` gdy jest dostępny.
+The new system has been integrated with the existing logging mechanism without breaking backward compatibility. The old `CommandLoggerService` works as an adapter that internally uses the new `MancerLogger` when available.
+
+## Development Lifecycle for Adding New Features
+
+The complete development lifecycle in Mancer follows these steps:
+
+```
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│                │     │                │     │                │     │                │
+│  1. Planning   │────►│ 2. Development │────►│   3. Testing   │────►│  4. Versioning │
+│                │     │                │     │                │     │                │
+└────────────────┘     └────────────────┘     └────────────────┘     └────────────────┘
+        │                                                                     │
+        │                                                                     ▼
+┌────────────────┐                                                   ┌────────────────┐
+│                │                                                   │                │
+│ 7. Maintenance │◄────────────────────────────────────────────────►│  5. Building   │
+│                │                                                   │                │
+└────────────────┘                                                   └────────────────┘
+        ▲                                                                     │
+        │                                                                     ▼
+        │                                                             ┌────────────────┐
+        │                                                             │                │
+        └─────────────────────────────────────────────────────────────┤  6. Publishing │
+                                                                      │                │
+                                                                      └────────────────┘
+```
+
+### 1. Planning
+
+- Define requirements for a new feature or command
+- Document expected behavior
+- Create Interfaces in `domain/interface/`
+- Design the domain model in `domain/model/`
+
+### 2. Development
+
+- Implement the domain services in `domain/service/`
+- Create concrete command implementations in `infrastructure/command/`
+- Implement backend adapters if needed in `infrastructure/backend/`
+- Add application services in `application/`
+- Create examples in `examples/`
+
+### 3. Testing
+
+- Write unit tests in `tests/unit/`
+- Add integration tests in `tests/integration/`
+- Run tests with coverage:
+  ```bash
+  ./dev_tools/run_tests.py --coverage --html
+  ```
+- Fix any bugs found during testing
+
+### 4. Versioning
+
+- Update version number in `setup.py`
+- For minor changes, `install_dev.py` will automatically increment the Z version
+- For significant changes, manually update X or Y version
+- Document version-specific behaviors if applicable
+
+### 5. Building
+
+- Build package distribution:
+  ```bash
+  ./dev_tools/build_package.py
+  ```
+- Test the built package locally:
+  ```bash
+  ./dev_tools/build_package.py --install
+  ```
+
+### 6. Publishing
+
+- Publish to PyPI or internal repository
+- Update documentation
+- Create release notes
+
+### 7. Maintenance
+
+- Monitor for bug reports
+- Implement version-specific adapters for backward compatibility
+- Update tool version configurations
