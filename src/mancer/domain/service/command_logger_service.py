@@ -7,9 +7,21 @@ from datetime import datetime
 import json
 import threading
 
+# Importuj nowy MancerLogger, ale obsłuż przypadki gdy nie jest dostępny (np. stary kod)
+try:
+    from ...infrastructure.logging.mancer_logger import MancerLogger
+    from ...domain.service.log_backend_interface import LogLevel
+    NEW_LOGGER_AVAILABLE = True
+except ImportError:
+    NEW_LOGGER_AVAILABLE = False
+
+
 class CommandLoggerService:
     """
     Uniwersalny serwis logowania komend w Mancer.
+    
+    UWAGA: Ta klasa została zachowana dla kompatybilności wstecznej.
+    Preferowane jest używanie klasy MancerLogger z nowego API logowania.
     
     Zapewnia jednolite logowanie wszystkich komend oraz ich wyników.
     Umożliwia łatwe konfigurowanie poziomu logowania oraz lokalizacji plików logów.
@@ -44,6 +56,9 @@ class CommandLoggerService:
         self._file_enabled = False
         self._initialized = False
         self._command_history = []
+        
+        # Użyj nowego MancerLogger jeśli jest dostępny
+        self._new_logger = MancerLogger.get_instance() if NEW_LOGGER_AVAILABLE else None
     
     def initialize(self, log_level: Optional[Union[int, str]] = None,
                   log_format: Optional[str] = None,
@@ -91,6 +106,28 @@ class CommandLoggerService:
             # Utwórz katalog logów, jeśli nie istnieje
             if self._file_enabled and not os.path.exists(self._log_dir):
                 os.makedirs(self._log_dir, exist_ok=True)
+            
+            # Inicjalizuj również nowy logger, jeśli jest dostępny
+            if self._new_logger:
+                # Translacja poziomów logowania
+                new_log_level = LogLevel.INFO
+                python_to_new_level = {
+                    logging.DEBUG: LogLevel.DEBUG,
+                    logging.INFO: LogLevel.INFO,
+                    logging.WARNING: LogLevel.WARNING,
+                    logging.ERROR: LogLevel.ERROR,
+                    logging.CRITICAL: LogLevel.CRITICAL
+                }
+                new_log_level = python_to_new_level.get(self._log_level, LogLevel.INFO)
+                
+                self._new_logger.initialize(
+                    log_level=new_log_level,
+                    log_format=self._log_format,
+                    log_dir=self._log_dir,
+                    log_file=self._log_file,
+                    console_enabled=self._console_enabled,
+                    file_enabled=self._file_enabled
+                )
             
             # Ustaw flagę inicjalizacji
             self._initialized = True
@@ -150,6 +187,15 @@ class CommandLoggerService:
         Returns:
             Słownik z informacjami o rozpoczętej komendzie (do użycia w log_command_end)
         """
+        # Jeśli dostępny jest nowy logger, użyj go
+        if self._new_logger:
+            return self._new_logger.log_command_start(
+                command_name=command_name,
+                command_string=command_string,
+                context_params=context_params
+            )
+        
+        # Stara implementacja
         start_time = time.time()
         timestamp = datetime.now().isoformat()
         
@@ -196,6 +242,18 @@ class CommandLoggerService:
             error: Błąd komendy (opcjonalne)
             execution_time: Czas wykonania w sekundach (opcjonalne, obliczane automatycznie)
         """
+        # Jeśli dostępny jest nowy logger, użyj go
+        if self._new_logger:
+            self._new_logger.log_command_end(
+                command_info=command_info,
+                success=success,
+                exit_code=exit_code,
+                output=output,
+                error=error
+            )
+            return
+        
+        # Stara implementacja
         # Oblicz czas wykonania, jeśli nie podano
         if execution_time is None and 'start_time' in command_info:
             execution_time = time.time() - command_info['start_time']
@@ -240,6 +298,11 @@ class CommandLoggerService:
         Returns:
             Lista słowników z informacjami o komendach
         """
+        # Jeśli dostępny jest nowy logger, użyj go
+        if self._new_logger:
+            return self._new_logger.get_command_history(limit, success_only)
+        
+        # Stara implementacja
         with self._lock:
             history = self._command_history
             
@@ -262,6 +325,11 @@ class CommandLoggerService:
         Returns:
             Ścieżka do utworzonego pliku
         """
+        # Jeśli dostępny jest nowy logger, użyj go
+        if self._new_logger:
+            return self._new_logger.export_history(filepath)
+        
+        # Stara implementacja
         if filepath is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filepath = os.path.join(self._log_dir, f'command_history_{timestamp}.json')
@@ -277,5 +345,11 @@ class CommandLoggerService:
     
     def clear_history(self) -> None:
         """Czyści historię komend"""
+        # Jeśli dostępny jest nowy logger, użyj go
+        if self._new_logger:
+            self._new_logger.clear_history()
+            return
+            
+        # Stara implementacja
         with self._lock:
             self._command_history.clear() 

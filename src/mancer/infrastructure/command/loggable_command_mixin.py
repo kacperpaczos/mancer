@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional
 from ...domain.model.command_context import CommandContext
 from ...domain.model.command_result import CommandResult
-from ...domain.service.command_logger_service import CommandLoggerService
+from ..logging.mancer_logger import MancerLogger
 
 class LoggableCommandMixin:
     """
@@ -11,9 +11,9 @@ class LoggableCommandMixin:
     a także zapisuje wyniki w historii komend.
     """
     
-    def _get_command_logger(self) -> CommandLoggerService:
-        """Pobiera instancję serwisu logowania"""
-        return CommandLoggerService.get_instance()
+    def _get_logger(self) -> MancerLogger:
+        """Pobiera instancję MancerLogger."""
+        return MancerLogger.get_instance()
     
     def _log_command_start(self, command_string: str, context: CommandContext) -> Dict[str, Any]:
         """
@@ -49,7 +49,7 @@ class LoggableCommandMixin:
                 context_params[key] = value
         
         # Loguj rozpoczęcie komendy
-        return self._get_command_logger().log_command_start(
+        return self._get_logger().log_command_start(
             command_name=command_name,
             command_string=command_string,
             context_params=context_params
@@ -63,13 +63,20 @@ class LoggableCommandMixin:
             command_info: Informacje zwrócone przez _log_command_start
             result: Wynik wykonania komendy
         """
-        self._get_command_logger().log_command_end(
+        self._get_logger().log_command_end(
             command_info=command_info,
             success=result.success,
             exit_code=result.exit_code,
             output=result.raw_output,
             error=result.error_message
         )
+        
+        # Loguj dane wejściowe i wyjściowe dla pipeline'ów
+        if hasattr(result, 'command_name') and result.structured_output:
+            self._get_logger().log_command_output(
+                command_name=result.command_name, 
+                data=result.structured_output
+            )
     
     def execute_with_logging(self, original_execute, context: CommandContext, 
                            input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -90,9 +97,31 @@ class LoggableCommandMixin:
         # Logujemy rozpoczęcie
         command_info = self._log_command_start(command_string, context)
         
+        # Jeśli mamy dane wejściowe, zaloguj je
+        if input_result:
+            command_name = self.__class__.__name__
+            if hasattr(self, 'name'):
+                command_name = getattr(self, 'name')
+            
+            self._get_logger().log_command_input(
+                command_name=command_name, 
+                data=input_result.structured_output
+            )
+            
+            # Dodaj nazwę komendy dla logowania danych wyjściowych
+            if not hasattr(input_result, 'command_name'):
+                setattr(input_result, 'command_name', command_name)
+        
         try:
             # Wykonujemy oryginalną metodę
             result = original_execute(context, input_result)
+            
+            # Dodaj nazwę komendy dla logowania danych wyjściowych
+            if not hasattr(result, 'command_name'):
+                command_name = self.__class__.__name__
+                if hasattr(self, 'name'):
+                    command_name = getattr(self, 'name')
+                setattr(result, 'command_name', command_name)
             
             # Logujemy zakończenie
             self._log_command_end(command_info, result)
@@ -107,6 +136,13 @@ class LoggableCommandMixin:
                 exit_code=-1,
                 error_message=str(e)
             )
+            
+            # Dodaj nazwę komendy dla logowania
+            command_name = self.__class__.__name__
+            if hasattr(self, 'name'):
+                command_name = getattr(self, 'name')
+            setattr(error_result, 'command_name', command_name)
+            
             self._log_command_end(command_info, error_result)
             
             # Przekazujemy wyjątek dalej

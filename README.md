@@ -374,3 +374,80 @@ When adding version-specific behavior:
 ## License
 
 This project is available under the [add your chosen license].
+
+## Nowy System Logowania
+
+Od wersji 0.2.0 Mancer zawiera nowy, zaawansowany system logowania oparty na bibliotece Icecream, który znacznie ułatwia debugowanie i monitorowanie komend.
+
+### Główne Cechy
+
+- **Automatyczne wykrywanie Icecream** - jeśli biblioteka Icecream jest dostępna, system używa jej do formatowania logów, w przeciwnym razie używa standardowego loggera Pythona
+- **Hierarchiczne logowanie** - jasno zorganizowane logi na różnych poziomach (debug, info, warning, error, critical)
+- **Śledzenie pipeline'ów** - automatyczne logowanie danych wejściowych i wyjściowych komend w łańcuchach
+- **Historia wykonania** - pełna historia wykonanych komend z czasami wykonania i statusami
+- **Logowanie łańcuchów komend** - wizualizacja struktury łańcuchów komend
+- **Wsparcie dla wielu formatów danych** - formatowanie strukturalne wyników komend
+
+### Przykład Użycia
+
+```python
+from src.mancer.infrastructure.logging.mancer_logger import MancerLogger
+from src.mancer.domain.service.log_backend_interface import LogLevel
+
+# Pobierz singleton instancję loggera
+logger = MancerLogger.get_instance()
+
+# Skonfiguruj logger
+logger.initialize(
+    log_level=LogLevel.DEBUG,  # Poziom logowania
+    console_enabled=True,      # Logowanie do konsoli
+    file_enabled=True,         # Logowanie do pliku
+    log_file="mancer.log"      # Nazwa pliku logu
+)
+
+# Logowanie na różnych poziomach
+logger.debug("Szczegółowe informacje debugowania")
+logger.info("Informacja o postępie")
+logger.warning("Ostrzeżenie o potencjalnym problemie")
+logger.error("Błąd podczas wykonania")
+
+# Logowanie z kontekstem (dodatkowymi danymi)
+logger.info("Połączenie z hostem", {
+    "host": "example.com",
+    "port": 22,
+    "user": "admin"
+})
+```
+
+### Zaawansowane Funkcje
+
+Nowy system logowania obsługuje również zaawansowane scenariusze:
+
+- **Śledzenie pipeline'ów komend**:
+  ```python
+  # Loguj dane wejściowe
+  logger.log_command_input("grep", input_data)
+  
+  # Loguj dane wyjściowe
+  logger.log_command_output("grep", output_data)
+  ```
+
+- **Eksport historii komend**:
+  ```python
+  # Eksportuj historię do pliku JSON
+  history_file = logger.export_history()
+  print(f"Historia wyeksportowana do: {history_file}")
+  ```
+
+- **Wizualizacja łańcucha komend**:
+  ```python
+  # Łańcuch komend będzie automatycznie logowany podczas wykonania
+  chain = ls_command.pipe(grep_command).then(wc_command)
+  result = chain.execute(context)
+  ```
+
+Bardziej szczegółowe przykłady znajdują się w pliku `examples/new_logger_example.py`.
+
+### Kompatybilność Wsteczna
+
+Nowy system został zintegrowany z istniejącym mechanizmem logowania bez naruszania kompatybilności wstecznej. Stary `CommandLoggerService` działa jako adapter, który wewnętrznie korzysta z nowego `MancerLogger` gdy jest dostępny.
