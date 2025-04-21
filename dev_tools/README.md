@@ -2,6 +2,60 @@
 
 This directory contains helper tools for working with the Mancer project in development mode.
 
+## Universal Development Tool
+
+For a simpler experience, you can use the all-in-one development tool:
+
+```bash
+./dev_tools/mancer_tools.sh
+```
+
+This interactive script provides a menu-based interface for all development tasks:
+- Installing/uninstalling the development environment
+- Running the application
+- Running different types of tests with various options
+- Building distribution packages
+- Checking and updating the version
+
+It combines all the functionality of individual scripts described below in a user-friendly interface.
+
+### Command Line Parameters
+
+The script can also be used in non-interactive mode with command line parameters:
+
+```bash
+# Display help
+./dev_tools/mancer_tools.sh --help
+
+# Install development environment
+./dev_tools/mancer_tools.sh --install
+
+# Run application
+./dev_tools/mancer_tools.sh --run
+
+# Run tests (with options)
+./dev_tools/mancer_tools.sh --test unit --verbose --coverage
+
+# Build package
+./dev_tools/mancer_tools.sh --build wheel --install
+
+# Uninstall environment (force mode)
+./dev_tools/mancer_tools.sh --uninstall --force
+
+# Display version
+./dev_tools/mancer_tools.sh --version
+```
+
+Available options:
+- `-h, --help` - Display help
+- `-i, --install` - Install development environment
+- `-r, --run` - Run Mancer application
+- `-t, --test [type]` - Run tests (all, unit, integration, privileged)
+- `-b, --build [format]` - Build package (all, wheel, sdist)
+- `-u, --uninstall` - Uninstall development environment
+- `-v, --version` - Display current Mancer version
+- `-f, --force` - Force operations without asking
+
 ## Development Environment Installation
 
 To install the project in development mode, run:
