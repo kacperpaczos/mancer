@@ -5,6 +5,12 @@ from ..model.data_format import DataFormat
 from ..model.execution_history import ExecutionHistory
 from ..interface.command_interface import CommandInterface
 
+try:
+    from ...infrastructure.logging.mancer_logger import MancerLogger
+    LOGGER_AVAILABLE = True
+except ImportError:
+    LOGGER_AVAILABLE = False
+
 class CommandChain:
     """Klasa reprezentująca łańcuch komend"""
     
@@ -40,10 +46,43 @@ class CommandChain:
         """Zwraca historię wykonania łańcucha komend"""
         return self.history
     
+    def _get_logger(self):
+        """Pobiera logger, jeśli jest dostępny."""
+        if LOGGER_AVAILABLE:
+            return MancerLogger.get_instance()
+        return None
+    
+    def _log_chain_structure(self):
+        """Loguje strukturę łańcucha komend."""
+        logger = self._get_logger()
+        if not logger:
+            return
+            
+        # Przygotuj opis łańcucha do zalogowania
+        chain_steps = []
+        for i, command in enumerate(self.commands):
+            command_name = command.__class__.__name__
+            if hasattr(command, 'name'):
+                command_name = getattr(command, 'name')
+                
+            step = {
+                'name': command_name,
+                'type': command.__class__.__name__,
+                'connection': 'pipe' if i > 0 and self.is_pipeline[i] else 'then',
+                'command_string': command.build_command()
+            }
+            chain_steps.append(step)
+            
+        # Zaloguj łańcuch
+        logger.log_command_chain(chain_steps)
+        
     def execute(self, context: CommandContext) -> Optional[CommandResult]:
         """Wykonuje cały łańcuch komend"""
         if not self.commands:
             return None
+        
+        # Zaloguj strukturę łańcucha przed wykonaniem
+        self._log_chain_structure()
         
         result = None
         current_context = context

@@ -62,7 +62,7 @@ Mancer implements a Domain-Driven Design architecture, organizing code into dist
                                            │
                                            ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  INTERFACE LAYER                                         │
+│                                  INTERFACE LAYER                                        │
 │                                                                                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐ │
 │  │ CLI         │  │ API         │  │ CommandFactory          │  │ ResultFormatter     │ │
@@ -71,7 +71,7 @@ Mancer implements a Domain-Driven Design architecture, organizing code into dist
                                           │
                                           ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                APPLICATION LAYER                                         │
+│                                APPLICATION LAYER                                        │
 │                                                                                         │
 │  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────────────────┐  │
 │  │ CommandExecutor     │  │ CommandChain        │  │ VersionManager                  │  │
@@ -80,48 +80,48 @@ Mancer implements a Domain-Driven Design architecture, organizing code into dist
                                           │
                                           ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  DOMAIN LAYER                                            │
+│                                  DOMAIN LAYER                                           │
 │                                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
 │  │ Models                                                                          │    │
 │  │                                                                                 │    │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
-│  │  │ CommandContext  │  │ CommandResult   │  │ VersionInfo     │                 │    │
-│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
+│  │  │ CommandContext  │  │ CommandResult   │  │ VersionInfo     │                  │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
 │  └─────────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
 │  │ Interfaces                                                                      │    │
 │  │                                                                                 │    │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
 │  │  │ ICommand        │  │ IExecutionBackend│  │ IResultParser   │                 │    │
-│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
 │  └─────────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────────────────────┐    │
 │  │ Services                                                                        │    │
 │  │                                                                                 │    │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                 │    │
-│  │  │ VersionService  │  │ FormatService   │  │ CacheService    │                 │    │
-│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                 │    │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │    │
+│  │  │ VersionService  │  │ FormatService   │  │ CacheService    │                  │    │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │    │
 │  └─────────────────────────────────────────────────────────────────────────────────┘    │
 └────────────────────────────────────────┬────────────────────────────────────────────────┘
                                           │
                                           ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 INFRASTRUCTURE LAYER                                     │
+│                                 INFRASTRUCTURE LAYER                                    │
 │                                                                                         │
 │  ┌─────────────────────────────────────────────┐  ┌─────────────────────────────────┐   │
 │  │ Command Implementations                     │  │ Execution Backends              │   │
 │  │                                             │  │                                 │   │
-│  │  ┌─────────────┐  ┌─────────────┐          │  │  ┌─────────────┐ ┌────────────┐ │   │
+│  │  ┌─────────────┐  ┌─────────────┐           │  │  ┌─────────────┐ ┌────────────┐ │   │
 │  │  │ BaseCommand │  │ SystemCommand│          │  │  │ LocalBackend│ │ SSHBackend │ │   │
-│  │  └─────┬───────┘  └─────────────┘          │  │  └─────────────┘ └────────────┘ │   │
+│  │  └─────┬───────┘  └─────────────┘           │  │  └─────────────┘ └────────────┘ │   │
 │  │        │                                    │  │                                 │   │
 │  │        ▼                                    │  └─────────────────────────────────┘   │
-│  │  ┌─────────────┐  ┌─────────────┐          │                                        │
-│  │  │ DFCommand   │  │ LSCommand   │  ...     │  ┌─────────────────────────────────┐   │
-│  │  └─────────────┘  └─────────────┘          │  │ Configuration                   │   │
+│  │  ┌─────────────┐  ┌─────────────┐           │                                        │
+│  │  │ DFCommand   │  │ LSCommand   │  ...      │  ┌─────────────────────────────────┐   │
+│  │  └─────────────┘  └─────────────┘           │  │ Configuration                   │   │
 │  │                                             │  │                                 │   │
 │  └─────────────────────────────────────────────┘  │  ┌─────────────┐ ┌────────────┐ │   │
 │                                                   │  │ ConfigLoader│ │VersionStore│ │   │
@@ -471,6 +471,83 @@ When adding version-specific behavior:
 ## License
 
 This project is available under the [add your chosen license].
+
+## New Logging System
+
+Since version 0.2.0, Mancer includes a new, advanced logging system based on the Icecream library, which significantly simplifies debugging and monitoring commands.
+
+### Main Features
+
+- **Automatic Icecream detection** - if the Icecream library is available, the system uses it for log formatting; otherwise, it uses the standard Python logger
+- **Hierarchical logging** - clearly organized logs at different levels (debug, info, warning, error, critical)
+- **Pipeline tracking** - automatic logging of command input and output data in chains
+- **Execution history** - complete history of executed commands with execution times and statuses
+- **Command chain logging** - visualization of command chain structures
+- **Support for multiple data formats** - structural formatting of command results
+
+### Usage Example
+
+```python
+from src.mancer.infrastructure.logging.mancer_logger import MancerLogger
+from src.mancer.domain.service.log_backend_interface import LogLevel
+
+# Get singleton logger instance
+logger = MancerLogger.get_instance()
+
+# Configure logger
+logger.initialize(
+    log_level=LogLevel.DEBUG,   # Logging level
+    console_enabled=True,       # Console logging
+    file_enabled=True,          # File logging
+    log_file="mancer.log"       # Log file name
+)
+
+# Logging at different levels
+logger.debug("Detailed debugging information")
+logger.info("Progress information")
+logger.warning("Warning about a potential problem")
+logger.error("Error during execution")
+
+# Logging with context (additional data)
+logger.info("Connecting to host", {
+    "host": "example.com",
+    "port": 22,
+    "user": "admin"
+})
+```
+
+### Advanced Features
+
+The new logging system also supports advanced scenarios:
+
+- **Command pipeline tracking**:
+  ```python
+  # Log input data
+  logger.log_command_input("grep", input_data)
+  
+  # Log output data
+  logger.log_command_output("grep", output_data)
+  ```
+
+- **Command history export**:
+  ```python
+  # Export history to JSON file
+  history_file = logger.export_history()
+  print(f"History exported to: {history_file}")
+  ```
+
+- **Command chain visualization**:
+  ```python
+  # Command chain will be automatically logged during execution
+  chain = ls_command.pipe(grep_command).then(wc_command)
+  result = chain.execute(context)
+  ```
+
+More detailed examples can be found in the `examples/new_logger_example.py` file.
+
+### Backward Compatibility
+
+The new system has been integrated with the existing logging mechanism without breaking backward compatibility. The old `CommandLoggerService` works as an adapter that internally uses the new `MancerLogger` when available.
 
 ## Development Lifecycle for Adding New Features
 

@@ -7,11 +7,12 @@ from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.backend.bash_backend import BashBackend
 from ..infrastructure.backend.ssh_backend import SshBackend
 from .command_cache import CommandCache
-from ..domain.service.command_logger_service import CommandLoggerService
+from ..infrastructure.logging.mancer_logger import MancerLogger
+from ..domain.service.log_backend_interface import LogLevel
 import uuid
 import hashlib
 
-# Definicje typów komend w różnych językach
+# Command type definitions in different languages
 COMMAND_TYPES_TRANSLATION = {
     "pl": {
         "ls": "Lista plików",
@@ -84,7 +85,7 @@ COMMAND_TYPES_TRANSLATION = {
 }
 
 class ShellRunner:
-    """Główna klasa aplikacji do uruchamiania komend"""
+    """Main application class for running commands"""
     
     def __init__(self, backend_type: str = "bash", 
                 context: Optional[CommandContext] = None, 
@@ -95,17 +96,17 @@ class ShellRunner:
                 log_to_file: bool = False,
                 log_level: str = "info"):
         """
-        Inicjalizuje runner komend.
+        Initializes the command runner.
         
         Args:
-            backend_type: Typ backendu ("bash" lub "ssh")
-            context: Opcjonalny kontekst wykonania
-            cache_size: Rozmiar pamięci podręcznej komend
-            enable_cache: Czy włączyć cache komend
-            enable_live_output: Czy domyślnie pokazywać wyjście komend na żywo
-            enable_command_logging: Czy włączyć logowanie komend
-            log_to_file: Czy zapisywać logi do pliku
-            log_level: Poziom logowania ("debug", "info", "warning", "error", "critical")
+            backend_type: Backend type ("bash" or "ssh")
+            context: Optional execution context
+            cache_size: Command cache size
+            enable_cache: Whether to enable command caching
+            enable_live_output: Whether to show command output in real-time by default
+            enable_command_logging: Whether to enable command logging
+            log_to_file: Whether to log to a file
+            log_level: Logging level ("debug", "info", "warning", "error", "critical")
         """
         self.factory = CommandFactory(backend_type)
         self._context = context or self._create_default_context()
@@ -113,65 +114,65 @@ class ShellRunner:
         self._cache_enabled = enable_cache
         self.enable_live_output = enable_live_output
         
-        # Inicjalizacja podsystemu logowania komend
+        # Initialize command logging subsystem
         if enable_command_logging:
-            command_logger = CommandLoggerService.get_instance()
-            command_logger.initialize(
+            logger = MancerLogger.get_instance()
+            logger.initialize(
                 log_level=log_level,
                 file_enabled=log_to_file,
                 console_enabled=True
             )
     
     def create_command(self, command_name: str) -> CommandInterface:
-        """Tworzy nową instancję komendy"""
+        """Creates a new command instance"""
         return self.factory.create_command(command_name)
     
     def execute(self, command: CommandInterface, 
                context_params: Optional[Dict[str, Any]] = None,
                cache_id: Optional[str] = None,
                live_output: bool = False) -> CommandResult:
-        """Wykonuje pojedynczą komendę lub łańcuch komend"""
-        # Kopiujemy kontekst, aby nie modyfikować globalnego
+        """Executes a single command or command chain"""
+        # Copy context to avoid modifying the global one
         context = self._prepare_context(context_params)
         
-        # Określamy, czy używamy wyjścia na żywo (live output)
+        # Determine if we're using live output
         use_live_output = live_output or self.enable_live_output
         
-        # Dla komend, które mają refresh w nazwie, zawsze włączamy live output
+        # For commands with 'refresh' in their name, always enable live output
         if "refresh" in str(command).lower():
             use_live_output = True
         
-        # Generujemy unikalny identyfikator komendy, jeśli nie podano
+        # Generate a unique command identifier if not provided
         if self._cache_enabled and cache_id is None and not use_live_output:
             cache_id = self._generate_command_id(command, context)
             
-            # Sprawdzamy, czy wynik jest w cache'u
+            # Check if the result is in the cache
             cached_result = self._command_cache.get(cache_id)
             if cached_result:
                 return cached_result
         
-        # Ustawiamy parametr live_output w kontekście
+        # Set the live_output parameter in the context
         if use_live_output:
             context.set_parameter("live_output", True)
-            context.set_parameter("live_output_interval", 0.1)  # Odświeżanie co 0.1 sekundy
+            context.set_parameter("live_output_interval", 0.1)  # Refresh every 0.1 seconds
         
-        # Wykonujemy komendę - używamy metody __call__, która zapewnia logowanie
+        # Execute the command - use __call__ method which provides logging
         if isinstance(command, CommandChain):
             result = command.execute(context)
         else:
-            # Używamy __call__ zamiast bezpośredniego execute, aby zapewnić logowanie
+            # Use __call__ instead of direct execute to ensure logging
             result = command(context) if hasattr(command, '__call__') else command.execute(context)
             
-        # Zapisujemy wynik w cache'u, jeśli cache jest włączony (ale nie dla live output)
+        # Store the result in the cache if caching is enabled (but not for live output)
         if self._cache_enabled and result and not use_live_output:
             command_str = str(command)
             
-            # Pobieramy typ komendy (nazwę klasy lub nazwę komendy)
+            # Get the command type (class name or command name)
             command_type = command.__class__.__name__
             if hasattr(command, 'name'):
                 command_type = command.name
                 
-            # Pobieramy pełne polecenie
+            # Get the full command string
             command_string = command.build_command() if hasattr(command, 'build_command') else str(command)
             
             metadata = {
@@ -189,40 +190,45 @@ class ShellRunner:
         return result
     
     def register_command(self, alias: str, command: CommandInterface) -> None:
-        """Rejestruje prekonfigurowaną komendę pod aliasem"""
+        """Registers a preconfigured command under an alias"""
         self.factory.register_command(alias, command)
     
     def get_command(self, alias: str) -> CommandInterface:
-        """Pobiera prekonfigurowaną komendę według aliasu"""
+        """Gets a preconfigured command by alias"""
         return self.factory.get_command(alias)
     
     def _prepare_context(self, context_params: Optional[Dict[str, Any]] = None) -> CommandContext:
-        """Przygotowuje kontekst wykonania komendy"""
-        # Tworzymy kopię głównego kontekstu
-        context = CommandContext(
-            current_directory=self._context.current_directory,
-            environment_variables=self._context.environment_variables.copy(),
-            execution_mode=self._context.execution_mode,
-            remote_host=self._context.remote_host
-        )
+        """Prepares the command execution context"""
+        # Copy the base context
+        context = self._context.clone()
         
-        # Dodajemy parametry kontekstu, jeśli są
+        # Add parameters if provided
         if context_params:
             for key, value in context_params.items():
                 context.set_parameter(key, value)
-                
+        
         return context
     
+    def _create_default_context(self) -> CommandContext:
+        """Creates a default execution context"""
+        import os
+        return CommandContext(current_directory=os.getcwd())
+    
     def _generate_command_id(self, command: CommandInterface, context: CommandContext) -> str:
-        """Generuje unikalny identyfikator komendy na podstawie jej parametrów i kontekstu"""
-        # Tworzymy hash na podstawie reprezentacji tekstowej komendy i kontekstu
-        command_str = str(command)
-        context_str = f"{context.current_directory}:{context.execution_mode}"
+        """Generates a unique identifier for a command in a specific context"""
+        # Get command string
+        cmd_str = command.build_command() if hasattr(command, "build_command") else str(command)
+        
+        # Create a string containing all the contextual information
+        context_str = f"{context.current_directory}|{context.execution_mode}|"
+        
+        # Add remote host info if applicable
         if context.remote_host:
-            context_str += f":{context.remote_host.host}:{context.remote_host.user}"
-            
-        hash_input = f"{command_str}:{context_str}:{uuid.uuid4()}"
-        return hashlib.md5(hash_input.encode()).hexdigest()
+            context_str += f"{context.remote_host.hostname}|{context.remote_host.username}|{context.remote_host.port}"
+        
+        # Combine and hash
+        combined = f"{cmd_str}|{context_str}"
+        return hashlib.md5(combined.encode('utf-8')).hexdigest()
     
     def set_remote_execution(self, host: str, user: Optional[str] = None, 
                            port: int = 22, key_file: Optional[str] = None,
@@ -232,259 +238,242 @@ class ShellRunner:
                            gssapi_auth: bool = False, gssapi_keyex: bool = False,
                            gssapi_delegate_creds: bool = False,
                            ssh_options: Optional[Dict[str, str]] = None) -> None:
-        """Ustawia tryb wykonania zdalnego
+        """
+        Configures the runner for remote command execution via SSH.
         
         Args:
-            host: Nazwa hosta lub adres IP zdalnego serwera
-            user: Nazwa użytkownika (opcjonalnie)
-            port: Port SSH (domyślnie 22)
-            key_file: Ścieżka do pliku klucza prywatnego (opcjonalnie)
-            password: Hasło (opcjonalnie, niezalecane - lepiej używać kluczy)
-            use_sudo: Czy automatycznie używać sudo dla komend, które tego wymagają
-            sudo_password: Hasło do sudo (opcjonalnie)
-            use_agent: Czy używać agenta SSH do uwierzytelniania
-            certificate_file: Ścieżka do pliku certyfikatu SSH
-            identity_only: Czy używać tylko podanego klucza/certyfikatu (IdentitiesOnly=yes)
-            gssapi_auth: Czy używać uwierzytelniania GSSAPI (Kerberos)
-            gssapi_keyex: Czy używać wymiany kluczy GSSAPI
-            gssapi_delegate_creds: Czy delegować poświadczenia GSSAPI
-            ssh_options: Dodatkowe opcje SSH jako słownik
+            host: Remote host address
+            user: SSH username
+            port: SSH port
+            key_file: SSH private key file
+            password: SSH password (not recommended, use key authentication)
+            use_sudo: Whether to use sudo for commands
+            sudo_password: Password for sudo
+            use_agent: Whether to use SSH agent
+            certificate_file: SSH certificate file
+            identity_only: Whether to only use the specified identity
+            gssapi_auth: Whether to use GSSAPI authentication
+            gssapi_keyex: Whether to use GSSAPI key exchange
+            gssapi_delegate_creds: Whether to delegate GSSAPI credentials
+            ssh_options: Additional SSH options
         """
-        self._context.set_remote_execution(
-            host=host,
-            user=user,
+        # Create remote host info
+        remote_host = RemoteHostInfo(
+            hostname=host,
+            username=user,
             port=port,
-            key_file=key_file,
             password=password,
+            key_filename=key_file,
             use_sudo=use_sudo,
             sudo_password=sudo_password,
-            use_agent=use_agent,
+            allow_agent=use_agent,
             certificate_file=certificate_file,
             identity_only=identity_only,
             gssapi_auth=gssapi_auth,
-            gssapi_keyex=gssapi_keyex,
+            gssapi_kex=gssapi_keyex,
             gssapi_delegate_creds=gssapi_delegate_creds,
-            ssh_options=ssh_options
+            ssh_options=ssh_options or {}
         )
         
-        # Tworzymy backend SSH
-        self.remote_backend = SshBackend(
-            host=host,
-            user=user,
-            port=port,
-            key_file=key_file,
-            password=password,
-            use_sudo=use_sudo,
-            sudo_password=sudo_password,
-            use_agent=use_agent,
-            certificate_file=certificate_file,
-            identity_only=identity_only,
-            gssapi_auth=gssapi_auth,
-            gssapi_keyex=gssapi_keyex,
-            gssapi_delegate_creds=gssapi_delegate_creds,
-            ssh_options=ssh_options
-        )
+        # Set remote execution mode in context
+        self._context.set_remote_execution(remote_host)
+        
+        # Log the change
+        logger = MancerLogger.get_instance()
+        logger.info(f"Remote execution set to {host}:{port}", {
+            "user": user,
+            "use_sudo": use_sudo,
+            "use_agent": use_agent
+        })
     
     def set_local_execution(self) -> None:
-        """Ustawia tryb wykonania lokalnego"""
+        """Sets the execution mode back to local"""
         self._context.set_local_execution()
+        
+        # Log the change
+        logger = MancerLogger.get_instance()
+        logger.info("Execution mode set to local")
     
     def get_backend(self):
-        """Zwraca odpowiedni backend na podstawie trybu wykonania"""
-        if self._context.is_remote():
-            if not self.remote_backend:
-                # Jeśli nie mamy jeszcze backendu SSH, tworzymy go
-                remote_host = self._context.remote_host
-                self.remote_backend = SshBackend(
-                    host=remote_host.host,
-                    user=remote_host.user,
-                    port=remote_host.port,
-                    key_file=remote_host.key_file,
-                    password=remote_host.password,
-                    use_sudo=remote_host.use_sudo,
-                    sudo_password=remote_host.sudo_password,
-                    use_agent=remote_host.use_agent,
-                    certificate_file=remote_host.certificate_file,
-                    identity_only=remote_host.identity_only,
-                    gssapi_auth=remote_host.gssapi_auth,
-                    gssapi_keyex=remote_host.gssapi_keyex,
-                    gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
-                    ssh_options=remote_host.ssh_options
-                )
-            return self.remote_backend
+        """Returns the current execution backend"""
+        if self._context.execution_mode == ExecutionMode.REMOTE:
+            # Create an SSH backend
+            return SshBackend(
+                hostname=self._context.remote_host.hostname,
+                username=self._context.remote_host.username,
+                password=self._context.remote_host.password,
+                port=self._context.remote_host.port,
+                key_filename=self._context.remote_host.key_filename,
+                allow_agent=self._context.remote_host.allow_agent,
+                look_for_keys=True
+            )
         else:
-            return self.local_backend
-    
-    # Metody do zarządzania cache'em
+            # Use local bash backend
+            return BashBackend()
     
     def enable_cache(self, max_size: int = 100, auto_refresh: bool = False, 
                     refresh_interval: int = 5) -> None:
         """
-        Włącza cache dla wyników komend.
+        Enables command result caching.
         
         Args:
-            max_size: Maksymalna liczba przechowywanych wyników komend
-            auto_refresh: Czy automatycznie odświeżać cache
-            refresh_interval: Interwał odświeżania w sekundach
+            max_size: Maximum number of cached results
+            auto_refresh: Whether to automatically refresh cached results
+            refresh_interval: Refresh interval in minutes
         """
-        if not self._cache_enabled:
-            self._cache_enabled = True
-            self._command_cache = CommandCache(
-                max_size=max_size,
-                auto_refresh=auto_refresh,
-                refresh_interval=refresh_interval
-            )
-        else:
-            # Jeśli cache już istnieje, aktualizujemy jego parametry
-            self._command_cache.set_auto_refresh(auto_refresh, refresh_interval)
+        self._cache_enabled = True
+        self._command_cache.set_max_size(max_size)
+        
+        if auto_refresh:
+            self._command_cache.enable_auto_refresh(refresh_interval)
+            
+        # Log the change
+        logger = MancerLogger.get_instance()
+        logger.info(f"Command cache enabled (size: {max_size}, auto refresh: {auto_refresh})")
     
     def disable_cache(self) -> None:
-        """Wyłącza cache dla wyników komend"""
-        if self._cache_enabled and self._command_cache:
-            self._command_cache.stop_refresh()
-            self._cache_enabled = False
-            self._command_cache = None
+        """Disables command result caching"""
+        self._cache_enabled = False
+        self._command_cache.disable_auto_refresh()
+        
+        # Log the change
+        logger = MancerLogger.get_instance()
+        logger.info("Command cache disabled")
     
     def clear_cache(self) -> None:
-        """Czyści cache wyników komend"""
-        if self._cache_enabled and self._command_cache:
-            self._command_cache.clear()
+        """Clears all cached command results"""
+        self._command_cache.clear()
     
     def get_cache_statistics(self) -> Dict[str, Any]:
-        """
-        Zwraca statystyki cache.
-        
-        Returns:
-            Słownik ze statystykami lub pusty słownik, jeśli cache jest wyłączony
-        """
-        if self._cache_enabled and self._command_cache:
-            return self._command_cache.get_statistics()
-        return {}
+        """Returns statistics about the command cache"""
+        return {
+            "enabled": self._cache_enabled,
+            "size": self._command_cache.get_size(),
+            "max_size": self._command_cache.get_max_size(),
+            "hit_count": self._command_cache.get_hit_count(),
+            "miss_count": self._command_cache.get_miss_count(),
+            "hit_ratio": self._command_cache.get_hit_ratio()
+        }
     
     def get_command_history(self, limit: Optional[int] = None, 
                            success_only: bool = False) -> List[Any]:
         """
-        Pobiera historię wykonanych komend.
+        Gets the command execution history.
         
         Args:
-            limit: Maksymalna liczba zwracanych wpisów (od najnowszych)
-            success_only: Czy zwracać tylko komendy zakończone sukcesem
+            limit: Maximum number of history entries to return
+            success_only: Whether to only return successful commands
             
         Returns:
-            Lista krotek (command_id, timestamp, success) lub pusta lista, jeśli cache jest wyłączony
+            List of command history entries
         """
-        if self._cache_enabled and self._command_cache:
-            return self._command_cache.get_history(limit, success_only)
-        return []
+        # Get history from the logger
+        logger = MancerLogger.get_instance()
+        return logger.get_command_history(limit=limit, success_only=success_only)
     
     def get_cached_result(self, command_id: str) -> Optional[CommandResult]:
         """
-        Pobiera wynik komendy z cache.
+        Gets a cached command result by ID.
         
         Args:
-            command_id: Identyfikator komendy
+            command_id: The cache ID of the command
             
         Returns:
-            Wynik komendy lub None, jeśli nie znaleziono lub cache wyłączony
+            The cached result or None if not found
         """
-        if not self._cache_enabled or not self._command_cache:
+        if not self._cache_enabled:
             return None
             
-        result = self._command_cache.get(command_id)
-        
-        # Pobierz również metadane z cache i dodaj je do wyniku
-        if result:
-            metadata_entry = self._command_cache.get_with_metadata(command_id)
-            if metadata_entry and len(metadata_entry) > 2:
-                _, _, meta_dict = metadata_entry
-                if meta_dict and 'metadata' in meta_dict:
-                    # Zaktualizuj metadane w wyniku, zachowując istniejące
-                    if result.metadata is None:
-                        result.metadata = meta_dict['metadata']
-                    else:
-                        result.metadata.update(meta_dict['metadata'])
-                        
-        return result
+        return self._command_cache.get(command_id)
     
     def export_cache_data(self, include_results: bool = True) -> Dict[str, Any]:
         """
-        Eksportuje dane cache do formatu JSON.
+        Exports the command cache data.
         
         Args:
-            include_results: Czy dołączać pełne wyniki komend
+            include_results: Whether to include full command results
             
         Returns:
-            Słownik z danymi cache lub pusty słownik, jeśli cache jest wyłączony
+            Dictionary with cache data
         """
-        if self._cache_enabled and self._command_cache:
-            return self._command_cache.export_data(include_results)
-        return {}
-
+        return self._command_cache.export_data(include_results=include_results)
+    
     def execute_live(self, command: CommandInterface, 
                    context_params: Optional[Dict[str, Any]] = None) -> CommandResult:
         """
-        Wykonuje komendę z wyświetlaniem wyjścia w czasie rzeczywistym.
-        Jest to skrót dla execute(command, context_params, live_output=True).
+        Executes a command with live output.
         
         Args:
-            command: Komenda do wykonania
-            context_params: Dodatkowe parametry kontekstu (opcjonalnie)
+            command: The command to execute
+            context_params: Additional context parameters
             
         Returns:
-            CommandResult: Wynik wykonania komendy
+            Command execution result
         """
         return self.execute(command, context_params, live_output=True)
-        
+    
     def create_bash_command(self, command_str: str) -> CommandInterface:
         """
-        Tworzy komendę bash z podanego stringa.
-        Jest to pomocnicza metoda ułatwiająca tworzenie komend shell.
+        Creates a raw bash command.
         
         Args:
-            command_str: Komenda bash do wykonania
+            command_str: Bash command string
             
         Returns:
-            CommandInterface: Obiekt komendy
+            Command interface
         """
-        from ..domain.model.shell_command import ShellCommand
-        return ShellCommand(command_str, self.get_backend())
-
+        from ..infrastructure.command.system.echo_command import EchoCommand
+        
+        # Create a placeholder echo command
+        echo = EchoCommand()
+        
+        # Set the raw bash command as the command string
+        echo.command_str = command_str
+        
+        # Override the build_command method
+        def _build_command():
+            return command_str
+            
+        echo.build_command = _build_command
+        
+        return echo
+    
     def get_command_type_name(self, command_type: str, language: Optional[str] = None) -> str:
         """
-        Zwraca nazwę typu komendy w określonym języku.
+        Gets a human-readable name for a command type in the specified language.
         
         Args:
-            command_type: Typ komendy (np. 'ls', 'ps')
-            language: Kod języka ('pl', 'en'), domyślnie używa języka ustawionego w instancji
+            command_type: Command type (e.g., "ls", "grep")
+            language: Language code ("en" or "pl")
             
         Returns:
-            Nazwa typu komendy lub command_type jeśli brak tłumaczenia
+            Human-readable command name
         """
-        lang = language or self.language
-        if lang not in COMMAND_TYPES_TRANSLATION:
-            return command_type
-            
-        translations = COMMAND_TYPES_TRANSLATION[lang]
-        return translations.get(command_type, command_type)
+        language = language or self._context.get_parameter("language", "en")
+        
+        if language in COMMAND_TYPES_TRANSLATION and command_type in COMMAND_TYPES_TRANSLATION[language]:
+            return COMMAND_TYPES_TRANSLATION[language][command_type]
+        
+        return command_type
     
     def set_language(self, language: str) -> None:
         """
-        Ustawia język dla nazw komend.
+        Sets the UI language.
         
         Args:
-            language: Kod języka ('pl', 'en')
+            language: Language code ("en" or "pl")
         """
-        if language in COMMAND_TYPES_TRANSLATION:
-            self.language = language
-        else:
-            raise ValueError(f"Nieobsługiwany język: {language}")
+        if language not in self.get_available_languages():
+            raise ValueError(f"Unsupported language: {language}")
             
+        self._context.set_parameter("language", language)
+    
     def get_available_languages(self) -> List[str]:
         """
-        Zwraca listę dostępnych języków.
+        Returns a list of available UI languages.
         
         Returns:
-            Lista kodów języków
+            List of language codes
         """
         return list(COMMAND_TYPES_TRANSLATION.keys())
 
