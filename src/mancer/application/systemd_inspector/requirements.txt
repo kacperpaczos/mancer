@@ -1,0 +1,2 @@
+cryptography>=3.4.0
+sshpass>=1.0.6 
