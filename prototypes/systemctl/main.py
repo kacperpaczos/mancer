@@ -5,6 +5,7 @@ import json
 import os
 import base64
 from cryptography.fernet import Fernet
+import concurrent.futures
 
 def get_encryption_key():
     # Używamy stałego klucza dla uproszczenia (w produkcji należy użyć bezpieczniejszego rozwiązania)
@@ -27,10 +28,14 @@ def decrypt_password(encrypted_password):
         print(f"Błąd deszyfrowania hasła: {str(e)}")
         return None
 
-def get_systemd_units(hostname, username, password=None):
+def get_systemd_units(server_info):
+    hostname = server_info['hostname']
+    username = server_info['username']
+    password = server_info['password']
+    
     try:
         # Tworzymy unikalną nazwę pliku tymczasowego
-        temp_filename = f"systemd_units_temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        temp_filename = f"systemd_units_temp_{hostname}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         remote_temp_file = f"/tmp/{temp_filename}"
         
         # Polecenie do pobrania wszystkich jednostek i zapisania do pliku
@@ -68,14 +73,80 @@ def get_systemd_units(hostname, username, password=None):
         # Usuń lokalny plik tymczasowy
         os.remove(temp_filename)
         
-        return content
+        return {
+            'hostname': hostname,
+            'content': content,
+            'status': 'success'
+        }
         
     except subprocess.CalledProcessError as e:
-        print(f"Błąd wykonania polecenia: {e}")
-        return None
+        print(f"Błąd wykonania polecenia dla {hostname}: {e}")
+        return {
+            'hostname': hostname,
+            'content': None,
+            'status': 'error',
+            'error': f"Błąd wykonania polecenia: {e}"
+        }
     except Exception as e:
-        print(f"Wystąpił błąd: {str(e)}")
-        return None
+        print(f"Wystąpił błąd dla {hostname}: {str(e)}")
+        return {
+            'hostname': hostname,
+            'content': None,
+            'status': 'error',
+            'error': f"Wystąpił błąd: {str(e)}"
+        }
+
+def manage_systemd_service(server_info, service_name, action):
+    hostname = server_info['hostname']
+    username = server_info['username']
+    password = server_info['password']
+    
+    valid_actions = ['start', 'stop', 'restart', 'status', 'enable', 'disable']
+    if action not in valid_actions:
+        return {
+            'hostname': hostname,
+            'status': 'error',
+            'error': f"Nieprawidłowa akcja: {action}. Dostępne: {', '.join(valid_actions)}"
+        }
+    
+    try:
+        # Polecenie do zarządzania usługą
+        systemctl_cmd = f"systemctl {action} {service_name}"
+        
+        # Wykonaj polecenie na zdalnym serwerze
+        if password:
+            ssh_cmd = f"sshpass -p '{password}' ssh {username}@{hostname} '{systemctl_cmd}'"
+        else:
+            ssh_cmd = f"ssh {username}@{hostname} '{systemctl_cmd}'"
+        
+        # Wykonaj polecenie SSH i pobierz wynik
+        result = subprocess.run(ssh_cmd, shell=True, check=True, capture_output=True, text=True)
+        
+        return {
+            'hostname': hostname,
+            'service': service_name,
+            'action': action,
+            'output': result.stdout,
+            'status': 'success'
+        }
+        
+    except subprocess.CalledProcessError as e:
+        return {
+            'hostname': hostname,
+            'service': service_name,
+            'action': action,
+            'status': 'error',
+            'error': f"Błąd wykonania polecenia: {e}",
+            'output': e.stdout if hasattr(e, 'stdout') else ''
+        }
+    except Exception as e:
+        return {
+            'hostname': hostname,
+            'service': service_name,
+            'action': action,
+            'status': 'error',
+            'error': f"Wystąpił błąd: {str(e)}"
+        }
 
 def parse_units(units_output):
     units = {
@@ -100,7 +171,7 @@ def parse_units(units_output):
             'failed': [],
             'other': []
         },
-        'dimark': [], #TODO Kategoryzowac ponazwie,nie na sztywno.
+        'dimark': {}, # Kategorie dimark według wzorca nazwy
         'user': []
     }
     
@@ -149,9 +220,15 @@ def parse_units(units_output):
             else:
                 units['by_state']['other'].append(unit_info)
             
-            # Sprawdź czy to jednostka dimark
+            # Sprawdź czy to jednostka dimark i kategoryzuj według nazwy
             if 'dimark_' in unit_name.lower():
-                units['dimark'].append(unit_info)
+                # Wyodrębnij nazwę kategorii z nazwy jednostki
+                parts = unit_name.lower().split('dimark_')
+                if len(parts) > 1:
+                    category = parts[1].split('_')[0] if '_' in parts[1] else parts[1].split('.')[0]
+                    if category not in units['dimark']:
+                        units['dimark'][category] = []
+                    units['dimark'][category].append(unit_info)
             
             # Sprawdź czy to jednostka użytkownika
             if '@' in unit_name or 'user' in unit_name:
@@ -184,8 +261,10 @@ def save_report(hostname, units):
         f.write("JEDNOSTKI DIMARK:\n")
         f.write("-" * 20 + "\n")
         if units['dimark']:
-            for unit in units['dimark']:
-                f.write(f"{unit}\n")
+            for category, services in units['dimark'].items():
+                f.write(f"\nKategoria {category.upper()}:\n")
+                for unit in services:
+                    f.write(f"{unit}\n")
         else:
             f.write("Brak jednostek dimark\n")
         f.write("\n")
@@ -221,55 +300,251 @@ def save_report(hostname, units):
     
     return filename
 
-def load_profile():
-    if os.path.exists('connection_profile.json'):
+def load_servers_profile():
+    if os.path.exists('servers_profile.json'):
         try:
-            with open('connection_profile.json', 'r') as f:
-                profile = json.load(f)
-                print("\nZnaleziono zapisany profil połączenia:")
-                print(f"Host: {profile['hostname']}")
-                print(f"Użytkownik: {profile['username']}")
+            with open('servers_profile.json', 'r') as f:
+                servers = json.load(f)
                 
-                use_profile = input("\nCzy chcesz użyć tego profilu? (t/n): ").lower()
-                if use_profile == 't':
-                    return profile['hostname'], profile['username'], profile['password']
+                if servers and len(servers) > 0:
+                    print(f"\nZnaleziono {len(servers)} zapisanych serwerów:")
+                    for i, server in enumerate(servers, 1):
+                        print(f"{i}. {server['hostname']} (użytkownik: {server['username']})")
+                    
+                    use_profile = input("\nCzy chcesz użyć tych profili? (t/n): ").lower()
+                    if use_profile == 't':
+                        # Odszyfruj hasła
+                        for server in servers:
+                            if 'password' in server and server['password']:
+                                server['password'] = decrypt_password(server['password'])
+                        return servers
         except Exception as e:
-            print(f"Błąd odczytu profilu: {str(e)}")
-    return None, None, None
+            print(f"Błąd odczytu profilu serwerów: {str(e)}")
+    return []
 
-def save_profile(hostname, username, password):
-    profile = {
+def save_servers_profile(servers):
+    # Zaszyfruj hasła przed zapisem
+    servers_to_save = []
+    for server in servers:
+        server_copy = server.copy()
+        if 'password' in server_copy and server_copy['password']:
+            server_copy['password'] = encrypt_password(server_copy['password'])
+        servers_to_save.append(server_copy)
+    
+    try:
+        with open('servers_profile.json', 'w') as f:
+            json.dump(servers_to_save, f, indent=4)
+        print("Profile serwerów zostały zapisane")
+    except Exception as e:
+        print(f"Błąd zapisu profili serwerów: {str(e)}")
+
+def add_server():
+    hostname = input("Podaj adres hosta: ")
+    username = input("Podaj nazwę użytkownika: ")
+    password = getpass.getpass("Podaj hasło (zostaw puste dla autoryzacji kluczem): ")
+    
+    return {
+        'hostname': hostname,
+        'username': username,
+        'password': password if password else None
+    }
+
+def edit_server(server):
+    print(f"Edycja serwera {server['hostname']} (użytkownik: {server['username']})")
+    hostname = input(f"Nowy adres hosta [{server['hostname']}]: ") or server['hostname']
+    username = input(f"Nowa nazwa użytkownika [{server['username']}]: ") or server['username']
+    
+    change_password = input("Czy chcesz zmienić hasło? (t/n): ").lower()
+    password = server['password']
+    if change_password == 't':
+        password = getpass.getpass("Podaj nowe hasło (zostaw puste dla autoryzacji kluczem): ")
+        password = password if password else None
+    
+    return {
         'hostname': hostname,
         'username': username,
         'password': password
     }
-    try:
-        with open('connection_profile.json', 'w') as f:
-            json.dump(profile, f, indent=4)
-        print("Profil połączenia został zapisany")
-    except Exception as e:
-        print(f"Błąd zapisu profilu: {str(e)}")
+
+def manage_servers():
+    servers = load_servers_profile()
+    
+    while True:
+        print("\nZARZĄDZANIE SERWERAMI")
+        print("-" * 30)
+        print(f"Liczba zapisanych serwerów: {len(servers)}")
+        
+        for i, server in enumerate(servers, 1):
+            print(f"{i}. {server['hostname']} (użytkownik: {server['username']})")
+        
+        print("\nOpcje:")
+        print("1. Dodaj nowy serwer")
+        print("2. Edytuj serwer")
+        print("3. Usuń serwer")
+        print("4. Zapisz i wróć")
+        
+        choice = input("\nWybierz opcję (1-4): ")
+        
+        if choice == '1':
+            server = add_server()
+            servers.append(server)
+            print(f"Dodano serwer {server['hostname']}")
+        
+        elif choice == '2':
+            if not servers:
+                print("Brak serwerów do edycji!")
+                continue
+                
+            server_idx = int(input("Podaj numer serwera do edycji: ")) - 1
+            if 0 <= server_idx < len(servers):
+                updated_server = edit_server(servers[server_idx])
+                servers[server_idx] = updated_server
+                print(f"Zaktualizowano serwer {updated_server['hostname']}")
+            else:
+                print("Nieprawidłowy numer serwera!")
+        
+        elif choice == '3':
+            if not servers:
+                print("Brak serwerów do usunięcia!")
+                continue
+                
+            server_idx = int(input("Podaj numer serwera do usunięcia: ")) - 1
+            if 0 <= server_idx < len(servers):
+                removed = servers.pop(server_idx)
+                print(f"Usunięto serwer {removed['hostname']}")
+            else:
+                print("Nieprawidłowy numer serwera!")
+        
+        elif choice == '4':
+            save_servers_profile(servers)
+            break
+        
+        else:
+            print("Nieprawidłowa opcja!")
+    
+    return servers
+
+def process_servers(servers):
+    if not servers:
+        print("Brak serwerów do przetworzenia!")
+        return
+    
+    print(f"\nPrzetwarzanie {len(servers)} serwerów...")
+    
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(5, len(servers))) as executor:
+        future_to_server = {executor.submit(get_systemd_units, server): server for server in servers}
+        for future in concurrent.futures.as_completed(future_to_server):
+            server = future_to_server[future]
+            try:
+                result = future.result()
+                results.append(result)
+                if result['status'] == 'success':
+                    print(f"✓ Pobrano dane z {result['hostname']}")
+                else:
+                    print(f"✗ Błąd pobierania danych z {result['hostname']}: {result.get('error', 'Nieznany błąd')}")
+            except Exception as e:
+                print(f"✗ Wyjątek dla {server['hostname']}: {str(e)}")
+    
+    successful_results = [r for r in results if r['status'] == 'success']
+    failed_results = [r for r in results if r['status'] != 'success']
+    
+    print(f"\nPodsumowanie: {len(successful_results)} sukces, {len(failed_results)} błąd")
+    
+    if successful_results:
+        for result in successful_results:
+            units = parse_units(result['content'])
+            filename = save_report(result['hostname'], units)
+            print(f"Raport dla {result['hostname']} zapisany do pliku: {filename}")
+    
+    return results
 
 def main():
-    saved_hostname, saved_username, saved_password = load_profile()
-    
-    if saved_hostname and saved_username and saved_password:
-        hostname = saved_hostname
-        username = saved_username
-        password = saved_password
-    else:
-        hostname = input("Podaj adres hosta: ")
-        username = input("Podaj nazwę użytkownika: ")
-        password = getpass.getpass("Podaj hasło: ")
-        save_profile(hostname, username, password)
-    
-    print("Łączenie z serwerem...")
-    units_output = get_systemd_units(hostname, username, password)
-    
-    if units_output:
-        units = parse_units(units_output)
-        filename = save_report(hostname, units)
-        print(f"\nRaport został zapisany do pliku: {filename}")
+    while True:
+        print("\nMENU GŁÓWNE")
+        print("-" * 20)
+        print("1. Zarządzaj serwerami")
+        print("2. Pobierz dane z serwerów")
+        print("3. Zarządzaj usługami")
+        print("4. Wyjście")
+        
+        choice = input("\nWybierz opcję (1-4): ")
+        
+        if choice == '1':
+            servers = manage_servers()
+        
+        elif choice == '2':
+            servers = load_servers_profile()
+            if not servers:
+                print("Brak zapisanych serwerów. Najpierw dodaj serwery.")
+                continue
+            
+            process_servers(servers)
+            
+            # Zapytaj czy chcemy dodać więcej serwerów
+            add_more = input("\nCzy chcesz dodać więcej serwerów? (t/n): ").lower()
+            if add_more == 't':
+                servers = manage_servers()
+        
+        elif choice == '3':
+            servers = load_servers_profile()
+            if not servers:
+                print("Brak zapisanych serwerów. Najpierw dodaj serwery.")
+                continue
+            
+            # Wybierz serwer
+            print("\nWybierz serwer:")
+            for i, server in enumerate(servers, 1):
+                print(f"{i}. {server['hostname']} (użytkownik: {server['username']})")
+            
+            server_idx = int(input("\nPodaj numer serwera: ")) - 1
+            if not (0 <= server_idx < len(servers)):
+                print("Nieprawidłowy numer serwera!")
+                continue
+            
+            selected_server = servers[server_idx]
+            
+            # Wybierz akcję dla usługi
+            print("\nZarządzanie usługami dla", selected_server['hostname'])
+            print("1. Pokaż status usługi")
+            print("2. Uruchom usługę")
+            print("3. Zatrzymaj usługę")
+            print("4. Zrestartuj usługę")
+            print("5. Włącz usługę (enable)")
+            print("6. Wyłącz usługę (disable)")
+            
+            action_choice = input("\nWybierz akcję (1-6): ")
+            actions = {
+                '1': 'status',
+                '2': 'start',
+                '3': 'stop',
+                '4': 'restart',
+                '5': 'enable',
+                '6': 'disable'
+            }
+            
+            if action_choice in actions:
+                service_name = input("Podaj nazwę usługi: ")
+                result = manage_systemd_service(selected_server, service_name, actions[action_choice])
+                
+                print(f"\nWynik operacji {actions[action_choice]} dla {service_name} na {result['hostname']}:")
+                if result['status'] == 'success':
+                    print("Status: SUKCES")
+                    if result.get('output'):
+                        print(result['output'])
+                else:
+                    print(f"Status: BŁĄD - {result.get('error', 'Nieznany błąd')}")
+                    if result.get('output'):
+                        print(result['output'])
+            else:
+                print("Nieprawidłowa opcja!")
+        
+        elif choice == '4':
+            print("Do widzenia!")
+            break
+        
+        else:
+            print("Nieprawidłowa opcja!")
 
 if __name__ == "__main__":
     main()
