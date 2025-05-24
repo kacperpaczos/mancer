@@ -1,0 +1,30 @@
+{
+    "presets": {
+        "none": {
+            "description": "Clean Debian environment with Python and SSH",
+            "enabled": true
+        },
+        "basic_web": {
+            "description": "Web server environment with Nginx, Apache, and Flask",
+            "enabled": true
+        },
+        "sac": {
+            "description": "SAC environment with multiple application configs",
+            "enabled": true
+        }
+    },
+    "containers": {
+        "mancer-test-1": {
+            "preset": "none",
+            "enabled": true
+        },
+        "mancer-test-2": {
+            "preset": "none",
+            "enabled": true
+        },
+        "mancer-test-3": {
+            "preset": "none",
+            "enabled": true
+        }
+    }
+} 
