@@ -1,110 +1,178 @@
-# Docker Test Environment for Mancer
+# Mancer Docker Test Environment
 
-This directory contains Docker configurations to create a test environment for Mancer prototypes on Debian-based containers with SSH access.
+A comprehensive test environment for prototyping and testing Mancer solutions in Debian containers.
 
-## Overview
+---
 
-The setup provides:
-- Multiple Debian containers with SSH enabled
-- Python environments pre-configured
-- Ability to test Mancer prototype SSH functionality
-- Volume mapping for easy code sharing between host and containers
+## Table of Contents
+1. [What Has Been Done?](#what-has-been-done)
+2. [Requirements](#requirements)
+3. [Quick Start](#quick-start)
+4. [Preset Management](#preset-management)
+5. [Starting the Environment](#starting-the-environment)
+6. [Accessing Containers](#accessing-containers)
+7. [Cleaning Up the Environment](#cleaning-up-the-environment)
+8. [Directory Structure](#directory-structure)
+9. [Example Presets](#example-presets)
+10. [Troubleshooting](#troubleshooting)
+11. [Best Practices](#best-practices)
+12. [Contact](#contact)
+
+---
+
+## What Has Been Done?
+- **Interactive preset manager** (`manage_presets.sh`):
+  - Create, remove, assign, enable/disable presets for containers.
+  - Configuration is stored in `presets.json`.
+- **Automated environment startup** (`start_test.sh`):
+  - Loads configuration from `presets.json` and `.env`.
+  - Builds and starts Docker containers.
+  - Tests SSH connections and inter-container connectivity.
+- **Environment cleanup** (`cleanup.sh`):
+  - Removes containers, network, volumes, and the `.env` file.
+- **Example presets**: `none`, `sac`, `basic_web`.
+
+---
 
 ## Requirements
+- Linux with sudo privileges
+- Docker & Docker Compose
+- jq
+- git
 
-- Docker
-- Docker Compose
+---
 
-## Setup
-
-1. Copy the example environment file:
-   ```
-   cp env.example .env
-   ```
-
-2. Edit the `.env` file to customize user credentials and SSH ports if needed.
-
-3. Run the setup script:
-   ```
-   ./setup.sh
-   ```
-
-The script will:
-- Check if Docker and Docker Compose are installed
-- Create the .env file if it doesn't exist
-- Build and start the Docker containers
-- Test SSH connections to all containers
-- Display connection information
-
-## Container Details
-
-By default, three containers are created:
-
-| Container Name | User     | Password      | SSH Port |
-|----------------|----------|---------------|----------|
-| mancer-test-1  | mancer1  | test_password1 | 2221     |
-| mancer-test-2  | mancer2  | test_password2 | 2222     |
-| mancer-test-3  | mancer3  | test_password3 | 2223     |
-
-## Usage
-
-### SSH Access
-
-Connect to the containers using SSH:
+## Quick Start
+```bash
+cd development/docker_test
+cp env.develop.test .env
+sudo chmod +x *.sh
 ```
+
+---
+
+## Preset Management
+
+Start the preset manager:
+```bash
+./manage_presets.sh
+```
+
+Features:
+- List available presets
+- Assign presets to containers
+- Create new presets (with automatic directory and setup script generation)
+- Remove presets (if not in use)
+- Enable/disable presets and containers
+
+**Creating your own preset:**
+1. Select "Create new preset" in the manager.
+2. Enter a description.
+3. Edit the file `presets/<name>/setup-<name>.sh` and the README.
+
+---
+
+## Starting the Environment
+
+1. (Optional) Configure presets and assign them to containers using `manage_presets.sh`.
+2. Start the environment:
+```bash
+sudo ./start_test.sh
+```
+- The script will automatically build and start containers according to the configuration.
+- It will display container info and test SSH connections.
+
+---
+
+## Accessing Containers
+
+From the host:
+```bash
 ssh mancer1@localhost -p 2221
 ssh mancer2@localhost -p 2222
 ssh mancer3@localhost -p 2223
 ```
-
-### Testing Mancer Prototypes
-
-The Mancer project directory is mounted at `/home/[username]/mancer` in each container.
-
-You can test the prototypes by running:
-```
-cd ~/mancer
-python development/scripts/install_prototype_deps.py --all
-python development/scripts/run_prototype.py [prototype_name]
+From one container to another:
+```bash
+ssh mancer2@10.100.2.102
 ```
 
-### Using the systemctl Prototype
+---
 
-To test the systemctl prototype across containers:
+## Cleaning Up the Environment
+
+To stop and remove the environment and clean up the `.env` file:
+```bash
+sudo ./cleanup.sh
 ```
-cd ~/mancer
-python prototypes/systemctl/main.py
+
+---
+
+## Directory Structure
+```
+development/docker_test/
+├── machine-template/         # Container template
+│   ├── Dockerfile           # Base image definition
+│   └── entrypoint.sh        # Container startup script
+├── presets/                 # Preset directories
+│   ├── basic_web/           # Web preset
+│   │   ├── setup-basic_web.sh
+│   │   └── README.md
+│   └── sac/                 # SAC preset
+│       ├── setup-sac.sh
+│       └── README.md
+├── docker-compose.yml       # Container orchestration
+├── env.develop.test         # .env file template
+├── presets.json             # Preset and container configuration
+├── start_test.sh            # Startup script
+├── cleanup.sh               # Cleanup script
+└── manage_presets.sh        # Preset manager
 ```
 
-Then add the other containers as servers with their credentials from the `.env` file.
+---
 
-## Management Commands
+## Example Presets
 
-- Start containers: `docker-compose up -d`
-- Stop containers: `docker-compose down`
-- Rebuild containers: `docker-compose up -d --build`
-- View container logs: `docker-compose logs -f`
-- SSH into a container: `ssh [username]@localhost -p [port]`
+- **none**: Clean Debian + Python + SSH
+- **sac**: Config files + systemd services
+- **basic_web**: Nginx + Apache + Flask
+
+Each preset has its own directory with a setup script (`setup-<preset>.sh`) and README.
+
+---
 
 ## Troubleshooting
 
-### SSH Connection Issues
-
-If you're unable to connect via SSH, check:
-1. Container status: `docker-compose ps`
-2. Container logs: `docker-compose logs -f`
-3. SSH service in container: `docker exec -it mancer-test-1 service ssh status`
-
 ### Permission Issues
-
-If you encounter permission issues with the mounted volume:
+- Make sure to run `start_test.sh` and `cleanup.sh` with `sudo`.
+- If you encounter volume permission errors:
+```bash
+sudo chown -R mancer1:mancer1 /home/mancer1/mancer
 ```
-docker exec -it mancer-test-1 chown -R mancer1:mancer1 /home/mancer1/mancer
+
+### Network Issues
+- Check network configuration:
+```bash
+docker network inspect docker_test_mancer_network
+ping 10.100.2.102
 ```
 
-## Customization
+### Service Issues
+- Check service status inside a container:
+```bash
+systemctl status <service_name>
+journalctl -u <service_name>
+```
 
-To add more containers or modify the configuration, edit:
-- `docker-compose.yml`
-- `env.example` (and your `.env` file)
-- `Dockerfile` if you need to install additional system packages 
+---
+
+## Best Practices
+- Always clean up the environment before restarting (`sudo ./cleanup.sh`).
+- Create custom presets for specific test scenarios.
+- Document changes in presets and use version control.
+- Do not store sensitive data in presets – use environment variables.
+
+---
+
+## Contact
+For questions or issues, open an issue in the repository or contact the Mancer team.
