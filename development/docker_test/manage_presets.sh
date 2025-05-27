@@ -2,9 +2,14 @@
 # Interactive script to manage test environment presets
 
 # Check if jq is installed
-if ! command -v jq &> /dev/null; then
-    echo "Error: jq is required but not installed. Please install jq first."
-    exit 1
+if ! command -v jq >/dev/null 2>&1; then
+    echo "jq nie jest zainstalowane. Próbuję zainstalować..."
+    if command -v apt >/dev/null 2>&1; then
+        sudo apt update && sudo apt install -y jq
+    else
+        echo "Nie znaleziono apt. Zainstaluj jq ręcznie."
+        exit 1
+    fi
 fi
 
 CONFIG_FILE="presets.json"
