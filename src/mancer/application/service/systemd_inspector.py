@@ -7,7 +7,7 @@ from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
 from ...domain.shared.profile_producer import ProfileProducer, ConnectionProfile
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
-from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHost
+from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
 
 
 class SystemdUnit:
@@ -146,13 +146,12 @@ class SystemdInspector:
             return False
         
         # Utwórz kontekst wykonania
-        remote_host = RemoteHost(
-            hostname=profile.hostname,
-            username=profile.username,
+        remote_host = RemoteHostInfo(
+            host=profile.hostname,
+            user=profile.username,
             password=profile.password,
             port=profile.port,
-            key_filename=profile.key_filename,
-            passphrase=profile.passphrase
+            key_file=profile.key_filename
         )
         
         self.context = CommandContext(

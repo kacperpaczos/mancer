@@ -115,3 +115,8 @@ class CommandContext:
     def is_remote(self) -> bool:
         """Sprawdza, czy kontekst jest w trybie zdalnym"""
         return self.execution_mode == ExecutionMode.REMOTE
+    
+    def clone(self) -> 'CommandContext':
+        """Tworzy kopię kontekstu"""
+        import copy
+        return copy.deepcopy(self)

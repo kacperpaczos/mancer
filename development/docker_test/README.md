@@ -8,15 +8,16 @@ A comprehensive test environment for prototyping and testing Mancer solutions in
 1. [What Has Been Done?](#what-has-been-done)
 2. [Requirements](#requirements)
 3. [Quick Start](#quick-start)
-4. [Preset Management](#preset-management)
-5. [Starting the Environment](#starting-the-environment)
-6. [Accessing Containers](#accessing-containers)
-7. [Cleaning Up the Environment](#cleaning-up-the-environment)
-8. [Directory Structure](#directory-structure)
-9. [Example Presets](#example-presets)
-10. [Troubleshooting](#troubleshooting)
-11. [Best Practices](#best-practices)
-12. [Contact](#contact)
+4. [Automated Testing](#automated-testing)
+5. [Preset Management](#preset-management)
+6. [Starting the Environment](#starting-the-environment)
+7. [Accessing Containers](#accessing-containers)
+8. [Cleaning Up the Environment](#cleaning-up-the-environment)
+9. [Directory Structure](#directory-structure)
+10. [Example Presets](#example-presets)
+11. [Troubleshooting](#troubleshooting)
+12. [Best Practices](#best-practices)
+13. [Contact](#contact)
 
 ---
 
@@ -30,6 +31,11 @@ A comprehensive test environment for prototyping and testing Mancer solutions in
   - Tests SSH connections and inter-container connectivity.
 - **Environment cleanup** (`cleanup.sh`):
   - Removes containers, network, volumes, and the `.env` file.
+- **Automated Testing System** (`run_automated_tests.sh`):
+  - Comprehensive test suite using pytest-docker-compose
+  - Tests Mancer framework functionality in containers
+  - Collects application results and metrics
+  - SSH connectivity and inter-container communication tests
 - **Example presets**: `none`, `sac`, `basic_web`.
 
 ---
@@ -37,6 +43,8 @@ A comprehensive test environment for prototyping and testing Mancer solutions in
 ## Requirements
 - Linux with sudo privileges
 - Docker & Docker Compose
+- Python 3.8+
+- pytest and testing dependencies (automatically installed)
 - jq
 - git
 
@@ -48,6 +56,39 @@ cd development/docker_test
 cp env.develop.test .env
 sudo chmod +x *.sh
 ```
+
+---
+
+## Automated Testing
+
+### Running All Tests
+```bash
+# Uruchom pełny zestaw testów automatycznych
+./run_automated_tests.sh
+```
+
+### Running Specific Tests
+```bash
+# Tylko testy połączenia SSH
+pytest tests/integration/test_bash_commands.py::TestMancerDockerIntegration::test_ssh_connectivity -v
+
+# Tylko testy prototypów
+pytest tests/integration/test_bash_commands.py::TestMancerPrototypes -v
+
+# Testy z dodatkowymi detalami
+pytest tests/integration/ -v --tb=long --capture=no
+```
+
+### Test Categories
+- **Infrastructure Tests**: Container startup, SSH connectivity, networking
+- **Framework Tests**: Mancer framework import and functionality
+- **Application Tests**: Custom applications (configMaster, systemctl, NOM)
+- **Performance Tests**: Resource usage and metrics collection
+
+### Test Results
+- **HTML Coverage Report**: `htmlcov/index.html`
+- **JUnit XML**: `test_results.xml`
+- **JSON Results**: `logs/test_results.json`
 
 ---
 
@@ -126,7 +167,8 @@ development/docker_test/
 ├── presets.json             # Preset and container configuration
 ├── start_test.sh            # Startup script
 ├── cleanup.sh               # Cleanup script
-└── manage_presets.sh        # Preset manager
+├── manage_presets.sh        # Preset manager
+└── run_automated_tests.sh   # Automated testing script
 ```
 
 ---
@@ -164,6 +206,11 @@ systemctl status <service_name>
 journalctl -u <service_name>
 ```
 
+### Test Issues
+- **Timeouts**: Increase wait times in test configuration
+- **SSH Connection Failed**: Check if containers are running and SSH service is active
+- **Import Errors**: Ensure Mancer source code is properly mounted in containers
+
 ---
 
 ## Best Practices
@@ -171,6 +218,8 @@ journalctl -u <service_name>
 - Create custom presets for specific test scenarios.
 - Document changes in presets and use version control.
 - Do not store sensitive data in presets – use environment variables.
+- Run automated tests regularly to catch regressions early.
+- Use test results to optimize application performance.
 
 ---
 
