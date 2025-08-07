@@ -202,30 +202,31 @@ def is_flask_available() -> bool:
 def install_flask(prompt: bool = True) -> bool:
     """
     Attempt to install Flask
-    
+
     Args:
         prompt: Whether to prompt the user before installation
-        
+
     Returns:
         True if Flask was installed successfully, False otherwise
     """
+    global Flask, request, jsonify, _has_flask
+
     if _has_flask:
         return True
-        
+
     try:
         if prompt:
             user_input = input("Flask is not installed. Install it now? (y/n): ").lower()
             if user_input != 'y':
                 return False
-        
+
         import subprocess
         subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
-        
+
         # Try to import Flask again
-        global Flask, request, jsonify, _has_flask
         from flask import Flask, request, jsonify
         _has_flask = True
-        
+
         return True
     except Exception as e:
         logger.error(f"Error installing Flask: {str(e)}")
