@@ -1,0 +1,222 @@
+# 🚀 Konfiguracja Lokalnego Pipeline'u Testowego dla Frameworka Mancer
+
+pipeline:
+  name: "Mancer Framework Local Pipeline"
+  version: "1.0.0"
+  description: "Comprehensive local testing pipeline for Mancer framework"
+  
+  # Pipeline execution settings
+  execution:
+    continue_on_failure: false
+    parallel_stages: false
+    timeout_minutes: 30
+    retry_count: 1
+    
+  # Quality gates - minimum requirements to pass
+  quality_gates:
+    unit_test_coverage: 80        # Minimum 80% code coverage
+    max_lint_issues: 5           # Maximum 5 linting issues
+    max_security_issues: 0       # Zero security vulnerabilities
+    max_performance_time: 100    # Max 100ms average command time
+    
+  # Stage configuration
+  stages:
+    setup:
+      enabled: true
+      timeout_minutes: 5
+      retry_on_failure: true
+      dependencies:
+        - python3
+        - pip
+        - requirements.txt
+        
+    lint:
+      enabled: true
+      timeout_minutes: 3
+      tools:
+        - flake8
+        - black
+        - isort
+        - mypy
+      config:
+        max_line_length: 100
+        exclude_paths:
+          - "__pycache__"
+          - ".pytest_cache"
+          - "htmlcov"
+          
+    unit_tests:
+      enabled: true
+      timeout_minutes: 5
+      coverage_required: true
+      parallel_execution: false
+      paths:
+        - "tests/unit/"
+      reports:
+        - junit
+        - coverage_html
+        - coverage_xml
+        
+    build_docker:
+      enabled: true
+      timeout_minutes: 10
+      compose_file: "development/docker_test/docker-compose.yml"
+      containers:
+        - "mancer-test-1"
+        - "mancer-test-2" 
+        - "mancer-test-3"
+      wait_timeout: 120
+      healthcheck_command: 'echo "ready"'
+      
+    integration_tests:
+      enabled: true
+      timeout_minutes: 8
+      depends_on: 
+        - build_docker
+      paths:
+        - "tests/integration/"
+      docker_required: true
+      
+    e2e_tests:
+      enabled: true
+      timeout_minutes: 5
+      depends_on:
+        - integration_tests
+      scripts:
+        - "examples/docker_testing_example.py"
+        
+    coverage_report:
+      enabled: true
+      timeout_minutes: 3
+      depends_on:
+        - unit_tests
+        - integration_tests
+      output_formats:
+        - html
+        - xml
+        - terminal
+      threshold: 80
+      
+    performance_tests:
+      enabled: true
+      timeout_minutes: 2
+      benchmarks:
+        - command_execution_time
+        - memory_usage
+        - framework_overhead
+      thresholds:
+        avg_execution_time_ms: 100
+        max_memory_mb: 50
+        
+    security_scan:
+      enabled: true
+      timeout_minutes: 3
+      tools:
+        - safety          # Vulnerability scanning
+        - secrets_scan    # Hardcoded secrets detection
+      fail_on_issues: true
+      
+    cleanup:
+      enabled: true
+      timeout_minutes: 3
+      always_run: true
+      actions:
+        - docker_cleanup
+        - temp_files_cleanup
+
+# Reporting configuration        
+reporting:
+  formats:
+    - console
+    - json
+    - html
+  output_directory: "pipeline/reports"
+  archive_results: true
+  
+  # Notification settings (for future CI/CD integration)
+  notifications:
+    slack:
+      enabled: false
+      webhook_url: ""
+    email:
+      enabled: false
+      recipients: []
+
+# Docker configuration
+docker:
+  network: "docker_test_mancer_network"
+  subnet: "10.100.2.0/24"
+  container_prefix: "mancer-test"
+  remove_volumes: true
+  remove_orphans: true
+  
+  # Resource limits
+  resources:
+    memory: "512m"
+    cpu: "1.0"
+    
+# Environment variables
+environment:
+  PYTHONPATH: "src"
+  MANCER_TEST_MODE: "true"
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+
+# File patterns for different operations
+patterns:
+  python_files:
+    - "src/**/*.py"
+    - "tests/**/*.py"
+  exclude_from_lint:
+    - "__pycache__/**"
+    - ".pytest_cache/**"
+    - "htmlcov/**"
+    - "*.egg-info/**"
+  test_files:
+    - "tests/**/test_*.py"
+    
+# Tools configuration
+tools:
+  pytest:
+    config_file: "pytest.ini"
+    markers:
+      - slow
+      - integration  
+      - docker
+      - ssh
+    addopts:
+      - "--verbose"
+      - "--tb=short"
+      - "--strict-markers"
+      
+  flake8:
+    max_line_length: 100
+    ignore:
+      - "E203"  # whitespace before ':'
+      - "W503"  # line break before binary operator
+    exclude:
+      - "__pycache__"
+      - ".pytest_cache"
+      
+  black:
+    line_length: 100
+    target_version: 
+      - "py38"
+      - "py39"
+      - "py310"
+    exclude: "__pycache__|.pytest_cache"
+    
+  coverage:
+    source: "src/mancer"
+    omit:
+      - "tests/*"
+      - "*/__pycache__/*"
+    show_missing: true
+    
+# Pipeline metadata
+metadata:
+  created_by: "Mancer Framework Team"
+  created_date: "2024-01-27"
+  last_updated: "2024-01-27"
+  documentation: "docs/TESTING_AUTOMATION_FLOW.md"
+  repository: "https://github.com/your-org/mancer" 

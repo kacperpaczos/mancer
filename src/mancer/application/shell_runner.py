@@ -346,14 +346,21 @@ class ShellRunner:
     
     def get_cache_statistics(self) -> Dict[str, Any]:
         """Returns statistics about the command cache"""
-        return {
-            "enabled": self._cache_enabled,
-            "size": self._command_cache.get_size(),
-            "max_size": self._command_cache.get_max_size(),
-            "hit_count": self._command_cache.get_hit_count(),
-            "miss_count": self._command_cache.get_miss_count(),
-            "hit_ratio": self._command_cache.get_hit_ratio()
-        }
+        if self._cache_enabled:
+            stats = self._command_cache.get_statistics()
+            stats["enabled"] = True
+            return stats
+        else:
+            return {
+                "enabled": False,
+                "total_commands": 0,
+                "success_count": 0,
+                "error_count": 0,
+                "cache_size": 0,
+                "max_size": 0,
+                "auto_refresh": False,
+                "refresh_interval": 0
+            }
     
     def get_command_history(self, limit: Optional[int] = None, 
                            success_only: bool = False) -> List[Any]:
