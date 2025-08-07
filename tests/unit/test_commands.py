@@ -7,8 +7,7 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Dodaj ścieżkę do Mancer
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
+
 
 from mancer.infrastructure.factory.command_factory import CommandFactory
 from mancer.infrastructure.backend.bash_backend import BashBackend
@@ -130,7 +129,7 @@ class TestBashBackend:
         assert isinstance(result, CommandResult)
         assert result.success == False
         assert result.exit_code == 1
-        assert "command not found" in result.error_output
+        assert "command not found" in result.error_message
     
     @patch('subprocess.run')
     def test_execute_command_with_working_dir(self, mock_run):
@@ -226,7 +225,7 @@ class TestCoreCommands:
         df_cmd = factory.create_command("df")
         
         basic_command = df_cmd.build_command()
-        assert basic_command == "df"
+        assert basic_command == "df -h"  # df command domyślnie używa -h flag
         
         # Test df z human readable jeśli dostępne
         if hasattr(df_cmd, 'human_readable'):
@@ -259,11 +258,9 @@ class TestCommandExecution:
         # Mock backend execution
         mock_result = CommandResult(
             raw_output="test output",
-            error_output="",
-            exit_code=0,
             success=True,
-            command="echo test",
-            execution_time=0.1
+            structured_output=["test output"],
+            exit_code=0
         )
         mock_execute.return_value = mock_result
         
