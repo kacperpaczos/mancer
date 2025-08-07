@@ -14,20 +14,71 @@ fail() { echo -e "${R}[FAIL]${NC} $1"; }
 warn() { echo -e "${Y}[WARN]${NC} $1"; }
 
 # =============================================================================
+# VENV SETUP
+# =============================================================================
+
+setup_venv_environment() {
+    log "Przygotowuję środowisko wirtualne Python..."
+    
+    # Sprawdź czy venv istnieje
+    if [[ ! -d ".venv" ]]; then
+        log "Tworzę nowe środowisko wirtualne..."
+        python3 -m venv .venv || {
+            fail "Nie można utworzyć środowiska wirtualnego"
+            return 1
+        }
+    fi
+    
+    # Aktywuj venv
+    source .venv/bin/activate || {
+        fail "Nie można aktywować środowiska wirtualnego"
+        return 1
+    }
+    
+    # Sprawdź czy pytest jest zainstalowany
+    if ! python -c "import pytest" &>/dev/null; then
+        log "Instaluję pytest w venv..."
+        pip install pytest || {
+            warn "Nie można zainstalować pytest w venv"
+            return 1
+        }
+    fi
+    
+    # Zainstaluj wersję developerską mancera
+    log "Instaluję wersję developerską mancera..."
+    pip install -e . || {
+        warn "Nie można zainstalować wersji developerskiej mancera"
+        # Spróbuj alternatywną metodę
+        export PYTHONPATH="$PROJECT_ROOT/src:$PYTHONPATH"
+    }
+    
+    ok "Środowisko wirtualne gotowe"
+    return 0
+}
+
+# =============================================================================
 # UNIT TESTS - LOCAL EXECUTION
 # =============================================================================
 
 run_unit_tests_local() {
-    log "Uruchamiam testy jednostkowe LOKALNIE..."
+    log "Uruchamiam testy jednostkowe LOKALNIE (w venv)..."
+    
+    # Upewnij się, że venv jest aktywny
+    if [[ -z "${VIRTUAL_ENV:-}" ]]; then
+        source .venv/bin/activate || {
+            warn "Nie można aktywować venv"
+            return 1
+        }
+    fi
     
     # Test 1: Sprawdź czy framework jest dostępny
-    if ! python3 -c "import sys; sys.path.append('src'); from mancer.application.shell_runner import ShellRunner" &>/dev/null; then
-        warn "Framework nie jest dostępny lokalnie"
+    if ! python -c "import mancer; print('Mancer version:', mancer.__version__)" &>/dev/null; then
+        warn "Framework mancer nie jest dostępny w venv"
         return 1
     fi
     
     # Test 2: Sprawdź czy pytest jest dostępny
-    if ! python3 -c "import pytest" &>/dev/null; then
+    if ! python -c "import pytest" &>/dev/null; then
         log "Auto-instaluję pytest..."
         # Try system package first
         if command -v apt &>/dev/null; then
@@ -42,19 +93,19 @@ run_unit_tests_local() {
         fi
     fi
     
-    # Test 3: Uruchom testy lokalnie
+    # Test 3: Uruchom testy lokalnie w venv
     local test_result=0
     
-    # Method 1: Standard PYTHONPATH
-    PYTHONPATH=src python3 -m pytest tests/unit/ -v --tb=short -q &>/dev/null || {
-        warn "Metoda 1 nie powiodła się, próbuję metody 2..."
+    # Method 1: Direct pytest call (mancer installed in venv)
+    python -m pytest tests/unit/ -v --tb=short -q &>/dev/null || {
+        warn "Metoda 1 (venv) nie powiodła się, próbuję metody 2..."
         
-        # Method 2: Change to src directory
-        (cd src && python3 -m pytest ../tests/unit/ -v --tb=short -q &>/dev/null) || {
+        # Method 2: Fallback with PYTHONPATH
+        PYTHONPATH=src python -m pytest tests/unit/ -v --tb=short -q &>/dev/null || {
             warn "Metoda 2 nie powiodła się, próbuję metody 3..."
             
-            # Method 3: Direct pytest call
-            python3 -m pytest tests/unit/ -v --tb=short -q &>/dev/null || {
+            # Method 3: Change to src directory
+            (cd src && python -m pytest ../tests/unit/ -v --tb=short -q &>/dev/null) || {
                 test_result=1
             }
         }
@@ -466,6 +517,13 @@ main() {
     local local_passed=0
     local docker_passed=0
     local docker_available=false
+    
+    # Setup venv environment first
+    log "=== SETUP ŚRODOWISKA ==="
+    if ! setup_venv_environment; then
+        fail "Nie można skonfigurować środowiska venv"
+        return 1
+    fi
     
     # Test LOCAL execution
     log "=== TESTY LOKALNE ==="
