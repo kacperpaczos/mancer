@@ -20,11 +20,12 @@ class StandardBackend(LogBackendInterface):
         self._logger = logging.getLogger("mancer")
         self._logger.setLevel(logging.DEBUG)
         self._log_level = LogLevel.INFO
-        self._log_format = '%(asctime)s [%(levelname)s] %(message)s'
+        self._log_format = '%(asctime)sZ [%(levelname)s] %(message)s'
         self._log_dir = os.path.join(os.getcwd(), 'logs')
         self._log_file = 'mancer_commands.log'
         self._console_enabled = True
         self._file_enabled = False
+        self._use_utc = True
     
     def initialize(self, **kwargs) -> None:
         """
@@ -46,6 +47,7 @@ class StandardBackend(LogBackendInterface):
         log_file = kwargs.get('log_file', self._log_file)
         console_enabled = kwargs.get('console_enabled', True)
         file_enabled = kwargs.get('file_enabled', False)
+        use_utc = kwargs.get('use_utc', True)
         
         # Zastosuj konfigurację
         self._log_level = log_level
@@ -54,6 +56,7 @@ class StandardBackend(LogBackendInterface):
         self._log_file = log_file
         self._console_enabled = console_enabled
         self._file_enabled = file_enabled
+        self._use_utc = use_utc
         
         # Utwórz directory dla logów, jeśli nie istnieje
         if self._file_enabled and not os.path.exists(self._log_dir):
@@ -72,11 +75,16 @@ class StandardBackend(LogBackendInterface):
         python_log_level = self._get_python_log_level(self._log_level)
         self._logger.setLevel(python_log_level)
         
+        # Opcjonalnie wymuś UTC na formaterach
+        formatter = logging.Formatter(self._log_format)
+        if self._use_utc:
+            formatter.converter = time.gmtime  # type: ignore[attr-defined]
+
         # Dodaj handler konsoli, jeśli włączony
         if self._console_enabled:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(python_log_level)
-            console_handler.setFormatter(logging.Formatter(self._log_format))
+            console_handler.setFormatter(formatter)
             self._logger.addHandler(console_handler)
         
         # Dodaj handler pliku, jeśli włączony
@@ -84,7 +92,7 @@ class StandardBackend(LogBackendInterface):
             log_path = os.path.join(self._log_dir, self._log_file)
             file_handler = logging.FileHandler(log_path, encoding='utf-8')
             file_handler.setLevel(python_log_level)
-            file_handler.setFormatter(logging.Formatter(self._log_format))
+            file_handler.setFormatter(formatter)
             self._logger.addHandler(file_handler)
     
     def _get_python_log_level(self, level: LogLevel) -> int:
