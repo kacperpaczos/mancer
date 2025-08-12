@@ -1,20 +1,32 @@
+TODO — plan działań
 
-jakię slogger ktory jest wysoko jakościowy i działa pod spodem
+- Logging
+  - Wybrać i utrzymać wysokiej jakości backend logowania (standardowy `logging` + opcjonalnie Icecream).
+  - Ujednolicić poziomy/format logów i konfigurację (env/pyproject, plik konfiguracyjny).
 
-siwtch fom polish to english
+- Język i styl
+  - Ustalić język kodu i dokumentacji: angielski (konsekwentnie w kodzie, README, docstrings).
 
-rozdzielićtools od tych narzędzi ktore beða powstawały z tym frameworkim jak cofig master.
+- Architektura narzędzi
+  - Rozdzielić ogólne `tools` od aplikacji budowanych na frameworku (np. „Config Master”).
 
-napisac confgi master
-co z  rpocerem, co zconeccterem do połączeń
+- Config Master
+  - Zaprojektować i zaimplementować „Config Master” (CLI, API, formaty plików, integracje).
 
-chcę żeby głównym obiektem głównym bazowym dla wszystkich był mancer,
+- Procesy i połączenia
+  - Zdecydować, jak zarządzać procesami uruchomieniowymi i konektorem do połączeń (lokal/SSH).
 
-switch to ic
+- Rdzeń systemu
+  - Upewnić się, że bazowym obiektem w całym systemie jest `Mancer` (spójne API, kompozycja).
 
-mancerops powiino być.
+- Icecream (IC)
+  - Doprecyzować zakres użycia „ic” (Icecream) i zapewnić łatwy przełącznik oraz bezpieczny fallback.
 
-obserwalability.
+- MancerOps
+  - Zdefiniować „mancerops” (zestaw operacji/automatyzacji) oraz jego zakres w repo.
 
+- Observability
+  - Dodać metryki/tracing/logi (np. integracja z OpenTelemetry/Prometheus, eksportery).
 
-Jak wygebrowac dokuemtnacje
+- Dokumentacja
+  - Jak wygenerować dokumentację: przygotować Sphinx/Markdown, dodać komendę w README i skrypty.
