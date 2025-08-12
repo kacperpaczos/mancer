@@ -13,6 +13,15 @@ services:
     hostname: mancer-test-1
     ports:
       - "${SSH_PORT_1}:22"
+    privileged: true
+    stop_signal: SIGRTMIN+3
+    environment:
+      - container=docker
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       mancer_network:
         ipv4_address: 10.100.2.101
@@ -30,6 +39,15 @@ services:
     hostname: mancer-test-2
     ports:
       - "${SSH_PORT_2}:22"
+    privileged: true
+    stop_signal: SIGRTMIN+3
+    environment:
+      - container=docker
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       mancer_network:
         ipv4_address: 10.100.2.102
@@ -47,6 +65,15 @@ services:
     hostname: mancer-test-3
     ports:
       - "${SSH_PORT_3}:22"
+    privileged: true
+    stop_signal: SIGRTMIN+3
+    environment:
+      - container=docker
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       mancer_network:
         ipv4_address: 10.100.2.103
