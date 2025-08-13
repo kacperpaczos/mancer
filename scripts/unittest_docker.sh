@@ -1,5 +1,5 @@
 #!/bin/bash
-# 🐳 MANCER UNIT TESTS - Testy jednostkowe w Docker
+# 🐳 MANCER UNIT TESTS - Testy jednostkowe w Docker (bez pytest-docker)
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,21 +20,14 @@ info() { echo -e "${C}[INFO]${NC} $1"; }
 
 check_docker() {
     log "Sprawdzam dostępność Docker..."
-    
+
     # Sprawdź czy Docker jest zainstalowany
     if ! command -v docker &> /dev/null; then
         fail "Docker nie jest zainstalowany!"
         echo "Zainstaluj Docker: https://docs.docker.com/get-docker/"
         return 1
     fi
-    
-    # Sprawdź czy Docker Compose jest dostępny
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        fail "Docker Compose nie jest dostępny!"
-        echo "Zainstaluj Docker Compose lub nowszą wersję Docker"
-        return 1
-    fi
-    
+
     # Sprawdź czy Docker działa (może wymagać sudo)
     if ! docker info &> /dev/null; then
         warn "Docker wymaga uprawnień sudo"
@@ -47,71 +40,70 @@ check_docker() {
     else
         export DOCKER_SUDO=""
     fi
-    
+
     ok "Docker jest dostępny"
     return 0
 }
 
-setup_docker_environment() {
-    log "Przygotowuję środowisko Docker..."
-    
-    # Przejdź do katalogu Docker
-    cd tests/docker || {
-        fail "Katalog tests/docker nie istnieje!"
+create_test_dockerfile() {
+    log "Tworzenie Dockerfile dla testów..."
+
+    cat > Dockerfile.test << 'EOF'
+FROM python:3.10-slim
+
+# Zainstaluj wymagane pakiety systemowe
+RUN apt-get update && apt-get install -y \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ustaw katalog roboczy
+WORKDIR /app
+
+# Skopiuj pliki projektu
+COPY . .
+
+# Zainstaluj zależności Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Zainstaluj dodatkowe zależności testowe
+RUN pip install --no-cache-dir pytest pytest-cov pytest-xdist
+
+# Ustaw PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Domyślna komenda
+CMD ["python", "-m", "pytest", "tests/unit/", "-v", "--cov=src/mancer", "--cov-report=term-missing"]
+EOF
+
+    ok "Dockerfile.test utworzony"
+}
+
+build_test_image() {
+    log "Budowanie obrazu Docker dla testów..."
+
+    # Usuń stary obraz jeśli istnieje
+    $DOCKER_SUDO docker rmi mancer-unittest:latest 2>/dev/null || true
+
+    # Zbuduj nowy obraz
+    $DOCKER_SUDO docker build -f Dockerfile.test -t mancer-unittest:latest . || {
+        fail "Nie można zbudować obrazu Docker"
         return 1
     }
-    
-    # Wyczyść środowisko Docker
-    log "Czyszczenie środowiska Docker..."
-    $DOCKER_SUDO ./cleanup.sh 2>/dev/null || true
-    
-    # Skopiuj plik środowiskowy jeśli nie istnieje
-    if [[ ! -f .env ]]; then
-        log "Tworzenie pliku .env..."
-        cp env.develop.test .env || {
-            fail "Nie można skopiować pliku środowiskowego"
-            return 1
-        }
-    fi
-    
-    # Uruchom kontenery
-    log "Uruchamianie kontenerów Docker..."
-    if command -v docker-compose &> /dev/null; then
-        $DOCKER_SUDO docker-compose up -d || {
-            fail "Nie można uruchomić kontenerów Docker"
-            return 1
-        }
-    else
-        $DOCKER_SUDO docker compose up -d || {
-            fail "Nie można uruchomić kontenerów Docker"
-            return 1
-        }
-    fi
-    
-    # Poczekaj na gotowość kontenerów
-    log "Oczekiwanie na gotowość kontenerów..."
-    sleep 15
-    
-    # Sprawdź status kontenerów
-    log "Sprawdzam status kontenerów..."
-    if command -v docker-compose &> /dev/null; then
-        $DOCKER_SUDO docker-compose ps
-    else
-        $DOCKER_SUDO docker compose ps
-    fi
-    
-    # Wróć do głównego katalogu
-    cd "$PROJECT_ROOT"
-    
-    ok "Środowisko Docker przygotowane"
+
+    ok "Obraz Docker zbudowany: mancer-unittest:latest"
     return 0
 }
 
 cleanup_docker_environment() {
     log "Czyszczenie środowiska Docker..."
-    cd tests/docker 2>/dev/null || return 0
-    $DOCKER_SUDO ./cleanup.sh 2>/dev/null || true
-    cd "$PROJECT_ROOT"
+
+    # Usuń kontener testowy jeśli istnieje
+    $DOCKER_SUDO docker rm -f mancer-unittest-container 2>/dev/null || true
+
+    # Usuń Dockerfile.test
+    rm -f Dockerfile.test
+
     ok "Środowisko Docker wyczyszczone"
 }
 
