@@ -28,6 +28,7 @@ show_help() {
     echo "  -u, --uninstall         Remove development environment"
     echo "  -v, --version           Display current Mancer version"
     echo "  -f, --force             Force operations without asking (for -i, -u)"
+    echo "  -d, --docs [action]     Zarządzanie dokumentacją (dev, build, deploy)"
     echo
     echo "Examples:"
     echo "  $0                      Run interactive menu"
@@ -56,9 +57,10 @@ show_menu() {
     echo "4) Build package"
     echo "5) Remove development environment"
     echo "6) Check Mancer version"
+    echo "7) Zarządzanie dokumentacją"
     echo "0) Exit"
     echo
-    echo -n "Your choice [0-6]: "
+    echo -n "Your choice [0-7]: "
 }
 
 # Function checking if we're in virtualenv
@@ -455,6 +457,39 @@ uninstall_dev_env() {
     echo -e "${YELLOW}To reinstall the environment, use option 1 in the main menu.${RESET}"
 }
 
+# Function managing documentation
+docs_management() {
+    echo -e "${YELLOW}Zarządzanie dokumentacją${RESET}"
+    echo "1) Uruchom serwer dokumentacji (dev)"
+    echo "2) Zbuduj dokumentację (build)"
+    echo "3) Wdróż na GitHub Pages (deploy)"
+    echo "0) Powrót do menu"
+    read -r docs_choice
+    case $docs_choice in
+        1)
+            mkdocs serve
+            ;;
+        2)
+            mkdocs build
+            ;;
+        3)
+            deploy_docs
+            ;;
+        0)
+            return
+            ;;
+        *)
+            echo "Nieprawidłowy wybór."
+            ;;
+    esac
+}
+
+# Function deploying documentation
+deploy_docs() {
+    echo -e "${YELLOW}Wdrażanie dokumentacji na GitHub Pages...${RESET}"
+    mkdocs gh-deploy
+}
+
 # Process command line parameters
 process_args() {
     # Check if we have any arguments
@@ -594,6 +629,24 @@ process_args() {
                 FORCE_MODE="true"
                 shift
                 ;;
+            -d|--docs)
+                action="$2"
+                case $action in
+                    dev)
+                        mkdocs serve
+                        ;;
+                    build)
+                        mkdocs build
+                        ;;
+                    deploy)
+                        deploy_docs
+                        ;;
+                    *)
+                        docs_management
+                        ;;
+                esac
+                exit $?
+                ;;
             *)
                 echo -e "${RED}Unknown parameter: $1${RESET}"
                 show_help
@@ -633,6 +686,9 @@ interactive_mode() {
                 ;;
             6)
                 get_version
+                ;;
+            7)
+                docs_management
                 ;;
             *)
                 echo -e "${RED}Invalid choice. Try again.${RESET}"
