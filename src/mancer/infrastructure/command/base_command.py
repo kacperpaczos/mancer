@@ -13,65 +13,69 @@ from ...domain.service.command_chain_service import CommandChain
 T = TypeVar('T', bound='BaseCommand')
 
 class BaseCommand(CommandInterface, LoggableCommandMixin):
-    """Bazowa implementacja komendy"""
-    
+    """Base implementation of a command.
+
+    Provides common building, execution and result preparation logic.
+    Subclasses should override execute() and _parse_output().
+    """
+
     def __init__(self, name: str):
         self.name = name
         self.options: List[str] = []
         self.parameters: Dict[str, Any] = {}
         self.flags: List[str] = []
-        self.backend = BashBackend()  # Domyślny backend
-        self.pipeline = None  # Opcjonalny pipeline (np. | grep)
-        self.requires_sudo = False  # Czy komenda wymaga sudo
-        self._args: List[str] = []  # Lista dodatkowych argumentów
-        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferowany format danych
+        self.backend = BashBackend()  # Default backend
+        self.pipeline = None  # Optional pipeline (e.g., | grep)
+        self.requires_sudo = False  # Whether the command requires sudo
+        self._args: List[str] = []  # Additional arguments
+        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
     
     def with_option(self, option: str) -> T:
-        """Dodaje opcję do komendy"""
+        """Return a new instance with an added short/long option (e.g., -l)."""
         new_instance = self.clone()
         new_instance.options.append(option)
         return new_instance
-    
+
     def with_param(self, name: str, value: Any) -> T:
-        """Ustawia parametr komendy"""
+        """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance = self.clone()
         new_instance.parameters[name] = value
         return new_instance
-    
+
     def with_flag(self, flag: str) -> T:
-        """Dodaje flagę do komendy"""
+        """Return a new instance with a boolean flag (e.g., --recursive)."""
         new_instance = self.clone()
         new_instance.flags.append(flag)
         return new_instance
-    
+
     def with_sudo(self) -> T:
-        """Oznacza, że komenda wymaga sudo"""
+        """Return a new instance marked to require sudo."""
         new_instance = self.clone()
         new_instance.requires_sudo = True
         return new_instance
-    
+
     def add_arg(self, arg: str) -> T:
-        """Dodaje argument do komendy"""
+        """Return a new instance with an added positional argument."""
         new_instance = self.clone()
         new_instance._args.append(arg)
         return new_instance
-    
+
     def add_args(self, args: List[str]) -> T:
-        """Dodaje listę argumentów do komendy"""
+        """Return a new instance with extended positional arguments."""
         new_instance = self.clone()
         new_instance._args.extend(args)
         return new_instance
-    
+
     def with_data_format(self, format_type: DataFormat) -> T:
-        """Ustawia preferowany format danych wyjściowych komendy"""
+        """Return a new instance with a preferred output data format."""
         new_instance = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
     
     def clone(self) -> T:
-        """Tworzy kopię instancji komendy"""
-        new_instance = type(self)()  # Wywołaj bezargumentowy konstruktor
-        new_instance.name = self.name  # Przepisz nazwę komendy
+        """Create a copy of the command instance (immutable builder pattern)."""
+        new_instance = type(self)()  # Call no-arg constructor
+        new_instance.name = self.name
         new_instance.options = deepcopy(self.options)
         new_instance.parameters = deepcopy(self.parameters)
         new_instance.flags = deepcopy(self.flags)
@@ -83,95 +87,83 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         return new_instance
     
     def build_command(self) -> str:
-        """Buduje string komendy"""
+        """Build the command string for execution."""
         cmd_parts = []
-        
-        # Dodaj sudo jeśli wymagane
+
+        # Add sudo if required
         if self.requires_sudo:
             cmd_parts.append("sudo")
-            
-        # Dodaj nazwę komendy
+
+        # Command name
         cmd_parts.append(self.name)
-        
-        # Dodaj opcje
+
+        # Options
         cmd_parts.extend(self.options)
-        
-        # Dodaj parametry
+
+        # Parameters
         for name, value in self.parameters.items():
             cmd_parts.append(self._format_parameter(name, value))
-            
-        # Dodaj flagi
+
+        # Flags
         cmd_parts.extend([f"--{flag}" for flag in self.flags])
-        
-        # Dodaj dodatkowe argumenty
+
+        # Additional positional arguments
         cmd_parts.extend(self._get_additional_args())
-        
-        # Dodaj pipeline jeśli istnieje
+
+        # Pipeline if present
         if self.pipeline:
             cmd_parts.append(self.pipeline)
-            
+
         return " ".join(cmd_parts)
     
     def _get_backend(self, context: CommandContext):
-        """
-        Wybiera odpowiedni backend na podstawie kontekstu.
-        """
-        # Jeśli kontekst wskazuje na tryb zdalny, użyj SSH
-        if (context.execution_mode == ExecutionMode.REMOTE 
+        """Select an execution backend based on context (SSH for remote, otherwise default)."""
+        if (context.execution_mode == ExecutionMode.REMOTE
             and context.remote_host is not None):
-            
             remote_host = context.remote_host
-            
             return SshBackend(
-                hostname=remote_host.hostname,
-                username=remote_host.username,
+                hostname=remote_host.host,
+                username=remote_host.user,
                 password=remote_host.password,
                 port=remote_host.port,
-                key_filename=remote_host.key_filename,
-                passphrase=remote_host.passphrase,
-                allow_agent=remote_host.allow_agent,
-                look_for_keys=remote_host.look_for_keys,
-                compress=remote_host.compress, 
-                timeout=remote_host.timeout,
+                key_filename=remote_host.key_file,
+                allow_agent=remote_host.use_agent,
+                look_for_keys=True,
+                compress=False,
+                timeout=None,
                 gssapi_auth=remote_host.gssapi_auth,
-                gssapi_kex=remote_host.gssapi_kex,
+                gssapi_kex=remote_host.gssapi_keyex,
                 gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
                 ssh_options=remote_host.ssh_options
             )
         else:
-            # W przeciwnym razie używamy domyślnego backendu
             return self.backend
     
     @abstractmethod
-    def execute(self, context: CommandContext, 
+    def execute(self, context: CommandContext,
                input_result: Optional[CommandResult] = None) -> CommandResult:
-        """
-        Implementacja wykonania komendy - do zaimplementowania w podklasach.
-        Ta metoda powinna zostać nadpisana w klasach potomnych, ale nie powinna być
-        wywoływana bezpośrednio. Zamiast tego należy używać execute_with_logging().
+        """Execute the command (to be implemented by subclasses).
+
+        Do not call directly; the __call__ wrapper ensures logging.
         """
         pass
     
-    def __call__(self, context: CommandContext, 
+    def __call__(self, context: CommandContext,
                 input_result: Optional[CommandResult] = None) -> CommandResult:
-        """
-        Wykonuje komendę z pełnym logowaniem.
-        Ta metoda jest głównym punktem wejścia do wykonania komendy.
-        
+        """Execute the command with logging (main entry point).
+
         Args:
-            context: Kontekst wykonania komendy
-            input_result: Opcjonalny wynik poprzedniej komendy
-            
+            context: Command execution context.
+            input_result: Optional previous command result (for pipelines).
+
         Returns:
-            Wynik wykonania komendy
+            CommandResult: Result of execution.
         """
-        # Wywołujemy execute z logowaniem
         return self.execute_with_logging(self.execute, context, input_result)
     
     def _format_parameter(self, name: str, value: Any) -> str:
-        """
-        Formatuje pojedynczy parametr komendy.
-        Można nadpisać w podklasach dla specjalnego formatowania.
+        """Format a single command parameter.
+        Override in subclasses for special formatting.
         """
         return f"--{name}={value}"
     
@@ -183,19 +175,16 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         return self._args
     
     def _parse_output(self, raw_output: str) -> List[Any]:
-        """
-        Parsuje surowe wyjście komendy do struktury.
-        Do nadpisania w podklasach.
+        """Parse raw command output to a structured representation.
+        Override in subclasses.
         """
         return [raw_output]
     
-    def _prepare_result(self, raw_output: str, success: bool, exit_code: int = 0, 
-                       error_message: Optional[str] = None, 
+    def _prepare_result(self, raw_output: str, success: bool, exit_code: int = 0,
+                       error_message: Optional[str] = None,
                        metadata: Optional[Dict[str, Any]] = None) -> CommandResult:
-        """
-        Przygotowuje wynik komendy z uwzględnieniem preferowanego formatu danych i historii.
-        """
-        # Parsuj dane wyjściowe
+        """Prepare command result, add history and handle preferred data format."""
+        # Parse output
         structured_output = self._parse_output(raw_output)
         
         # Utwórz obiekt wyniku
@@ -223,11 +212,11 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         return result
     
     def then(self, next_command: CommandInterface) -> 'CommandChain':
-        """Tworzy łańcuch komend"""
+        """Create a sequential command chain with the next command."""
         chain = CommandChain(self)
         return chain.then(next_command)
-    
+
     def pipe(self, next_command: CommandInterface) -> 'CommandChain':
-        """Tworzy łańcuch komend z przekierowaniem wyjścia"""
+        """Create a pipeline chain, piping this command's output to the next."""
         chain = CommandChain(self)
         return chain.pipe(next_command)
