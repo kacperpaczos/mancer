@@ -3,3 +3,33 @@
   --md-code-font: "JetBrains Mono", "Roboto Mono", ui-monospace, monospace;
 }
 
+/* Center hero buttons on homepage */
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1.25rem;
+}
+.hero-buttons .md-button {
+  padding-inline: 1rem;
+}
+
+/* Sidebar nav: make section headings darker and bold */
+/* Top-level items */
+.md-nav--primary > .md-nav__list > .md-nav__item > .md-nav__link {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+/* Collapsible section labels */
+.md-nav--primary .md-nav__item--section > .md-nav__link {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+/* Active link contrast */
+.md-nav--primary .md-nav__link--active {
+  color: var(--md-primary-fg-color);
+}
+
+
