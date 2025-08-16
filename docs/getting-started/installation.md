@@ -27,7 +27,7 @@ python -c "import mancer; print('Mancer version:', mancer.__version__)"
 ## Install from source (editable)
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/mancer.git
+git clone https://github.com/Liberos-Systems/mancer.git
 cd mancer
 
 # Create and activate virtual environment (recommended)

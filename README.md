@@ -399,7 +399,7 @@ If you'd like to contribute to the Mancer framework, here's how to get started:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/mancer.git
+   git clone https://github.com/Liberos-Systems/mancer.git
    cd mancer
    ```
 

@@ -15,7 +15,7 @@ Professional command automation and orchestration for system and network environ
 === "From source"
 
     ```bash
-    git clone https://github.com/your-org/mancer.git
+    git clone https://github.com/Liberos-Systems/mancer.git
     cd mancer
     python3 -m venv .venv && source .venv/bin/activate
     pip install -r requirements.txt
