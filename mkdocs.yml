@@ -55,6 +55,7 @@ nav:
   - Concepts: concepts.md
   - Architecture:
       - Overview: architecture/overview.md
+      - DDD Architecture: architecture/ddd-overview.md
       - Modules: architecture/modules.md
       - Command Flow: architecture/command-flow.md
   - User Guide:
@@ -63,8 +64,8 @@ nav:
       - Data & Formatting: user-guide/data-formatting.md
       - Logging & Errors: user-guide/logging-and-errors.md
       - Versioning & Compatibility: user-guide/versioning-compatibility.md
+      - Examples: user-guide/examples.md
   - Examples:
-      - Quick Examples: user-guide/examples.md
       - All Examples: examples/all-examples.md
   - API Reference:
       - Overview: api.md
@@ -75,8 +76,12 @@ nav:
       - Custom Commands: extending/custom-commands.md
       - Backends: extending/backends.md
       - Plugins: extending/plugins.md
-  - Development: development.md
-  - Testing: development/testing-overview.md
+  - Development:
+      - Overview: development.md
+      - Contributing: development/contributing.md
+      - Feature Lifecycle: development/feature-lifecycle.md
+      - Version Adaptation: development/version-adaptation.md
+      - Testing Overview: development/testing-overview.md
   - Versioning: versioning.md
   - FAQ: faq.md
   - Contact: contact.md
