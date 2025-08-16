@@ -37,7 +37,11 @@ nav:
       - Logging & Errors: user-guide/logging-and-errors.md
       - Versioning & Compatibility: user-guide/versioning-compatibility.md
   - Examples: user-guide/examples.md
-  - API Reference: api.md
+  - API Reference:
+      - Overview: api.md
+      - Application: api/application.md
+      - Domain: api/domain.md
+      - Infrastructure: api/infrastructure.md
   - Extending Mancer:
       - Custom Commands: extending/custom-commands.md
       - Backends: extending/backends.md
