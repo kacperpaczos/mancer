@@ -9,4 +9,5 @@ setup(
     author="Kacper Paczos",
     author_email="kacperpaczos2024@proton.me",
     python_requires=">=3.8",
+    license="MIT",
 )
