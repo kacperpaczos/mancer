@@ -97,4 +97,4 @@ Fun fact: “mancy” names come from real divination terms (oneiromancy, cartom
 ---
 
 ## Community & Contact
-Questions or want to contribute? [GitHub Repository](https://github.com/your-org/mancer)
+Questions or want to contribute? [GitHub Repository](https://github.com/Liberos-Systems/mancer)
