@@ -3,19 +3,29 @@
 This quickstart shows the simplest way to run a command using Mancer's high-level runner and how to chain commands. It also briefly covers remote execution.
 
 ## 1) Run your first command
-```python
-from mancer.application.shell_runner import ShellRunner
 
-runner = ShellRunner(backend_type="bash")
+=== "Python"
 
-# Create a command (ls -la) and execute it
-cmd = runner.create_command("ls").long().all()
-result = runner.execute(cmd)
+    ```python
+    from mancer.application.shell_runner import ShellRunner
 
-print("Success:", result.is_success())
-print("Exit code:", result.exit_code)
-print("Raw output:\n", result.raw_output[:200])
-```
+    runner = ShellRunner(backend_type="bash")
+
+    # Create a command (ls -la) and execute it
+    cmd = runner.create_command("ls").long().all()
+    result = runner.execute(cmd)
+
+    print("Success:", result.is_success())
+    print("Exit code:", result.exit_code)
+    print("Raw output:\n", result.raw_output[:200])
+    ```
+
+=== "CLI"
+
+    ```bash
+    # Coming soon: mancer CLI quickstart
+    mancer run "ls -la"
+    ```
 
 ## 2) Build a small pipeline (chain)
 ```python
