@@ -36,7 +36,9 @@ nav:
       - Data & Formatting: user-guide/data-formatting.md
       - Logging & Errors: user-guide/logging-and-errors.md
       - Versioning & Compatibility: user-guide/versioning-compatibility.md
-  - Examples: user-guide/examples.md
+  - Examples:
+      - Quick Examples: user-guide/examples.md
+      - All Examples: examples/all-examples.md
   - API Reference:
       - Overview: api.md
       - Application: api/application.md
