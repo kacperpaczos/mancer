@@ -1,0 +1,87 @@
+site_name: Mancer Framework
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
+    - navigation.path
+    - navigation.top
+    - navigation.tracking
+    - navigation.footer
+    - toc.follow
+    - content.tabs.link
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - content.tooltips
+    - versioning
+extra_css:
+  - css/branding.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: false
+            merge_init_into_class: true
+            docstring_style: google
+            docstring_section_style: list
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - Concepts: concepts.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - DDD Architecture: architecture/ddd-overview.md
+      - Modules: architecture/modules.md
+      - Command Flow: architecture/command-flow.md
+  - User Guide:
+      - Commands: user-guide/commands.md
+      - Configuration: user-guide/configuration.md
+      - Data & Formatting: user-guide/data-formatting.md
+      - Logging & Errors: user-guide/logging-and-errors.md
+      - Versioning & Compatibility: user-guide/versioning-compatibility.md
+      - Examples: user-guide/examples.md
+  - Examples:
+      - All Examples: examples/all-examples.md
+  - API Reference:
+      - Overview: api.md
+      - Application: api/application.md
+      - Domain: api/domain.md
+      - Infrastructure: api/infrastructure.md
+  - Extending Mancer:
+      - Custom Commands: extending/custom-commands.md
+      - Backends: extending/backends.md
+      - Plugins: extending/plugins.md
+  - Development:
+      - Overview: development.md
+      - Contributing: development/contributing.md
+      - Feature Lifecycle: development/feature-lifecycle.md
+      - Version Adaptation: development/version-adaptation.md
+      - Testing Overview: development/testing-overview.md
+  - Versioning: versioning.md
+  - FAQ: faq.md
+  - Contact: contact.md

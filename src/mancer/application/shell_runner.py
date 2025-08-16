@@ -85,8 +85,12 @@ COMMAND_TYPES_TRANSLATION = {
 }
 
 class ShellRunner:
-    """Main application class for running commands"""
-    
+    """High-level entry point for creating and executing commands.
+
+    Provides context management, optional caching, live output support, logging,
+    and helpers for local/remote execution.
+    """
+
     def __init__(self, backend_type: str = "bash", 
                 context: Optional[CommandContext] = None, 
                 cache_size: int = 100,
@@ -95,18 +99,17 @@ class ShellRunner:
                 enable_command_logging: bool = True,
                 log_to_file: bool = False,
                 log_level: str = "info"):
-        """
-        Initializes the command runner.
-        
+        """Initialize the command runner.
+
         Args:
-            backend_type: Backend type ("bash" or "ssh")
-            context: Optional execution context
-            cache_size: Command cache size
-            enable_cache: Whether to enable command caching
-            enable_live_output: Whether to show command output in real-time by default
-            enable_command_logging: Whether to enable command logging
-            log_to_file: Whether to log to a file
-            log_level: Logging level ("debug", "info", "warning", "error", "critical")
+            backend_type: Backend type ("bash" or "ssh").
+            context: Optional execution context. If None, a default is created.
+            cache_size: Command cache size.
+            enable_cache: Whether to enable command caching.
+            enable_live_output: Show command output in real-time by default.
+            enable_command_logging: Whether to enable command logging.
+            log_to_file: Whether to log to a file in addition to console.
+            log_level: Logging level ("debug", "info", "warning", "error", "critical").
         """
         self.factory = CommandFactory(backend_type)
         self._context = context or self._create_default_context()
@@ -127,11 +130,25 @@ class ShellRunner:
         """Creates a new command instance"""
         return self.factory.create_command(command_name)
     
-    def execute(self, command: CommandInterface, 
+    def execute(self, command: CommandInterface,
                context_params: Optional[Dict[str, Any]] = None,
                cache_id: Optional[str] = None,
                live_output: bool = False) -> CommandResult:
-        """Executes a single command or command chain"""
+        """Execute a single command or a CommandChain with optional caching and live output.
+
+        Args:
+            command: Command instance or CommandChain to execute.
+            context_params: Optional context parameters to set for this run (e.g. env, live output config).
+            cache_id: Optional cache key; if omitted and caching enabled, a stable key is derived.
+            live_output: If True, stream stdout/stderr in real time (no caching).
+
+        Returns:
+            CommandResult with raw_output, structured_output, status and history.
+
+        Notes:
+            - When live_output is enabled, results are not cached.
+            - For simple commands, the __call__ wrapper is used to ensure logging.
+        """
         # Copy context to avoid modifying the global one
         context = self._prepare_context(context_params)
         
@@ -257,27 +274,24 @@ class ShellRunner:
             gssapi_delegate_creds: Whether to delegate GSSAPI credentials
             ssh_options: Additional SSH options
         """
-        # Create remote host info
-        remote_host = RemoteHostInfo(
-            hostname=host,
-            username=user,
+        # Configure remote execution mode in context
+        self._context.set_remote_execution(
+            host=host,
+            user=user,
             port=port,
+            key_file=key_file,
             password=password,
-            key_filename=key_file,
             use_sudo=use_sudo,
             sudo_password=sudo_password,
-            allow_agent=use_agent,
+            use_agent=use_agent,
             certificate_file=certificate_file,
             identity_only=identity_only,
             gssapi_auth=gssapi_auth,
-            gssapi_kex=gssapi_keyex,
+            gssapi_keyex=gssapi_keyex,
             gssapi_delegate_creds=gssapi_delegate_creds,
             ssh_options=ssh_options or {}
         )
-        
-        # Set remote execution mode in context
-        self._context.set_remote_execution(remote_host)
-        
+
         # Log the change
         logger = MancerLogger.get_instance()
         logger.info(f"Remote execution set to {host}:{port}", {
@@ -298,14 +312,19 @@ class ShellRunner:
         """Returns the current execution backend"""
         if self._context.execution_mode == ExecutionMode.REMOTE:
             # Create an SSH backend
+            rh = self._context.remote_host
             return SshBackend(
-                hostname=self._context.remote_host.hostname,
-                username=self._context.remote_host.username,
-                password=self._context.remote_host.password,
-                port=self._context.remote_host.port,
-                key_filename=self._context.remote_host.key_filename,
-                allow_agent=self._context.remote_host.allow_agent,
-                look_for_keys=True
+                hostname=rh.host,
+                username=rh.user,
+                password=rh.password,
+                port=rh.port,
+                key_filename=rh.key_file,
+                allow_agent=rh.use_agent,
+                look_for_keys=True,
+                gssapi_auth=rh.gssapi_auth,
+                gssapi_kex=rh.gssapi_keyex,
+                gssapi_delegate_creds=rh.gssapi_delegate_creds,
+                ssh_options=rh.ssh_options
             )
         else:
             # Use local bash backend
@@ -405,44 +424,43 @@ class ShellRunner:
         """
         return self._command_cache.export_data(include_results=include_results)
     
-    def execute_live(self, command: CommandInterface, 
+    def execute_live(self, command: CommandInterface,
                    context_params: Optional[Dict[str, Any]] = None) -> CommandResult:
-        """
-        Executes a command with live output.
-        
+        """Execute a command with live (streamed) output.
+
         Args:
-            command: The command to execute
-            context_params: Additional context parameters
-            
+            command: The command to execute.
+            context_params: Additional context parameters for this run.
+
         Returns:
-            Command execution result
+            CommandResult: Result of execution.
+
+        Notes:
+            Live output mode disables caching for this execution.
         """
         return self.execute(command, context_params, live_output=True)
     
     def create_bash_command(self, command_str: str) -> CommandInterface:
-        """
-        Creates a raw bash command.
-        
+        """Create a raw bash command wrapper based on EchoCommand.
+
         Args:
-            command_str: Bash command string
-            
+            command_str: Bash command string to execute as-is.
+
         Returns:
-            Command interface
+            CommandInterface: A command object whose build_command() returns command_str.
+
+        Examples:
+            runner.create_bash_command("ls -la /tmp").execute(ctx)
         """
         from ..infrastructure.command.system.echo_command import EchoCommand
-        
-        # Create a placeholder echo command
+
         echo = EchoCommand()
-        
-        # Set the raw bash command as the command string
         echo.command_str = command_str
-        
-        # Override the build_command method
+
         def _build_command():
             return command_str
-            
         echo.build_command = _build_command
-        
+
         return echo
     
     def get_command_type_name(self, command_type: str, language: Optional[str] = None) -> str:

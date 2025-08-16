@@ -12,23 +12,22 @@ from ...domain.shared.config_balancer import (
 
 
 class ConfigSyncTask:
-    """Reprezentuje zadanie synchronizacji konfiguracji."""
-    
+    """Represents a configuration synchronization task."""
+
     def __init__(self, name: str, source_profile: str, source_path: str,
                 target_profiles: List[str], target_path: str,
                 description: Optional[str] = None,
                 validate_before_sync: bool = True):
-        """
-        Inicjalizuje zadanie synchronizacji.
-        
+        """Initialize a synchronization task.
+
         Args:
-            name: Nazwa zadania
-            source_profile: Nazwa profilu źródłowego
-            source_path: Ścieżka do pliku źródłowego
-            target_profiles: Lista profili docelowych
-            target_path: Ścieżka do pliku docelowego
-            description: Opis zadania
-            validate_before_sync: Czy walidować przed synchronizacją
+            name: Task name.
+            source_profile: Source profile name.
+            source_path: Path to the source file.
+            target_profiles: List of target profile names.
+            target_path: Path to the target file.
+            description: Optional human-readable description.
+            validate_before_sync: Whether to validate before syncing.
         """
         self.name = name
         self.source_profile = source_profile
@@ -41,12 +40,7 @@ class ConfigSyncTask:
         self.last_run = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Konwertuje zadanie do słownika.
-        
-        Returns:
-            Dict[str, Any]: Słownik z danymi zadania
-        """
+        """Serialize the task to a dictionary."""
         return {
             'name': self.name,
             'source_profile': self.source_profile,
@@ -61,14 +55,13 @@ class ConfigSyncTask:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ConfigSyncTask':
-        """
-        Tworzy zadanie z słownika.
-        
+        """Create a task from a dictionary.
+
         Args:
-            data: Słownik z danymi zadania
-            
+            data: Task data mapping.
+
         Returns:
-            ConfigSyncTask: Utworzone zadanie
+            ConfigSyncTask: New task instance.
         """
         task = cls(
             name=data['name'],
@@ -90,20 +83,19 @@ class ConfigSyncTask:
 
 
 class SyncResult:
-    """Reprezentuje wynik synchronizacji."""
-    
+    """Represents the result of a synchronization for a single target profile."""
+
     def __init__(self, task_name: str, target_profile: str, success: bool,
                 error_message: Optional[str] = None,
                 backup_path: Optional[str] = None):
-        """
-        Inicjalizuje wynik synchronizacji.
-        
+        """Initialize a synchronization result item.
+
         Args:
-            task_name: Nazwa zadania
-            target_profile: Nazwa profilu docelowego
-            success: Czy synchronizacja się powiodła
-            error_message: Komunikat błędu
-            backup_path: Ścieżka do backupu
+            task_name: Synchronization task name.
+            target_profile: Target profile name.
+            success: Whether the synchronization succeeded.
+            error_message: Optional error message.
+            backup_path: Optional path to a created backup.
         """
         self.task_name = task_name
         self.target_profile = target_profile
@@ -113,12 +105,7 @@ class SyncResult:
         self.timestamp = datetime.datetime.now()
     
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Konwertuje wynik do słownika.
-        
-        Returns:
-            Dict[str, Any]: Słownik z danymi wyniku
-        """
+        """Serialize the synchronization result to a dictionary."""
         return {
             'task_name': self.task_name,
             'target_profile': self.target_profile,
@@ -130,20 +117,18 @@ class SyncResult:
 
 
 class RemoteConfigManager:
+    """Manage configurations on remote hosts via SSH and templates.
+
+    Uses shared components for SSH connections, profile management, and file operations.
     """
-    Klasa do zarządzania konfiguracjami na zdalnych serwerach.
-    Korzysta z wspólnych komponentów do połączeń SSH, zarządzania profilami
-    i operacji na plikach.
-    """
-    
+
     def __init__(self, profile_storage_dir: Optional[str] = None,
                 config_storage_dir: Optional[str] = None):
-        """
-        Inicjalizuje RemoteConfigManager.
-        
+        """Initialize the RemoteConfigManager.
+
         Args:
-            profile_storage_dir: Katalog do przechowywania profili połączeń
-            config_storage_dir: Katalog do przechowywania konfiguracji
+            profile_storage_dir: Directory for connection profiles.
+            config_storage_dir: Directory for configuration templates/data.
         """
         self.profile_producer = ProfileProducer(profile_storage_dir)
         self.config_balancer = ConfigBalancer(config_storage_dir)
@@ -164,16 +149,15 @@ class RemoteConfigManager:
         self._load_tasks()
     
     def connect(self, profile_name: str) -> bool:
-        """
-        Nawiązuje połączenie z serwerem na podstawie profilu.
-        
+        """Establish an SSH connection using a saved profile.
+
         Args:
-            profile_name: Nazwa profilu połączenia
-            
+            profile_name: Connection profile name.
+
         Returns:
-            bool: Czy połączenie się powiodło
+            True if the connection is established and alive.
         """
-        # Sprawdź czy już połączono
+        # Reuse existing connection if alive
         if profile_name in self.connections:
             return self.connections[profile_name].is_alive()
         
@@ -195,11 +179,10 @@ class RemoteConfigManager:
         return True
     
     def disconnect(self, profile_name: Optional[str] = None) -> None:
-        """
-        Rozłącza połączenie.
-        
+        """Close one connection or all connections if profile_name is None.
+
         Args:
-            profile_name: Nazwa profilu do rozłączenia (None = wszystkie)
+            profile_name: Profile to disconnect; None disconnects all.
         """
         if profile_name:
             # Rozłącz konkretne połączenie
@@ -210,15 +193,14 @@ class RemoteConfigManager:
             self.connections.clear()
     
     def get_remote_file_content(self, profile_name: str, file_path: str) -> Optional[str]:
-        """
-        Pobiera zawartość pliku ze zdalnego serwera.
-        
+        """Fetch a remote file content via SSH.
+
         Args:
-            profile_name: Nazwa profilu połączenia
-            file_path: Ścieżka do pliku
-            
+            profile_name: Connection profile name.
+            file_path: Absolute path to the file on the remote host.
+
         Returns:
-            Optional[str]: Zawartość pliku lub None
+            The file content as string, or None on error.
         """
         # Upewnij się, że jest połączenie
         if not self._ensure_connection(profile_name):
@@ -232,16 +214,15 @@ class RemoteConfigManager:
             return None
     
     def save_remote_file(self, profile_name: str, file_path: str, content: str) -> bool:
-        """
-        Zapisuje zawartość do pliku na zdalnym serwerze.
-        
+        """Write content to a remote file via SSH.
+
         Args:
-            profile_name: Nazwa profilu połączenia
-            file_path: Ścieżka do pliku
-            content: Zawartość do zapisania
-            
+            profile_name: Connection profile name.
+            file_path: Absolute path to the file on the remote host.
+            content: Content to write.
+
         Returns:
-            bool: Czy operacja się powiodła
+            True on success, False otherwise.
         """
         # Upewnij się, że jest połączenie
         if not self._ensure_connection(profile_name):
@@ -253,17 +234,16 @@ class RemoteConfigManager:
     
     def compare_config_files(self, source_profile: str, source_path: str,
                           target_profile: str, target_path: str) -> ConfigDiff:
-        """
-        Porównuje pliki konfiguracyjne.
-        
+        """Compare two remote config files and return a diff model.
+
         Args:
-            source_profile: Nazwa profilu źródłowego
-            source_path: Ścieżka do pliku źródłowego
-            target_profile: Nazwa profilu docelowego
-            target_path: Ścieżka do pliku docelowego
-            
+            source_profile: Source connection profile.
+            source_path: Source file path.
+            target_profile: Target connection profile.
+            target_path: Target file path.
+
         Returns:
-            ConfigDiff: Różnice między plikami
+            ConfigDiff describing differences.
         """
         # Upewnij się, że są połączenia
         if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
@@ -286,18 +266,17 @@ class RemoteConfigManager:
     def sync_config_file(self, source_profile: str, source_path: str,
                        target_profile: str, target_path: str,
                        make_backup: bool = True) -> Tuple[bool, Optional[str]]:
-        """
-        Synchronizuje plik konfiguracyjny z źródła do celu.
-        
+        """Synchronize a config file from source to target.
+
         Args:
-            source_profile: Nazwa profilu źródłowego
-            source_path: Ścieżka do pliku źródłowego
-            target_profile: Nazwa profilu docelowego
-            target_path: Ścieżka do pliku docelowego
-            make_backup: Czy utworzyć backup przed synchronizacją
-            
+            source_profile: Source connection profile name.
+            source_path: Path to the source file.
+            target_profile: Target connection profile name.
+            target_path: Path to the target file.
+            make_backup: Whether to create a backup before syncing.
+
         Returns:
-            Tuple[bool, Optional[str]]: (sukces, ścieżka do backupu lub komunikat błędu)
+            Tuple (success, backup_path_or_error_msg).
         """
         # Upewnij się, że są połączenia
         if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
@@ -313,14 +292,13 @@ class RemoteConfigManager:
         )
     
     def add_sync_task(self, task: ConfigSyncTask) -> bool:
-        """
-        Dodaje zadanie synchronizacji.
-        
+        """Add a synchronization task.
+
         Args:
-            task: Zadanie do dodania
-            
+            task: Task to add.
+
         Returns:
-            bool: Czy operacja się powiodła
+            True if the task was added and persisted.
         """
         # Sprawdź czy zadanie o takiej nazwie już istnieje
         if task.name in self._tasks:
@@ -333,14 +311,13 @@ class RemoteConfigManager:
         return self._save_task(task)
     
     def update_sync_task(self, task: ConfigSyncTask) -> bool:
-        """
-        Aktualizuje zadanie synchronizacji.
-        
+        """Update an existing synchronization task and persist it.
+
         Args:
-            task: Zadanie do aktualizacji
-            
+            task: Task to update.
+
         Returns:
-            bool: Czy operacja się powiodła
+            True if the task was saved successfully.
         """
         # Aktualizuj zadanie
         self._tasks[task.name] = task
@@ -349,26 +326,17 @@ class RemoteConfigManager:
         return self._save_task(task)
     
     def get_sync_task(self, name: str) -> Optional[ConfigSyncTask]:
-        """
-        Pobiera zadanie synchronizacji.
-        
-        Args:
-            name: Nazwa zadania
-            
-        Returns:
-            Optional[ConfigSyncTask]: Zadanie lub None
-        """
+        """Return a synchronization task by name (or None if not found)."""
         return self._tasks.get(name)
     
     def delete_sync_task(self, name: str) -> bool:
-        """
-        Usuwa zadanie synchronizacji.
-        
+        """Delete a synchronization task by name and its persisted file.
+
         Args:
-            name: Nazwa zadania
-            
+            name: Task name.
+
         Returns:
-            bool: Czy operacja się powiodła
+            True on success, False otherwise.
         """
         # Usuń zadanie z pamięci
         if name in self._tasks:
@@ -386,23 +354,17 @@ class RemoteConfigManager:
         return False
     
     def list_sync_tasks(self) -> List[ConfigSyncTask]:
-        """
-        Listuje zadania synchronizacji.
-        
-        Returns:
-            List[ConfigSyncTask]: Lista zadań
-        """
+        """Return all configured synchronization tasks as a list."""
         return list(self._tasks.values())
     
     def run_sync_task(self, task_name: str) -> List[SyncResult]:
-        """
-        Wykonuje zadanie synchronizacji.
-        
+        """Execute a configured synchronization task against all its targets.
+
         Args:
-            task_name: Nazwa zadania
-            
+            task_name: Task name.
+
         Returns:
-            List[SyncResult]: Lista wyników synchronizacji
+            List of SyncResult entries, one per target profile.
         """
         # Pobierz zadanie
         task = self.get_sync_task(task_name)

@@ -3,16 +3,23 @@ from typing import Any, Dict, List, Optional, Union
 import json
 
 class DataFormat(Enum):
-    """Formaty danych dla structured_output w CommandResult"""
-    LIST = auto()  # Standardowa lista słowników/obiektów
-    DATAFRAME = auto()  # Pandas DataFrame
-    NDARRAY = auto()  # NumPy ndarray
-    JSON = auto()  # JSON string
-    TABLE = auto()  # Format tabeli (dla komend jak df, ps)
+    """Data formats for CommandResult.structured_output.
+
+    - LIST: Standard list of dicts/objects
+    - DATAFRAME: pandas.DataFrame
+    - NDARRAY: numpy.ndarray
+    - JSON: JSON string
+    - TABLE: Tabular format used by commands like df/ps
+    """
+    LIST = auto()
+    DATAFRAME = auto()
+    NDARRAY = auto()
+    JSON = auto()
+    TABLE = auto()
     
     @staticmethod
     def from_string(format_name: str) -> Optional['DataFormat']:
-        """Konwertuje string na enum DataFormat"""
+        """Convert a string name to a DataFormat enum value."""
         format_map = {
             "list": DataFormat.LIST,
             "dataframe": DataFormat.DATAFRAME,
@@ -28,7 +35,7 @@ class DataFormat(Enum):
     
     @staticmethod
     def to_string(format_type: 'DataFormat') -> str:
-        """Konwertuje enum DataFormat na string"""
+        """Convert a DataFormat enum value to its string name."""
         format_map = {
             DataFormat.LIST: "list",
             DataFormat.DATAFRAME: "dataframe", 
@@ -41,6 +48,6 @@ class DataFormat(Enum):
     
     @staticmethod
     def is_convertible(source_format: 'DataFormat', target_format: 'DataFormat') -> bool:
-        """Sprawdza czy konwersja między formatami jest możliwa"""
+        """Return True if conversion between formats is possible."""
         # Wszystkie formaty są konwertowalne między sobą
         return True 

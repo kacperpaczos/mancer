@@ -4,11 +4,15 @@ import re
 from ..model.data_format import DataFormat
 
 class DataFormatConverter:
-    """Serwis do konwersji danych między różnymi formatami"""
-    
+    """Service for converting data between formats.
+
+    Provides helpers to convert between CommandResult data formats: LIST, JSON, DATAFRAME, NDARRAY.
+    Conversions are performed via a LIST (records) intermediate representation.
+    """
+
     @staticmethod
     def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Optional[Any]:
-        """Konwertuje dane z jednego formatu do drugiego"""
+        """Convert data from source_format to target_format using LIST as intermediate if needed."""
         # Jeśli formaty są takie same, zwróć dane bez zmian
         if source_format == target_format:
             return data
@@ -28,7 +32,7 @@ class DataFormatConverter:
     
     @staticmethod
     def _to_list(data: Any, source_format: DataFormat) -> Optional[List[Dict[str, Any]]]:
-        """Konwertuje dane z określonego formatu na listę słowników"""
+        """Convert data from a specific format to a list of dict records."""
         if source_format == DataFormat.LIST:
             return data
             
@@ -82,9 +86,9 @@ class DataFormatConverter:
                 import pandas as pd
                 
                 def convert_size(value):
-                    """
-                    Konwertuje wartość tekstową, która może zawierać jednostki i różne separatory
-                    dziesiętne (kropki, przecinki, średniki) na wartość liczbową.
+                    """Convert textual values with units and various decimal separators to numeric.
+
+                    Handles units (K/M/G/T) and decimal formats (dot/comma/semicolon).
                     """
                     if not isinstance(value, str):
                         return value
@@ -103,8 +107,7 @@ class DataFormatConverter:
                             unit_multiplier = mult
                             break
                     
-                    # Zamiana separatorów (najpierw wykrywamy jaki to format)
-                    # Usuwamy znaki procentu i inne znaki specjalne
+                    # Replace special characters and percent signs
                     cleaned_value = cleaned_value.replace('%', '').replace('€', '')
                     
                     # Próbujemy wykryć format liczby

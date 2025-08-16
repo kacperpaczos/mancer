@@ -5,13 +5,13 @@ from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 class BashBackend(BackendInterface):
-    """Backend wykonujący komendy w bashu"""
-    
-    def execute_command(self, command: str, working_dir: Optional[str] = None, 
-                       env_vars: Optional[Dict[str, str]] = None, 
+    """Backend executing commands in the local bash shell."""
+
+    def execute_command(self, command: str, working_dir: Optional[str] = None,
+                       env_vars: Optional[Dict[str, str]] = None,
                        context_params: Optional[Dict[str, Any]] = None,
                        stdin: Optional[str] = None) -> CommandResult:
-        """Wykonuje komendę w bashu"""
+        """Execute a command in bash."""
         try:
             # Przygotowanie środowiska
             process_env = None
@@ -153,18 +153,18 @@ class BashBackend(BackendInterface):
                 error_message=f"{str(e)}\n{traceback.format_exc()}"
             )
     
-    def execute(self, command: str, input_data: Optional[str] = None, 
+    def execute(self, command: str, input_data: Optional[str] = None,
                working_dir: Optional[str] = None, timeout: Optional[int] = 10) -> Tuple[int, str, str]:
-        """
-        Executes a command and returns exit code, stdout, and stderr.
-        This method is used by Command classes.
-        
+        """Execute the command and return (exit_code, stdout, stderr).
+
+        Used by Command classes.
+
         Args:
-            command: The command to execute
-            input_data: Optional input data to pass to stdin
-            working_dir: Optional working directory
-            timeout: Optional timeout in seconds (default 10)
-            
+            command: The command to execute.
+            input_data: Optional input data to pass to stdin.
+            working_dir: Optional working directory.
+            timeout: Optional timeout in seconds (default 10).
+
         Returns:
             Tuple of (exit_code, stdout, stderr)
         """
@@ -217,22 +217,17 @@ class BashBackend(BackendInterface):
             print(f"Error executing command: {str(e)}")
             return -1, "", str(e)
     
-    def parse_output(self, command: str, raw_output: str, exit_code: int, 
+    def parse_output(self, command: str, raw_output: str, exit_code: int,
                     error_output: str = "") -> CommandResult:
-        """Parsuje wyjście komendy do standardowego formatu"""
-        # Domyślnie zwracamy sukces, jeśli kod wyjścia jest 0
+        """Parse command output into a standard CommandResult."""
         success = exit_code == 0
-        
-        # Niektóre komendy mogą zwracać niepusty error_output nawet przy sukcesie
-        # np. grep zwraca kod 1 gdy nie znaleziono wzorca, co nie jest faktycznym błędem
-        
-        # Próbujemy podstawowe strukturyzowanie wyniku (linie tekstu)
+
+        # Basic line-splitting structure
         structured_output = []
         if raw_output:
             structured_output = raw_output.strip().split('\n')
-            # Usuwamy puste linie
             structured_output = [line for line in structured_output if line]
-        
+
         return CommandResult(
             raw_output=raw_output,
             success=success,
@@ -241,25 +236,16 @@ class BashBackend(BackendInterface):
             error_message=error_output if not success else None
         )
     
-    def build_command_string(self, command_name: str, options: List[str], 
+    def build_command_string(self, command_name: str, options: List[str],
                            params: Dict[str, Any], flags: List[str]) -> str:
-        """Buduje string komendy zgodny z bashem"""
+        """Build a bash-compatible command string."""
         parts = [command_name]
-        
-        # Opcje (krótkie, np. -l)
         parts.extend(options)
-        
-        # Flagi (długie, np. --recursive)
         parts.extend(flags)
-        
-        # Parametry (--name=value lub -n value)
         for name, value in params.items():
             if len(name) == 1:
-                # Krótka opcja
                 parts.append(f"-{name}")
                 parts.append(shlex.quote(str(value)))
             else:
-                # Długa opcja
                 parts.append(f"--{name}={shlex.quote(str(value))}")
-        
         return " ".join(parts)

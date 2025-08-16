@@ -7,41 +7,32 @@ from ....domain.model.command_context import CommandContext
 from ....domain.model.data_format import DataFormat
 
 class PsCommand(BaseCommand):
-    """Komenda ps - wyświetla informacje o procesach"""
-    
-    # Zdefiniuj nazwę narzędzia
+    """Command implementation for 'ps' to display running processes."""
+
+    # Tool name
     tool_name = "ps"
     
     def __init__(self):
         super().__init__("ps")
         self.preferred_data_format = DataFormat.TABLE
     
-    def execute(self, context: CommandContext, 
+    def execute(self, context: CommandContext,
                 input_result: Optional[CommandResult] = None) -> CommandResult:
-        """Wykonuje komendę ps"""
-        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
+        """Execute the ps command and return a structured result."""
         super().execute(context, input_result)
-        
-        # Zbuduj string komendy
+
         command_str = self.build_command()
-        
-        # Pobierz odpowiedni backend
         backend = self._get_backend(context)
-        
-        # Wykonaj komendę
         exit_code, output, error = backend.execute(command_str)
-        
-        # Sprawdź czy komenda się powiodła
+
         success = exit_code == 0
         error_message = error if error and not success else None
-        
-        # Dodaj ostrzeżenia o wersji do metadanych
+
         metadata = {}
         warnings = context.get_parameter("warnings", [])
         if warnings:
             metadata["version_warnings"] = warnings
-        
-        # Utwórz i zwróć wynik
+
         return self._prepare_result(
             raw_output=output,
             success=success,
@@ -51,28 +42,27 @@ class PsCommand(BaseCommand):
         )
     
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parsuje wynik ps do listy słowników z informacjami o procesach"""
+        """Parse ps output to a list of dictionaries with process information."""
         result = []
         lines = raw_output.strip().split('\n')
-        
-        if len(lines) < 2:  # Musi być co najmniej nagłówek i jeden proces
+
+        if len(lines) < 2:
             return result
         
-        # Parsujemy nagłówek, aby znaleźć pozycje kolumn
+        # Parse header to detect column start positions and names
         header = lines[0]
-        # Znajdź indeksy początku każdej kolumny
         col_positions = []
         col_names = []
         in_space = True
-        
+
         for i, char in enumerate(header):
             if char.isspace():
                 in_space = True
             elif in_space:
                 in_space = False
                 col_positions.append(i)
-                
-                # Znajdź nazwę kolumny (od tej pozycji do następnej spacji)
+
+                # Extract the column name from this start position
                 col_name = ""
                 for j in range(i, len(header)):
                     if header[j].isspace():
@@ -103,31 +93,30 @@ class PsCommand(BaseCommand):
         
         return result
     
-    # Metody specyficzne dla ps
-    
+    # ps specific helpers
+
     def all(self) -> 'PsCommand':
-        """Opcja -e - pokazuje wszystkie procesy"""
+        """Option -e: show all processes."""
         return self.with_option("-e")
     
     def full_format(self) -> 'PsCommand':
-        """Opcja -f - pełny format wyświetlania"""
+        """Option -f: full format."""
         return self.with_option("-f")
     
     def long_format(self) -> 'PsCommand':
-        """Opcja -l - długi format wyświetlania"""
+        """Option -l: long format."""
         return self.with_option("-l")
     
     def user(self, username: str) -> 'PsCommand':
-        """Opcja -u - pokazuje procesy określonego użytkownika"""
+        """Option -u: processes for a specific user."""
         return self.with_param("u", username)
     
     def search(self, pattern: str) -> 'PsCommand':
-        """Wyszukuje procesy według wzorca, wykorzystując grep"""
+        """Pipe ps output through grep with the given pattern."""
         new_instance = self.clone()
-        # Dodanie opcji do komendy ps, która przekazuje wynik do grep
         new_instance.pipeline = f"grep {pattern}"
         return new_instance
         
     def aux(self) -> 'PsCommand':
-        """Opcja aux - pokazuje wszystkie procesy dla wszystkich użytkowników z dodatkowymi informacjami"""
+        """Option aux: show processes for all users with extra info."""
         return self.with_option("aux")

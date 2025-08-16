@@ -11,40 +11,38 @@ from ...domain.model.command_context import CommandContext, ExecutionMode, Remot
 
 
 class SystemdUnit:
-    """Model jednostki systemd."""
-    
-    def __init__(self, name: str, load_state: str = "", active_state: str = "", 
+    """Systemd unit model."""
+
+    def __init__(self, name: str, load_state: str = "", active_state: str = "",
                 sub_state: str = "", description: str = ""):
-        """
-        Inicjalizuje jednostkę systemd.
-        
+        """Initialize a systemd unit.
+
         Args:
-            name: Nazwa jednostki
-            load_state: Stan załadowania (loaded, not-found, itp.)
-            active_state: Stan aktywności (active, inactive, failed, itp.)
-            sub_state: Stan szczegółowy (running, dead, exited, itp.)
-            description: Opis jednostki
+            name: Unit name
+            load_state: Load state (loaded, not-found, etc.).
+            active_state: Active state (active, inactive, failed, etc.).
+            sub_state: Detailed state (running, dead, exited, etc.).
+            description: Human-readable description.
         """
         self.name = name
         self.load_state = load_state
         self.active_state = active_state
         self.sub_state = sub_state
         self.description = description
-        
-        # Wnioskowanie typu jednostki z nazwy
+
+        # Infer unit type from name
         parts = name.split('.')
         self.unit_type = parts[-1] if len(parts) > 1 else "unknown"
     
     @classmethod
     def from_dict(cls, data: Dict[str, str]) -> 'SystemdUnit':
-        """
-        Tworzy jednostkę z słownika.
-        
+        """Create a unit from a dictionary.
+
         Args:
-            data: Słownik z danymi jednostki
-            
+            data: Unit data mapping (e.g., parsed columns from systemctl output).
+
         Returns:
-            SystemdUnit: Nowa jednostka
+            SystemdUnit: Created unit instance.
         """
         return cls(
             name=data.get('unit', ''),
@@ -55,12 +53,7 @@ class SystemdUnit:
         )
     
     def to_dict(self) -> Dict[str, str]:
-        """
-        Konwertuje jednostkę do słownika.
-        
-        Returns:
-            Dict[str, str]: Słownik z danymi jednostki
-        """
+        """Serialize the unit data to a dict."""
         return {
             'unit': self.name,
             'load': self.load_state,
@@ -71,45 +64,29 @@ class SystemdUnit:
         }
     
     def is_active(self) -> bool:
-        """
-        Sprawdza czy jednostka jest aktywna.
-        
-        Returns:
-            bool: True jeśli jednostka jest aktywna
-        """
+        """Return True if the unit is active."""
         return self.active_state == "active"
-    
+
     def is_failed(self) -> bool:
-        """
-        Sprawdza czy jednostka jest w stanie błędu.
-        
-        Returns:
-            bool: True jeśli jednostka jest w stanie błędu
-        """
+        """Return True if the unit is in a failed state."""
         return self.active_state == "failed"
-    
+
     def is_service(self) -> bool:
-        """
-        Sprawdza czy jednostka jest usługą.
-        
-        Returns:
-            bool: True jeśli jednostka jest usługą
-        """
+        """Return True if the unit is of type 'service'."""
         return self.unit_type == "service"
 
 
 class SystemdInspector:
+    """Inspect and manage systemd services on remote hosts.
+
+    Uses shared components for SSH connections and profile management.
     """
-    Klasa do monitorowania i zarządzania usługami systemd na zdalnych serwerach.
-    Korzysta z wspólnych komponentów do połączeń SSH i zarządzania profilami.
-    """
-    
+
     def __init__(self, profile_storage_dir: Optional[str] = None):
-        """
-        Inicjalizuje SystemdInspector.
-        
+        """Initialize the inspector.
+
         Args:
-            profile_storage_dir: Katalog do przechowywania profili połączeń
+            profile_storage_dir: Directory for connection profiles.
         """
         self.profile_producer = ProfileProducer(profile_storage_dir)
         self.report_dir = os.path.join(os.path.expanduser("~"), ".mancer", "systemd_reports")

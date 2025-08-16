@@ -7,34 +7,33 @@ from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 class SshBackend(BackendInterface):
-    """Backend wykonujący komendy przez SSH na zdalnym hoście"""
-    
-    def __init__(self, hostname: str = "", username: Optional[str] = None, 
-                port: int = 22, key_filename: Optional[str] = None, 
+    """Backend executing commands over SSH on a remote host."""
+
+    def __init__(self, hostname: str = "", username: Optional[str] = None,
+                port: int = 22, key_filename: Optional[str] = None,
                 password: Optional[str] = None, passphrase: Optional[str] = None,
-                allow_agent: bool = True, look_for_keys: bool = True, 
+                allow_agent: bool = True, look_for_keys: bool = True,
                 compress: bool = False, timeout: Optional[int] = None,
-                gssapi_auth: bool = False, gssapi_kex: bool = False, 
+                gssapi_auth: bool = False, gssapi_kex: bool = False,
                 gssapi_delegate_creds: bool = False,
                 ssh_options: Optional[Dict[str, str]] = None):
-        """
-        Inicjalizuje backend SSH
-        
+        """Initialize the SSH backend.
+
         Args:
-            hostname: Nazwa hosta lub adres IP zdalnego serwera
-            username: Nazwa użytkownika (opcjonalnie)
-            port: Port SSH (domyślnie 22)
-            key_filename: Ścieżka do pliku klucza prywatnego (opcjonalnie)
-            password: Hasło (opcjonalnie, niezalecane - lepiej używać kluczy)
-            passphrase: Hasło do klucza prywatnego (opcjonalnie)
-            allow_agent: Czy używać agenta SSH do uwierzytelniania
-            look_for_keys: Czy szukać kluczy w ~/.ssh
-            compress: Czy kompresować dane
-            timeout: Timeout połączenia w sekundach
-            gssapi_auth: Czy używać uwierzytelniania GSSAPI (Kerberos)
-            gssapi_kex: Czy używać wymiany kluczy GSSAPI
-            gssapi_delegate_creds: Czy delegować poświadczenia GSSAPI
-            ssh_options: Dodatkowe opcje SSH jako słownik
+            hostname: Remote host address or IP.
+            username: SSH user.
+            port: SSH port (default 22).
+            key_filename: Path to private key file.
+            password: SSH password (not recommended; prefer keys).
+            passphrase: Passphrase for the private key.
+            allow_agent: Whether to use SSH agent authentication.
+            look_for_keys: Whether to look for keys in ~/.ssh.
+            compress: Whether to enable compression.
+            timeout: Connection timeout in seconds.
+            gssapi_auth: Enable GSSAPI (Kerberos) authentication.
+            gssapi_kex: Enable GSSAPI key exchange.
+            gssapi_delegate_creds: Delegate GSSAPI credentials.
+            ssh_options: Additional SSH options as a dictionary.
         """
         self.hostname = hostname
         self.username = username
@@ -51,9 +50,9 @@ class SshBackend(BackendInterface):
         self.gssapi_delegate_creds = gssapi_delegate_creds
         self.ssh_options = ssh_options or {}
     
-    def execute_command(self, command: str, working_dir: Optional[str] = None, 
+    def execute_command(self, command: str, working_dir: Optional[str] = None,
                        env_vars: Optional[Dict[str, str]] = None) -> CommandResult:
-        """Wykonuje komendę przez SSH na zdalnym hoście"""
+        """Execute a command over SSH on the remote host."""
         # Budujemy komendę SSH
         ssh_command = ["ssh"]
         
@@ -258,10 +257,9 @@ class SshBackend(BackendInterface):
         except Exception as e:
             return -1, "", str(e)
     
-    def parse_output(self, command: str, raw_output: str, exit_code: int, 
+    def parse_output(self, command: str, raw_output: str, exit_code: int,
                     error_output: str = "") -> CommandResult:
-        """Parsuje wyjście komendy do standardowego formatu"""
-        # Domyślnie zwracamy sukces, jeśli kod wyjścia jest 0
+        """Parse command output into a standard CommandResult."""
         success = exit_code == 0
         
         # Próbujemy podstawowe strukturyzowanie wyniku (linie tekstu)
