@@ -1,55 +1,99 @@
 # Mancer
 
-A Domain-Driven Design (DDD) framework for system commands that enables version control of tools, local and remote command execution, and processing results in various formats.
+Mancer — Multisystem Programmable Engine
 
-> **WARNING**: Mancer is in early development stage (v0.1.0). The API and ABI are not stable and may change without notice in future releases. Use with caution in production environments.
+A domain-driven framework for programmable system automation: local bash and remote SSH, composable commands, structured results (JSON/DataFrame/ndarray), execution history, and version-aware behavior.
+
+> Status: Early-stage (pre‑1.0). The API may evolve between minor releases. We appreciate feedback and contributions.
 
 ## Installation
 
-The framework can be installed in two ways:
-
-### Quick Installation
-
+### From PyPI (recommended)
 ```bash
-pip uninstall -y mancer
+pip install -U mancer
+```
+
+### From source
+```bash
+git clone https://github.com/Liberos-Systems/mancer.git
+cd mancer
+python -m venv .venv && source .venv/bin/activate
 pip install -e .
 ```
 
-### Installation with Development Environment Setup
+## What is Mancer?
+- Execute system commands locally (bash) or remotely (SSH) via a unified API
+- Compose commands into pipelines and reusable building blocks
+- Get structured results (JSON / pandas DataFrame / NumPy ndarray)
+- Track execution history and metadata for auditing and analysis
+- Adapt to tool versions with version‑aware behavior
+- Extend with your own commands and backends
 
+## Quickstart
+```python
+from mancer.application.shell_runner import ShellRunner
+
+runner = ShellRunner(backend_type="bash")
+cmd = runner.create_command("echo").text("hello mancer")
+result = runner.execute(cmd)
+print(result.raw_output)
+```
+
+## Examples
+- Quick Examples: https://your-docs-url/user-guide/examples/
+- All Examples: https://your-docs-url/examples/all-examples/
+
+## Documentation
+- Getting Started: https://your-docs-url/getting-started/installation/
+- User Guide: https://your-docs-url/user-guide/commands/
+- API Reference: https://your-docs-url/api/
+
+## How Mancer differs from Plumbum
+Mancer is a domain-focused automation framework; Plumbum is a lightweight Pythonic shell toolbox. Both are valuable, but they serve different purposes.
+
+- Domain model & history
+  - Mancer: CommandResult with execution history/metadata for analysis and reporting
+  - Plumbum: Emphasis on concise shell combinators and piping
+- Data conversion
+  - Mancer: Built-in converters to JSON/DataFrame/ndarray
+  - Plumbum: Operates on stdio/strings; conversions left to user
+- Version-aware behavior
+  - Mancer: Detects tool versions and adapts parsing/behavior
+  - Plumbum: No built-in tool version compatibility layer
+- Extensibility via commands/backends
+  - Mancer: Extensible command classes and execution backends
+  - Plumbum: Focused on shell DSL and process primitives
+- Orchestration and context
+  - Mancer: Unified CommandContext (env, cwd, remote) and ShellRunner orchestration
+  - Plumbum: Excellent primitives; orchestration remains in user code
+
+See Plumbum: https://github.com/tomerfiliba/plumbum
+
+## Roadmap & Status
+- Status: pre‑1.0, API subject to change
+- Planned: richer CLI, more system commands, more backends, Windows/PowerShell maturity, extended data adapters
+
+## Contributing
 ```bash
-./tools/setup_dev.sh
+git clone https://github.com/Liberos-Systems/mancer.git
+cd mancer
+python -m venv .venv && source .venv/bin/activate
+pip install -e .[dev]
+pytest -q
 ```
 
-This script:
-- Checks system requirements
-- Creates a Python virtual environment
-- Installs all dependencies
-- Configures directories and configuration files
-- Sets up git hooks (optional)
+## Versioning and Releases
+- Semantic Versioning (pre‑1.0 semantics apply)
+- Release notes in GitHub Releases
 
-## Project Structure
+## License
+MIT
 
-```
-mancer/
-├── examples/                 # Framework usage examples
-├── src/                      # Source code
-│   └── mancer/
-│       ├── application/      # Application layer
-│       ├── config/           # Configuration files
-│       ├── domain/           # Domain layer
-│       │   ├── interface/    # Interfaces
-│       │   ├── model/        # Domain models
-│       │   └── service/      # Domain services
-│       ├── infrastructure/   # Infrastructure layer
-│       │   ├── backend/      # Execution backends
-│       │   └── command/      # Command implementations
-│       └── interface/        # Interface layer
-├── tests/                    # Automated tests
-│   ├── unit/                 # Unit tests
-│   └── integration/          # Integration tests
-└── tools/                    # Utility tools
-```
+## Links
+- Repository: https://github.com/Liberos-Systems/mancer
+- Issues: https://github.com/Liberos-Systems/mancer/issues
+- Docs: https://your-docs-url/
+
 
 ## DDD Architecture Overview
 

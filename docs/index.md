@@ -1,4 +1,6 @@
-# Mancer Framework
+# Mancer
+
+Mancer — Multisystem Programmable Engine
 
 Professional command automation and orchestration for system and network environments.
 
