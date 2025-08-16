@@ -1,24 +1,43 @@
 # API Reference
 
-This section provides an overview of the main classes and methods in Mancer. For full details, see the source code and docstrings.
+This page provides auto-generated API documentation from the source code using mkdocstrings. The sections below cover the most important public classes and modules.
 
-## Main Classes
+> Note: API surface is evolving. Treat classes without stability notes as experimental.
 
-### CommandManager
-- `run(cmd, backend='bash', **kwargs)`: Execute a command
-- `chain(cmd_list)`: Execute a chain of commands
+## Application Services
 
-### CommandCache
-- `get(cmd)`: Retrieve result from cache
-- `set(cmd, result)`: Store result in cache
+### Systemd Inspector
 
-## Example Usage
-```python
-from mancer.application.command_manager import CommandManager
-result = CommandManager.run('ls -l')
-print(result.output)
-```
+::: mancer.application.service.systemd_inspector.SystemdInspector
 
----
+### Systemd Unit model
 
-For auto-generated API documentation, use tools like `pdoc` or `sphinx`.
+::: mancer.application.service.systemd_inspector.SystemdUnit
+
+### Remote Config Manager
+
+::: mancer.application.service.remote_config_manager.RemoteConfigManager
+
+### Config Sync Task
+
+::: mancer.application.service.remote_config_manager.ConfigSyncTask
+
+### Sync Result
+
+::: mancer.application.service.remote_config_manager.SyncResult
+
+## Domain Models
+
+### Command Context and Remote Host Info
+
+::: mancer.domain.model.command_context.CommandContext
+
+::: mancer.domain.model.command_context.RemoteHostInfo
+
+### Command Result
+
+::: mancer.domain.model.command_result.CommandResult
+
+### Version Info
+
+::: mancer.domain.model.version_info.VersionInfo

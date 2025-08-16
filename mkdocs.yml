@@ -7,6 +7,19 @@ theme:
     - navigation.sections
     - navigation.instant
     - versioning
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: false
+            merge_init_into_class: true
+            docstring_style: google
+            docstring_section_style: list
+
 nav:
   - Home: index.md
   - Getting Started:
@@ -20,13 +33,17 @@ nav:
   - User Guide:
       - Commands: user-guide/commands.md
       - Configuration: user-guide/configuration.md
-      - Examples: user-guide/examples.md
+      - Data & Formatting: user-guide/data-formatting.md
+      - Logging & Errors: user-guide/logging-and-errors.md
+      - Versioning & Compatibility: user-guide/versioning-compatibility.md
+  - Examples: user-guide/examples.md
   - API Reference: api.md
   - Extending Mancer:
       - Custom Commands: extending/custom-commands.md
       - Backends: extending/backends.md
       - Plugins: extending/plugins.md
   - Development: development.md
+  - Testing: development/testing-overview.md
   - Versioning: versioning.md
   - FAQ: faq.md
   - Contact: contact.md

@@ -2,23 +2,57 @@
 
 ## Requirements
 - Python 3.8+
-- pip
-- (Optional) Docker
+- pip (latest recommended)
+- (Optional) Docker (for containerized testing/examples)
 
-## Install via pip
+## Install from PyPI
 ```bash
-pip install mancer
+pip install -U mancer
 ```
 
-## Install from source
+Optionally install extras:
 ```bash
+# Development tooling (linters, type-checkers)
+pip install "mancer[dev]"
+
+# Test tooling
+pip install "mancer[test]"
+```
+
+Verify installation:
+```bash
+python -c "import mancer; print('Mancer version:', mancer.__version__)"
+```
+
+## Install from source (editable)
+```bash
+# Clone the repository
 git clone https://github.com/your-org/mancer.git
 cd mancer
-pip install -r requirements.txt
+
+# Create and activate virtual environment (recommended)
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+
+# Install package in editable mode
+pip install -e .
+# or with dev extras
+pip install -e ".[dev]"
+```
+
+Upgrade/downgrade:
+```bash
+pip install -U mancer        # upgrade to latest
+pip install mancer==0.1.3    # install a specific version
+```
+
+Uninstall:
+```bash
+pip uninstall -y mancer
 ```
 
 ## (Optional) Using Docker
-If you want to use Docker, see the provided Dockerfiles and instructions in the `development/docker_test/` directory.
+See Docker-based workflows in the repository scripts (e.g., scripts/run_tests.sh) and development/docker_test/.
 
 ---
 

@@ -1,5 +1,16 @@
 # Development
 
+## Documentation prerequisites
+Install docs toolchain locally:
+```bash
+pip install mkdocs-material mkdocstrings[python]
+```
+Run docs server or build:
+```bash
+./dev_tools/mancer_tools.sh --docs dev    # mkdocs serve
+./dev_tools/mancer_tools.sh --docs build  # mkdocs build
+```
+
 ## Architecture for Developers
 See [Architecture](architecture/overview.md) for a high-level overview.
 
