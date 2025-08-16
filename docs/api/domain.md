@@ -1,26 +1,13 @@
 # API – Domain Layer
 
-Core domain models and services.
+Automatically generated from package docstrings.
 
-## Models
-
-### Command Context and Remote Host Info
-
-::: mancer.domain.model.command_context.CommandContext
-
-::: mancer.domain.model.command_context.RemoteHostInfo
-
-### Command Result
-
-::: mancer.domain.model.command_result.CommandResult
-
-### Version Info
-
-::: mancer.domain.model.version_info.VersionInfo
-
-## Services
-
-### Data Converter
-
-::: mancer.domain.service.data_converter_service.DataFormatConverter
+::: mancer.domain
+    options:
+      show_submodules: true
+      show_if_no_docstring: false
+      members_order: source
+      inherited_members: true
+      filters:
+        - '!^_'
 
