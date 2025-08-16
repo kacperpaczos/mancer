@@ -4,6 +4,9 @@ Mancer — Multisystem Programmable Engine
 
 Professional command automation and orchestration for system and network environments.
 
+> **Status: Early development version 0.1** - This is a pre-release version under active development. The API may evolve between releases.
+
+> **⚠️ Platform Support: Linux Only** - Mancer currently supports Linux systems only. Windows and macOS support is planned for future releases.
 
 <div class="hero-buttons">
   <a class="md-button md-button--primary" href="getting-started/installation/">Get Started</a>
@@ -68,14 +71,14 @@ Professional command automation and orchestration for system and network environ
 ## Quick Links
 - [Get Started](getting-started/installation.md)
 - [Tutorials](user-guide/examples.md)
-- [Agents / Tools](/) <!-- Placeholder if we introduce higher-level concepts later -->
+- [Development Guide](development.md)
 - [API Reference](api.md)
 
 ---
 
-## What does “Mancer” mean?
+## What does "Mancer" mean?
 
-Mancer comes from the Greek “manteia” (divination). In modern fantasy/sci‑fi, a “‑mancer” is a specialist who masters a specific domain or force (e.g., Pyromancer, Geomancer, Technomancer). In our context, Mancer is a programmable engine for mastering systems: shells, processes, data, and remote execution.
+Mancer comes from the Greek "manteia" (divination). In modern fantasy/sci‑fi, a "‑mancer" is a specialist who masters a specific domain or force (e.g., Pyromancer, Geomancer, Technomancer). In our context, Mancer is a programmable engine for mastering systems: shells, processes, data, and remote execution.
 
 - Necromancer — death/spirits
 - Pyromancer — fire
@@ -85,9 +88,9 @@ Mancer comes from the Greek “manteia” (divination). In modern fantasy/sci‑
 - Technomancer — technology
 - Chronomancer — time
 
-Fun fact: “mancy” names come from real divination terms (oneiromancy, cartomancy, chiromancy). That’s why “Mancer” is memorable and extensible — you can imagine any specialized “mancer” archetype.
+Fun fact: "mancy" names come from real divination terms (oneiromancy, cartomancy, chiromancy). That's why "Mancer" is memorable and extensible — you can imagine any specialized "mancer" archetype.
 
-- [Contributing](https://github.com/Liberos-Systems/mancer)
+- [Contributing](development/contributing.md)
 
 ---
 
@@ -98,3 +101,8 @@ Fun fact: “mancy” names come from real divination terms (oneiromancy, cartom
 
 ## Community & Contact
 Questions or want to contribute? [GitHub Repository](https://github.com/Liberos-Systems/mancer)
+
+For direct contact: kacperpaczos2024@proton.me
+
+## License
+This project is available under the [MIT License](https://opensource.org/licenses/MIT).
