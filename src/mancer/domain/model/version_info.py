@@ -10,8 +10,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class VersionInfo:
     """
-    Klasa przechowująca informacje o wersji pakietu Mancer.
-    Pozwala na dostęp do informacji o zainstalowanej wersji pakietu.
+    Holds version information for the installed Mancer package.
+
+    Attributes:
+        name: Package name.
+        version: Package version string.
+        summary: Optional short package summary from metadata.
+        author: Optional package author.
+        author_email: Optional package author email.
     """
     name: str
     version: str

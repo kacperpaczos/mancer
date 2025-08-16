@@ -5,18 +5,18 @@ from .data_format import DataFormat
 
 @dataclass
 class ExecutionStep:
-    """Model pojedynczego kroku wykonania komendy"""
-    command_string: str  # String komendy
-    command_type: str  # Nazwa klasy komendy
+    """Single command execution step model."""
+    command_string: str  # Command string
+    command_type: str  # Command class name
     timestamp: datetime = field(default_factory=datetime.now)
     data_format: DataFormat = DataFormat.LIST
     success: bool = True
     exit_code: int = 0
-    structured_sample: Any = None  # Próbka danych strukturalnych
+    structured_sample: Any = None  # Structured data sample
     metadata: Dict[str, Any] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
-        """Konwertuje krok wykonania do słownika"""
+        """Serialize execution step to a dictionary."""
         return {
             'command_string': self.command_string,
             'command_type': self.command_type,
@@ -30,7 +30,7 @@ class ExecutionStep:
     
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> 'ExecutionStep':
-        """Tworzy krok wykonania ze słownika"""
+        """Create an execution step from a dictionary."""
         return ExecutionStep(
             command_string=data['command_string'],
             command_type=data['command_type'],
@@ -40,4 +40,4 @@ class ExecutionStep:
             exit_code=data['exit_code'],
             structured_sample=data['structured_sample'],
             metadata=data.get('metadata', {})
-        ) 
+        )

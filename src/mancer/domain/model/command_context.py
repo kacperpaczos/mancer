@@ -1,20 +1,40 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from enum import Enum, auto
 
 class ExecutionMode(Enum):
-    """Tryb wykonania komendy"""
-    LOCAL = auto()  # Wykonanie lokalne
-    REMOTE = auto()  # Wykonanie zdalne
+    """Command execution mode.
+
+    - LOCAL: Execute on the local host.
+    - REMOTE: Execute on a remote host via SSH.
+    """
+    LOCAL = auto()
+    REMOTE = auto()
 
 @dataclass
 class RemoteHostInfo:
-    """Informacje o zdalnym hoście"""
+    """Remote host connection parameters.
+
+    Attributes:
+        host: Hostname or IP address.
+        user: SSH username.
+        port: SSH port (default 22).
+        key_file: Path to private key file.
+        password: Password for password-based auth (not recommended).
+        use_agent: Whether to use ssh-agent.
+        certificate_file: Path to SSH certificate (if applicable).
+        identity_only: Force using provided identities only (IdentitiesOnly=yes).
+        gssapi_auth: Enable GSSAPI authentication.
+        gssapi_keyex: Enable GSSAPI key exchange.
+        gssapi_delegate_creds: Delegate GSSAPI credentials.
+        use_sudo: Whether commands should use sudo by default.
+        sudo_password: Sudo password if required.
+        ssh_options: Extra SSH options as a dictionary.
+    """
     host: str
     user: Optional[str] = None
     port: int = 22
-    
-    # Metody uwierzytelniania
+    # Auth methods
     key_file: Optional[str] = None
     password: Optional[str] = None
     use_agent: bool = False
@@ -23,17 +43,24 @@ class RemoteHostInfo:
     gssapi_auth: bool = False
     gssapi_keyex: bool = False
     gssapi_delegate_creds: bool = False
-    
-    # Opcje sudo
+    # Sudo
     use_sudo: bool = False
     sudo_password: Optional[str] = None
-    
-    # Dodatkowe opcje SSH
+    # Extra SSH options
     ssh_options: Dict[str, str] = field(default_factory=dict)
 
 @dataclass
 class CommandContext:
-    """Kontekst wykonania komendy"""
+    """Command execution context.
+
+    Attributes:
+        current_directory: Working directory for the command.
+        environment_variables: Environment variables to set for execution.
+        command_history: Raw command strings executed in this context.
+        parameters: Arbitrary parameters used by commands and backends.
+        execution_mode: Local or remote execution mode.
+        remote_host: Remote host parameters when in REMOTE mode.
+    """
     current_directory: str = "."
     environment_variables: Dict[str, str] = field(default_factory=dict)
     command_history: List[str] = field(default_factory=list)
@@ -42,22 +69,22 @@ class CommandContext:
     remote_host: Optional[RemoteHostInfo] = None
     
     def change_directory(self, new_directory: str) -> None:
-        """Zmienia bieżący katalog w kontekście"""
+        """Change the working directory in this context."""
         self.current_directory = new_directory
-        
+
     def add_to_history(self, command_string: str) -> None:
-        """Dodaje komendę do historii"""
+        """Append a raw command string to the context history."""
         self.command_history.append(command_string)
-        
+
     def set_parameter(self, key: str, value: Any) -> None:
-        """Ustawia parametr kontekstu"""
+        """Set an arbitrary parameter on the context."""
         self.parameters[key] = value
-        
+
     def get_parameter(self, key: str, default: Any = None) -> Any:
-        """Pobiera parametr kontekstu"""
+        """Return a context parameter by key, or default if not set."""
         return self.parameters.get(key, default)
-    
-    def set_remote_execution(self, host: str, user: Optional[str] = None, 
+
+    def set_remote_execution(self, host: str, user: Optional[str] = None,
                            port: int = 22, key_file: Optional[str] = None,
                            password: Optional[str] = None, use_sudo: bool = False,
                            sudo_password: Optional[str] = None, use_agent: bool = False,
@@ -65,31 +92,30 @@ class CommandContext:
                            gssapi_auth: bool = False, gssapi_keyex: bool = False,
                            gssapi_delegate_creds: bool = False,
                            ssh_options: Optional[Dict[str, str]] = None) -> None:
-        """Ustawia tryb wykonania zdalnego
-        
+        """Configure remote execution mode.
+
         Args:
-            host: Nazwa hosta lub adres IP zdalnego serwera
-            user: Nazwa użytkownika (opcjonalnie)
-            port: Port SSH (domyślnie 22)
-            key_file: Ścieżka do pliku klucza prywatnego (opcjonalnie)
-            password: Hasło (opcjonalnie, niezalecane - lepiej używać kluczy)
-            use_sudo: Czy automatycznie używać sudo dla komend, które tego wymagają
-            sudo_password: Hasło do sudo (opcjonalnie)
-            use_agent: Czy używać agenta SSH do uwierzytelniania
-            certificate_file: Ścieżka do pliku certyfikatu SSH
-            identity_only: Czy używać tylko podanego klucza/certyfikatu (IdentitiesOnly=yes)
-            gssapi_auth: Czy używać uwierzytelniania GSSAPI (Kerberos)
-            gssapi_keyex: Czy używać wymiany kluczy GSSAPI
-            gssapi_delegate_creds: Czy delegować poświadczenia GSSAPI
-            ssh_options: Dodatkowe opcje SSH jako słownik
+            host: Hostname or IP address of the remote server.
+            user: SSH username.
+            port: SSH port (default 22).
+            key_file: Path to private key (optional).
+            password: Password (optional; prefer keys).
+            use_sudo: Whether to use sudo for commands requiring elevation.
+            sudo_password: Sudo password (if required).
+            use_agent: Whether to use SSH agent for authentication.
+            certificate_file: Path to SSH certificate.
+            identity_only: Whether to use only provided identities (IdentitiesOnly=yes).
+            gssapi_auth: Enable GSSAPI authentication (Kerberos).
+            gssapi_keyex: Enable GSSAPI key exchange.
+            gssapi_delegate_creds: Delegate GSSAPI credentials.
+            ssh_options: Additional SSH options as a dictionary.
         """
         self.execution_mode = ExecutionMode.REMOTE
-        
-        # Przygotowanie opcji SSH
+
         options = {}
         if ssh_options:
             options.update(ssh_options)
-        
+
         self.remote_host = RemoteHostInfo(
             host=host,
             user=user,
@@ -106,17 +132,17 @@ class CommandContext:
             gssapi_delegate_creds=gssapi_delegate_creds,
             ssh_options=options
         )
-    
+
     def set_local_execution(self) -> None:
-        """Ustawia tryb wykonania lokalnego"""
+        """Switch to local execution mode."""
         self.execution_mode = ExecutionMode.LOCAL
         self.remote_host = None
-    
+
     def is_remote(self) -> bool:
-        """Sprawdza, czy kontekst jest w trybie zdalnym"""
+        """Return True if the context is in REMOTE mode."""
         return self.execution_mode == ExecutionMode.REMOTE
-    
+
     def clone(self) -> 'CommandContext':
-        """Tworzy kopię kontekstu"""
+        """Return a deep copy of this context."""
         import copy
         return copy.deepcopy(self)

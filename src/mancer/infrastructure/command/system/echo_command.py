@@ -5,35 +5,34 @@ from ....domain.model.command_result import CommandResult
 from ....domain.model.command_context import CommandContext
 
 class EchoCommand(BaseCommand):
-    """Komenda echo - wyświetla tekst"""
-    
+    """Command implementation for 'echo' to print text to stdout."""
+
     def __init__(self, message: str = ""):
-        """
-        Inicjalizuje komendę echo.
-        
+        """Initialize echo command.
+
         Args:
-            message: Opcjonalny tekst do wyświetlenia
+            message: Optional text to print.
         """
         super().__init__("echo")
         if message:
             self.add_arg(message)
     
-    def execute(self, context: CommandContext, 
+    def execute(self, context: CommandContext,
                input_result: Optional[CommandResult] = None) -> CommandResult:
-        """Wykonuje komendę echo"""
-        # Budujemy komendę
+        """Execute the echo command."""
+        # Build the command
         cmd_str = self.build_command()
-        
-        # Pobieramy odpowiedni backend
+
+        # Select backend
         backend = self._get_backend(context)
-        
-        # Wykonujemy komendę
+
+        # Execute command
         result = backend.execute_command(
             cmd_str, 
             working_dir=context.current_directory
         )
         
-        # Parsujemy wynik - dla echo jest to po prostu tekst
+        # Parse result: for echo we just capture text
         if result.success:
             result.structured_output = [{'text': result.raw_output.strip()}]
         
@@ -42,28 +41,27 @@ class EchoCommand(BaseCommand):
     # Metody specyficzne dla echo
     
     def text(self, message: str) -> 'EchoCommand':
-        """Ustawia tekst do wyświetlenia"""
+        """Set text to print."""
         return self.add_arg(message)
-    
+
     def no_newline(self) -> 'EchoCommand':
-        """Opcja -n - nie dodaje znaku nowej linii na końcu"""
+        """Option -n: do not output the trailing newline."""
         return self.with_option("-n")
     
     def enable_backslash_escapes(self) -> 'EchoCommand':
-        """Opcja -e - włącza interpretację sekwencji escape z backslashem"""
+        """Option -e: enable interpretation of backslash escapes."""
         return self.with_option("-e")
-    
+
     def disable_backslash_escapes(self) -> 'EchoCommand':
-        """Opcja -E - wyłącza interpretację sekwencji escape z backslashem"""
+        """Option -E: disable interpretation of backslash escapes."""
         return self.with_option("-E")
     
     def to_file(self, file_path: str, append: bool = False) -> 'EchoCommand':
-        """
-        Przekierowuje wyjście do pliku
-        
+        """Redirect output to a file.
+
         Args:
-            file_path: Ścieżka do pliku
-            append: Czy dopisać do pliku (True) czy nadpisać (False)
+            file_path: Path to the target file.
+            append: Append if True, overwrite if False.
         """
         new_instance = self.clone()
         # Dodajemy przekierowanie do pliku

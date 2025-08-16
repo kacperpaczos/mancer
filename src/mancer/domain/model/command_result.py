@@ -6,10 +6,21 @@ from ..service.data_converter_service import DataFormatConverter
 
 @dataclass
 class CommandResult:
-    """Model wyniku komendy"""
+    """Represents the result of a command execution.
+
+    Attributes:
+        raw_output: Raw stdout/stderr captured as a single string.
+        success: True if the command succeeded (exit_code==0 by convention).
+        structured_output: Structured representation (typically a list of records).
+        exit_code: Process exit code.
+        error_message: Optional error message if available.
+        metadata: Optional metadata associated with execution.
+        data_format: Declared data format of structured_output.
+        history: Execution history with steps and metadata.
+    """
     raw_output: str
     success: bool
-    structured_output: List[Any]  # Zawsze lista
+    structured_output: List[Any]
     exit_code: int = 0
     error_message: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
@@ -23,14 +34,15 @@ class CommandResult:
         return self.success
     
     def get_structured(self) -> List[Any]:
+        """Return the structured_output as-is."""
         return self.structured_output
-    
+
     def get_format(self) -> DataFormat:
-        """Zwraca format danych"""
+        """Return the current data format of structured_output."""
         return self.data_format
-    
+
     def get_history(self) -> ExecutionHistory:
-        """Zwraca historię wykonania komendy"""
+        """Return the execution history for this result."""
         return self.history
     
     def add_to_history(self, command_string: str, command_type: str, 
@@ -52,10 +64,9 @@ class CommandResult:
     
     # Metoda do łatwej ekstrakcji konkretnych pól z strukturalnych wyników
     def extract_field(self, field_name: str) -> List[Any]:
-        """Ekstrahuje wartości konkretnego pola z listy słowników"""
+        """Extract a column by key from structured_output when it is a list of dicts."""
         if not self.structured_output or not isinstance(self.structured_output[0], dict):
             return []
-            
         return [item.get(field_name) for item in self.structured_output if field_name in item]
     
     def to_format(self, target_format: DataFormat) -> 'CommandResult':
