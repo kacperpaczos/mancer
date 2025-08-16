@@ -30,3 +30,5 @@ TODO — plan działań
 
 - Dokumentacja
   - Jak wygenerować dokumentację: przygotować Sphinx/Markdown, dodać komendę w README i skrypty.
+
+- dodać support do pydantic.
