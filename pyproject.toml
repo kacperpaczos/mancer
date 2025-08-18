@@ -35,11 +35,7 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
-[project.urls]
-Homepage = "https://github.com/Liberos-Systems/mancer"
-Repository = "https://github.com/Liberos-Systems/mancer"
-Issues = "https://github.com/Liberos-Systems/mancer/issues"
-Documentation = "https://github.com/Liberos-Systems/mancer/tree/main/docs"
+
 
 # Zależności czasu wykonania (zgrane z requirements.txt)
 dependencies = [
@@ -68,6 +64,13 @@ dev = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+
+[project.urls]
+Homepage = "https://github.com/Liberos-Systems/mancer"
+Repository = "https://github.com/Liberos-Systems/mancer"
+Issues = "https://github.com/Liberos-Systems/mancer/issues"
+Documentation = "https://github.com/Liberos-Systems/mancer/tree/main/docs"
 
 [tool.setuptools.packages.find]
 where = ["src"]
