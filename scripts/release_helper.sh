@@ -86,8 +86,11 @@ import mancer
 from mancer.application.shell_runner import ShellRunner
 print('mancer version:', getattr(mancer, '__version__', 'unknown'))
 r = ShellRunner(backend_type='bash')
-cmd = r.create_command('echo').text('ok')
-print('executable:', cmd.build().executable)
+cmd = r.create_command('echo')
+if hasattr(cmd, 'text'):
+    cmd = cmd.text('ok')
+result = r.execute(cmd)
+print('success:', getattr(result, 'success', None), 'exit_code:', getattr(result, 'exit_code', None))
 PY
   deactivate
   ok "Smoke test OK"
