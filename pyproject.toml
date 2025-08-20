@@ -19,7 +19,7 @@ markers = [
 # PEP 621 – metadane projektu
 [project]
 name = "mancer"
-version = "0.1.3"
+version = "0.1.4"
 description = "Framework DDD dla komend systemowych"
 requires-python = ">=3.8"
 authors = [
