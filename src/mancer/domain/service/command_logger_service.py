@@ -1,16 +1,16 @@
+import json
 import logging
 import os
 import sys
-import time
-from typing import Dict, Any, Optional, List, Union
-from datetime import datetime
-import json
 import threading
+import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
 # Importuj nowy MancerLogger, ale obsłuż przypadki gdy nie jest dostępny (np. stary kod)
 try:
-    from ...infrastructure.logging.mancer_logger import MancerLogger
     from ...domain.service.log_backend_interface import LogLevel
+    from ...infrastructure.logging.mancer_logger import MancerLogger
     NEW_LOGGER_AVAILABLE = True
 except ImportError:
     NEW_LOGGER_AVAILABLE = False

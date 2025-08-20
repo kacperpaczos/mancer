@@ -1,7 +1,9 @@
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from ...domain.model.command_context import CommandContext
 from ...domain.model.command_result import CommandResult
 from ..logging.mancer_logger import MancerLogger
+
 
 class LoggableCommandMixin:
     """
@@ -45,7 +47,7 @@ class LoggableCommandMixin:
         for key, value in context.parameters.items():
             # Pomijamy duże obiekty i poufne dane
             if (isinstance(value, (str, int, float, bool)) and 
-                not key.lower() in ('password', 'secret', 'token', 'key')):
+                key.lower() not in ('password', 'secret', 'token', 'key')):
                 context_params[key] = value
         
         # Loguj rozpoczęcie komendy

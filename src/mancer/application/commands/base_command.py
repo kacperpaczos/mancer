@@ -1,4 +1,5 @@
-from typing import Dict, Any, Optional, TypeVar, List, cast
+from typing import Any, Dict, List, Optional, TypeVar, cast
+
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
 from ...domain.model.command_result import CommandResult

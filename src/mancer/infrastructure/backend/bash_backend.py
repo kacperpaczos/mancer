@@ -1,8 +1,10 @@
-import subprocess
 import shlex
-from typing import Dict, List, Any, Optional, Tuple
+import subprocess
+from typing import Any, Dict, List, Optional, Tuple
+
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
+
 
 class BashBackend(BackendInterface):
     """Backend executing commands in the local bash shell."""
@@ -31,10 +33,9 @@ class BashBackend(BackendInterface):
             
             # Wykonanie komendy
             if use_live_output:
-                import time
+                import queue
                 import sys
                 import threading
-                import queue
                 
                 # Utwórz kolejkę dla wyjścia
                 output_queue = queue.Queue()

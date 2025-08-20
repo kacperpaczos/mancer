@@ -1,16 +1,15 @@
-from typing import Dict, Any, Optional, List, Union
-from ..domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
-from ..domain.model.command_result import CommandResult
+import hashlib
+from typing import Any, Dict, List, Optional
+
 from ..domain.interface.command_interface import CommandInterface
+from ..domain.model.command_context import CommandContext, ExecutionMode
+from ..domain.model.command_result import CommandResult
 from ..domain.service.command_chain_service import CommandChain
-from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.backend.bash_backend import BashBackend
 from ..infrastructure.backend.ssh_backend import SshBackend
-from .command_cache import CommandCache
+from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.logging.mancer_logger import MancerLogger
-from ..domain.service.log_backend_interface import LogLevel
-import uuid
-import hashlib
+from .command_cache import CommandCache
 
 # Command type definitions in different languages
 COMMAND_TYPES_TRANSLATION = {

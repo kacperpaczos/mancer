@@ -1,9 +1,10 @@
 import os
-from typing import Optional, List, Any
-from ..base_command import BaseCommand
-from ...backend.bash_backend import BashBackend
-from ....domain.model.command_result import CommandResult
+from typing import List, Optional
+
 from ....domain.model.command_context import CommandContext
+from ....domain.model.command_result import CommandResult
+from ..base_command import BaseCommand
+
 
 class CdCommand(BaseCommand):
     """Komenda cd - zmienia aktualny katalog"""

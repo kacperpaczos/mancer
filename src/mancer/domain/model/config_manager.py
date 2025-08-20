@@ -1,10 +1,9 @@
-import os
 import json
-import yaml
 import logging
-from typing import Dict, Any, Optional, List, Set
-from pathlib import Path
-import importlib.resources as pkg_resources
+import os
+from typing import Any, Dict, List
+
+import yaml
 
 logger = logging.getLogger(__name__)
 

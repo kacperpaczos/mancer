@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Iterator
+from typing import Any, Dict, Iterator, List, Optional
+
 from .execution_step import ExecutionStep
+
 
 @dataclass
 class ExecutionHistory:

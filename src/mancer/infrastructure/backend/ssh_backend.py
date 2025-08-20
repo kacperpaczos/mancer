@@ -1,10 +1,10 @@
-import subprocess
 import shlex
-import os
-import tempfile
-from typing import Dict, List, Any, Optional, Tuple
+import subprocess
+from typing import Any, Dict, List, Optional, Tuple
+
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
+
 
 class SshBackend(BackendInterface):
     """Backend executing commands over SSH on a remote host."""

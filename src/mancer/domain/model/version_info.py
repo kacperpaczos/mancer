@@ -1,9 +1,9 @@
 import importlib.metadata as metadata
+import logging
 from dataclasses import dataclass
 from typing import Optional
-import logging
+
 import pkg_resources
-import sys
 
 logger = logging.getLogger(__name__)
 

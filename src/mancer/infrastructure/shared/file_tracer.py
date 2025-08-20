@@ -1,11 +1,10 @@
-import os
-import shutil
-import tempfile
-import hashlib
-import difflib
 import datetime
-from typing import List, Dict, Optional, Tuple, Any, Union
-from ...domain.model.command_result import CommandResult
+import difflib
+import hashlib
+import os
+import tempfile
+from typing import List, Optional, Tuple, Union
+
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
 from .ssh_connecticer import SSHConnecticer

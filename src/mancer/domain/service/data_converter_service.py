@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional, Union, Callable
 import json
 import re
+from typing import Any, Dict, List, Optional
+
 from ..model.data_format import DataFormat
+
 
 class DataFormatConverter:
     """Service for converting data between formats.
@@ -143,7 +145,7 @@ class DataFormatConverter:
                             return float(cleaned_value) * unit_multiplier
                         # Jeśli nie, zwracamy oryginalną wartość
                         return value
-                    except:
+                    except (ValueError, TypeError):
                         # W przypadku błędu, zwracamy oryginalną wartość
                         return value
                 

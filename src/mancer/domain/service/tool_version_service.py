@@ -1,10 +1,9 @@
-import subprocess
 import logging
-from typing import Optional, Dict, List, Tuple, Any
-import os
+import subprocess
+from typing import List, Optional, Tuple
 
-from ..model.tool_version import ToolVersion, ToolVersionRegistry
 from ..model.config_manager import ConfigManager
+from ..model.tool_version import ToolVersion, ToolVersionRegistry
 
 logger = logging.getLogger(__name__)
 

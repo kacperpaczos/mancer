@@ -1,10 +1,10 @@
 import os
 import threading
 from datetime import datetime
-from typing import Dict, Any, Optional, List, ClassVar, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type
 
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
-from .icecream_backend import IcecreamBackend, ICECREAM_AVAILABLE
+from .icecream_backend import ICECREAM_AVAILABLE, IcecreamBackend
 from .standard_backend import StandardBackend
 
 

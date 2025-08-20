@@ -1,10 +1,10 @@
 import logging
 import re
-from typing import Dict, Any, Optional, ClassVar, Set, Callable, List
+from typing import Any, Callable, ClassVar, Dict, Optional
 
 from ...domain.model.command_context import CommandContext
-from ...domain.service.tool_version_service import ToolVersionService
 from ...domain.model.tool_version import ToolVersion
+from ...domain.service.tool_version_service import ToolVersionService
 
 logger = logging.getLogger(__name__)
 

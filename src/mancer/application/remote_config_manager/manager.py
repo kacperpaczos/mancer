@@ -1,18 +1,19 @@
 """
 Główny moduł implementujący funkcjonalność zarządzania konfiguracjami na zdalnych serwerach.
 """
-import os
 import json
+import os
 import shutil
 import subprocess
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
-import paramiko
-from paramiko import SSHClient, AutoAddPolicy
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+from paramiko import AutoAddPolicy, SSHClient
 
 from .config import AppConfig, ServerConfig
-from .file_operations import FileManager, FileInfo, FileDiff
+from .file_operations import FileDiff, FileManager
+
 
 class SSHManager:
     """

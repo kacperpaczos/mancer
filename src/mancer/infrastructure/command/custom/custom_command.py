@@ -1,9 +1,11 @@
-from typing import List, Dict, Any, Optional
 import json
 import re
-from ..base_command import BaseCommand
+from typing import Any, Dict, List, Optional
+
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
+from ..base_command import BaseCommand
+
 
 class CustomCommand(BaseCommand):
     """Command implementation for any custom command.

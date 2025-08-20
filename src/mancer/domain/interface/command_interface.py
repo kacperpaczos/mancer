@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Dict, List, TypeVar, Generic
-from ..model.command_result import CommandResult
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+
+if TYPE_CHECKING:
+    from ..service.command_chain_service import CommandChain
+
 from ..model.command_context import CommandContext
+from ..model.command_result import CommandResult
 
 T = TypeVar('T', bound='CommandInterface')
 

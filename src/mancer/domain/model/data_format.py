@@ -1,6 +1,6 @@
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Union
-import json
+from typing import Optional
+
 
 class DataFormat(Enum):
     """Data formats for CommandResult.structured_output.

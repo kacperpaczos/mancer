@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import argparse
 import getpass
-from pathlib import Path
+import sys
 from typing import List, Optional
 
 from .inspector import SystemdInspector

@@ -1,7 +1,7 @@
+import logging
+import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 

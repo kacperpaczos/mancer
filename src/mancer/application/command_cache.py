@@ -1,8 +1,8 @@
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime
-import json
 import threading
 import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+
 from ..domain.model.command_result import CommandResult
 
 

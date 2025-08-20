@@ -2,20 +2,19 @@
 """
 Moduł implementujący interfejs wiersza poleceń dla RemoteConfigManager.
 """
-import os
-import sys
 import argparse
 import getpass
-from typing import List, Optional, Dict, Any
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
+import sys
+from typing import List, Optional
+
 from rich import print as rprint
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Confirm, Prompt
+from rich.table import Table
 
 from .manager import RemoteConfigManager
-from .file_operations import FileDiff
 
 
 class CLI:

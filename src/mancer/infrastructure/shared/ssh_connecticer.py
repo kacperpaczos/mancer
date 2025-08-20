@@ -1,6 +1,6 @@
-from typing import Dict, Optional, List, Tuple, Any
 import os
-import shutil
+from typing import Dict, Optional
+
 from ...domain.model.command_result import CommandResult
 from ..backend.ssh_backend import SshBackend
 

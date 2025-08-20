@@ -1,19 +1,21 @@
-from typing import Dict, Type, Any, Optional
+from typing import Dict, Optional, Type
+
 from ...domain.interface.command_interface import CommandInterface
-from ..command.file.ls_command import LsCommand
-from ..command.file.cp_command import CpCommand
+from ..command.file.cat_command import CatCommand
 from ..command.file.cd_command import CdCommand
+from ..command.file.cp_command import CpCommand
 from ..command.file.find_command import FindCommand
 from ..command.file.grep_command import GrepCommand
-from ..command.file.cat_command import CatCommand
-from ..command.file.tail_command import TailCommand
 from ..command.file.head_command import HeadCommand
-from ..command.system.ps_command import PsCommand
-from ..command.system.systemctl_command import SystemctlCommand
-from ..command.system.hostname_command import HostnameCommand
+from ..command.file.ls_command import LsCommand
+from ..command.file.tail_command import TailCommand
+from ..command.network.netstat_command import NetstatCommand
 from ..command.system.df_command import DfCommand
 from ..command.system.echo_command import EchoCommand
-from ..command.network.netstat_command import NetstatCommand
+from ..command.system.hostname_command import HostnameCommand
+from ..command.system.ps_command import PsCommand
+from ..command.system.systemctl_command import SystemctlCommand
+
 
 class CommandFactory:
     """Fabryka komend"""

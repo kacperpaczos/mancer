@@ -1,14 +1,15 @@
 from abc import abstractmethod
-from typing import Dict, List, Any, Optional, TypeVar, Type
 from copy import deepcopy
+from typing import Any, Dict, List, Optional, TypeVar
+
 from ...domain.interface.command_interface import CommandInterface
-from ...domain.model.command_result import CommandResult
 from ...domain.model.command_context import CommandContext, ExecutionMode
+from ...domain.model.command_result import CommandResult
 from ...domain.model.data_format import DataFormat
+from ...domain.service.command_chain_service import CommandChain
 from ..backend.bash_backend import BashBackend
 from ..backend.ssh_backend import SshBackend
 from .loggable_command_mixin import LoggableCommandMixin
-from ...domain.service.command_chain_service import CommandChain
 
 T = TypeVar('T', bound='BaseCommand')
 

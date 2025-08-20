@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Dict, List, Optional
+
+from ..service.data_converter_service import DataFormatConverter
 from .data_format import DataFormat
 from .execution_history import ExecutionHistory
-from ..service.data_converter_service import DataFormatConverter
+
 
 @dataclass
 class CommandResult:

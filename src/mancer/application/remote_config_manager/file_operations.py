@@ -1,12 +1,11 @@
 """
 Moduł implementujący operacje na plikach i struktury danych związane z plikami.
 """
-import os
-import json
 import difflib
-from pathlib import Path
-from typing import List, Dict, Tuple, Optional, Any
+import json
 from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 
 @dataclass

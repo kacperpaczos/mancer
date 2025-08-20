@@ -6,20 +6,19 @@ This module provides Flask integration for Mancer applications.
 It allows easy creation of web APIs with minimal configuration.
 """
 
-import os
+import logging
 import sys
 import threading
 import time
-import logging
 from functools import wraps
-from typing import List, Dict, Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # Flask is imported conditionally to avoid hard dependency
 _has_flask = False
 try:
-    from flask import Flask, request, jsonify
+    from flask import Flask, jsonify, request
     _has_flask = True
 except ImportError:
     logger.debug("Flask is not installed - MancerFlask service will be limited")
@@ -224,7 +223,7 @@ def install_flask(prompt: bool = True) -> bool:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
 
         # Try to import Flask again
-        from flask import Flask, request, jsonify
+        from flask import Flask, jsonify, request
         _has_flask = True
 
         return True

@@ -1,12 +1,13 @@
-import subprocess
-import getpass
-from datetime import datetime
+import base64
 import json
 import os
-import base64
+import subprocess
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 from cryptography.fernet import Fernet
-from typing import Dict, List, Optional, Tuple, Any
+
 
 class SystemdInspector:
     """

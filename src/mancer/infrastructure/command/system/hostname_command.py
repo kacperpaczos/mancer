@@ -1,7 +1,9 @@
-from typing import List, Dict, Any, Optional
-from ...command.base_command import BaseCommand
-from ....domain.model.command_result import CommandResult
+from typing import Optional
+
 from ....domain.model.command_context import CommandContext
+from ....domain.model.command_result import CommandResult
+from ...command.base_command import BaseCommand
+
 
 class HostnameCommand(BaseCommand):
     """Komenda hostname - wyświetla lub ustawia nazwę hosta"""

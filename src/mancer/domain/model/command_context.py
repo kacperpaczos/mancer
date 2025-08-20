@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Union
 from enum import Enum, auto
+from typing import Any, Dict, List, Optional
+
 
 class ExecutionMode(Enum):
     """Command execution mode.

@@ -1,13 +1,13 @@
-import os
-import re
-import json
-import yaml
 import configparser
 import datetime
-from typing import Dict, List, Any, Optional, Tuple, Union, Callable
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
+import json
+import os
+from typing import Callable, Dict, List, Optional, Tuple
+
+import yaml
+
 from ...infrastructure.shared.file_tracer import FileTracer
-from .profile_producer import ConnectionProfile
+from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
 class ConfigDiff:
@@ -314,7 +314,7 @@ class ConfigBalancer:
         if make_backup:
             try:
                 backup_path = target_tracer.backup_file(target_path, is_target_remote, "before_sync")
-            except Exception as e:
+            except Exception:
                 # Kontynuuj nawet jeśli backup się nie powiedzie
                 pass
         

@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict
+
 from .data_format import DataFormat
+
 
 @dataclass
 class ExecutionStep:

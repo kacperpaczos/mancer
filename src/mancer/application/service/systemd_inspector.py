@@ -1,13 +1,17 @@
+import datetime
 import os
 import re
-import json
-import datetime
-from typing import Dict, List, Any, Optional, Tuple, Union
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
-from ...infrastructure.shared.command_enforcer import CommandEnforcer
-from ...domain.shared.profile_producer import ProfileProducer, ConnectionProfile
+from typing import Dict, List, Optional
+
+from ...domain.model.command_context import (
+    CommandContext,
+    ExecutionMode,
+    RemoteHostInfo,
+)
+from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
-from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
+from ...infrastructure.shared.command_enforcer import CommandEnforcer
+from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
 class SystemdUnit:

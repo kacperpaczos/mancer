@@ -1,10 +1,8 @@
 import logging
-import sys
 import os
-from typing import Any, Dict, List, Optional, Union
-from datetime import datetime
-import json
+import sys
 from pprint import pformat
+from typing import Any, Dict, List, Optional
 
 # Importuję interfejs backendu logowania
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel

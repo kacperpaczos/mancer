@@ -1,5 +1,7 @@
 from typing import Optional, cast
+
 from .base_command import BaseCommand
+
 
 class SystemctlCommand(BaseCommand):
     """Klasa do obsługi komend systemctl"""

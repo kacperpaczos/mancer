@@ -1,5 +1,11 @@
-from .profile_producer import ProfileProducer, ConnectionProfile
-from .config_balancer import ConfigBalancer, ConfigTemplate, ConfigValidator, ConfigDiff, ConfigFormat
+from .config_balancer import (
+    ConfigBalancer,
+    ConfigDiff,
+    ConfigFormat,
+    ConfigTemplate,
+    ConfigValidator,
+)
+from .profile_producer import ConnectionProfile, ProfileProducer
 
 __all__ = [
     'ProfileProducer',

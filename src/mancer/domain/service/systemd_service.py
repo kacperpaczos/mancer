@@ -1,11 +1,9 @@
-from typing import Dict, List, Any, Optional, Tuple, Union
-import subprocess
-from datetime import datetime
-import os
 import concurrent.futures
-from ..shared.profile_producer import ProfileProducer, ConnectionProfile
-from ...domain.model.command_result import CommandResult
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
+import os
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from ..shared.profile_producer import ProfileProducer
 
 
 class SystemdService:

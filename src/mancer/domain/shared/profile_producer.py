@@ -1,8 +1,9 @@
-import os
 import json
-import base64
-from typing import Dict, List, Any, Optional, Tuple, Union
+import os
+from typing import Any, Dict, List, Optional
+
 from cryptography.fernet import Fernet
+
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 

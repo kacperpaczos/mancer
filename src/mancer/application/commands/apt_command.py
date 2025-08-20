@@ -1,9 +1,10 @@
-from typing import Optional, List, cast, Dict, Any
-from .base_command import BaseCommand, T
-import time
-import os
 import json
+import os
 from datetime import datetime
+from typing import Any, Dict, Optional, cast
+
+from .base_command import BaseCommand
+
 
 class AptCommand(BaseCommand):
     """Klasa do obsługi komend apt"""
@@ -22,7 +23,7 @@ class AptCommand(BaseCommand):
         if not os.path.exists(state_dir):
             try:
                 os.makedirs(state_dir, exist_ok=True)
-            except:
+            except (OSError, PermissionError):
                 pass  # Ignorujemy błędy - użyjemy pamięci tymczasowej jeśli nie możemy zapisać na dysku
     
     def _load_state(self) -> Dict[str, Any]:
@@ -31,7 +32,7 @@ class AptCommand(BaseCommand):
             try:
                 with open(self.APT_STATE_FILE, 'r') as f:
                     return json.load(f)
-            except:
+            except (OSError, json.JSONDecodeError):
                 return self._get_default_state()
         return self._get_default_state()
     
@@ -40,7 +41,7 @@ class AptCommand(BaseCommand):
         try:
             with open(self.APT_STATE_FILE, 'w') as f:
                 json.dump(self._state, f, indent=2)
-        except:
+        except (OSError, PermissionError):
             pass  # Ignorujemy błędy zapisu
     
     def _get_default_state(self) -> Dict[str, Any]:
@@ -81,20 +82,27 @@ class AptCommand(BaseCommand):
     
     def install(self, package: str) -> 'AptCommand':
         """Instaluje pakiet"""
-        return cast(AptCommand, self.with_param("command", "install").with_param("package", package).with_option("y"))
+        return (cast(AptCommand, self.with_param("command", "install")
+                .with_param("package", package)
+                .with_option("y")))
     
     def remove(self, package: str) -> 'AptCommand':
         """Usuwa pakiet"""
-        return cast(AptCommand, self.with_param("command", "remove").with_param("package", package).with_option("y"))
+        return (cast(AptCommand, self.with_param("command", "remove")
+                .with_param("package", package)
+                .with_option("y")))
     
     def purge(self, package: str) -> 'AptCommand':
         """Usuwa pakiet wraz z plikami konfiguracyjnymi"""
-        return cast(AptCommand, self.with_param("command", "purge").with_param("package", package).with_option("y"))
+        return (cast(AptCommand, self.with_param("command", "purge")
+                .with_param("package", package)
+                .with_option("y")))
     
     def update(self) -> 'AptCommand':
         """Aktualizuje listę dostępnych pakietów"""
         # Dodajemy informację o aktualizacji stanu
-        return cast(AptCommand, self.with_param("command", "update").with_param("update_state", True))
+        return (cast(AptCommand, self.with_param("command", "update")
+                .with_param("update_state", True)))
     
     def upgrade(self) -> 'AptCommand':
         """Aktualizuje zainstalowane pakiety"""
@@ -118,7 +126,9 @@ class AptCommand(BaseCommand):
     
     def is_installed(self, package: str) -> 'AptCommand':
         """Sprawdza czy pakiet jest zainstalowany"""
-        return cast(AptCommand, self.with_param("command", "list").with_param("package", f"^{package}$").with_option("installed"))
+        return (cast(AptCommand, self.with_param("command", "list")
+                .with_param("package", f"^{package}$")
+                .with_option("installed")))
     
     def isInstalled(self, package: str) -> 'AptCommand':
         """

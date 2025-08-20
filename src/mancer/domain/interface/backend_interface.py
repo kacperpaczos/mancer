@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from ..model.command_result import CommandResult
+
 
 class BackendInterface(ABC):
     """Interfejs dla backendów wykonujących komendy"""
