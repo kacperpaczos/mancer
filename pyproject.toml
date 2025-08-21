@@ -20,7 +20,7 @@ markers = [
 [project]
 name = "mancer"
 version = "0.1.4"
-description = "Framework DDD dla komend systemowych"
+description = "Multisystem Programmable Engine - A framework for programmable system automation with bash and PowerShell support"
 requires-python = ">=3.8"
 authors = [
   { name = "Kacper Paczos", email = "kacperpaczos2024@proton.me" }
