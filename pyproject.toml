@@ -19,7 +19,7 @@ markers = [
 # PEP 621 – metadane projektu
 [project]
 name = "mancer"
-version = "0.1.4"
+version = "0.1.5"
 description = "Multisystem Programmable Engine - A framework for programmable system automation with bash and PowerShell support"
 requires-python = ">=3.8"
 authors = [

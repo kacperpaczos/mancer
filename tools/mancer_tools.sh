@@ -591,7 +591,7 @@ set_specific_version() {
             
             if [ -n "$VERSION" ]; then
                 # Update setup.py file
-                sed -i "s/version=\"$VERSION\"/version=\"$NEW_VERSION\"/" setup.py"
+                sed -i "s/version=\"$VERSION\"/version=\"$new_version\"/" setup.py"
                 
                 echo -e "${GREEN}Updated version from ${YELLOW}$VERSION${GREEN} to ${YELLOW}$new_version${RESET}"
                 return 0

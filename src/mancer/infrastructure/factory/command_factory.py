@@ -19,13 +19,13 @@ from ..command.system.systemctl_command import SystemctlCommand
 
 class CommandFactory:
     """Fabryka komend"""
-    
+
     def __init__(self, backend_type: str = "bash"):
         self.backend_type = backend_type
         self._command_types: Dict[str, Type[CommandInterface]] = {}
         self._configured_commands: Dict[str, CommandInterface] = {}
         self._initialize_commands()
-    
+
     def _initialize_commands(self) -> None:
         """Inicjalizuje dostępne typy komend"""
         # Komendy plikowe
@@ -37,33 +37,33 @@ class CommandFactory:
         self._command_types["cat"] = CatCommand
         self._command_types["tail"] = TailCommand
         self._command_types["head"] = HeadCommand
-        
+
         # Komendy systemowe
         self._command_types["ps"] = PsCommand
         self._command_types["systemctl"] = SystemctlCommand
         self._command_types["hostname"] = HostnameCommand
         self._command_types["df"] = DfCommand
         self._command_types["echo"] = EchoCommand
-        
+
         # Komendy sieciowe
         self._command_types["netstat"] = NetstatCommand
-    
+
     def create_command(self, command_name: str) -> Optional[CommandInterface]:
         """Tworzy nową instancję komendy"""
         if command_name not in self._command_types:
             return None
-            
+
         # Tworzymy nową instancję
         return self._command_types[command_name]()
-    
+
     def register_command(self, alias: str, command: CommandInterface) -> None:
         """Rejestruje prekonfigurowaną komendę pod aliasem"""
         self._configured_commands[alias] = command
-    
+
     def get_command(self, alias: str) -> Optional[CommandInterface]:
         """Pobiera prekonfigurowaną komendę według aliasu"""
         if alias not in self._configured_commands:
             return None
-            
+
         # Zwracamy kopię, aby uniknąć modyfikacji oryginalnej komendy
         return self._configured_commands[alias].clone()

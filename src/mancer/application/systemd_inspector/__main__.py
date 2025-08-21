@@ -7,4 +7,4 @@ Umożliwia uruchamianie jako: python -m mancer.application.systemd_inspector
 from .cli import main
 
 if __name__ == "__main__":
-    main() 
+    main()

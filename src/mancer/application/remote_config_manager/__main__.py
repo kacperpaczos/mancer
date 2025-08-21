@@ -7,4 +7,4 @@ Umożliwia uruchamianie jako: python -m mancer.application.remote_config_manager
 from .cli import main
 
 if __name__ == "__main__":
-    main() 
+    main()
