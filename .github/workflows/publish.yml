@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi  # Nazwa środowiska z PyPI trusted publisher
     
+    permissions:
+      id-token: write  # Wymagane dla trusted publishing na PyPI
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
