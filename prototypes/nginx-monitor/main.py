@@ -1,23 +1,27 @@
-import os
 import json
-import subprocess
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from rich.panel import Panel
-from rich.table import Table
-from rich.live import Live
-from rich.text import Text
-from rich.layout import Layout
-import threading
+import os
 import queue
-import time
-import sys, tty, termios
-from select import select
 import select as select_module  # Zmiana nazwy importu
+import subprocess
+import sys
+import termios
+import threading
+import time
+import tty
+from select import select
+
+from rich.console import Console
+from rich.layout import Layout
+from rich.live import Live
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.table import Table
+from rich.text import Text
 from textual.app import App
-from textual.widgets import Header, Footer, Tree, Static, ScrollView
-from textual.containers import Container, Horizontal
 from textual.binding import Binding
+from textual.containers import Container, Horizontal
+from textual.widgets import Footer, Header, ScrollView, Static, Tree
+
 
 class NginxMonitor:
     def __init__(self):
@@ -27,34 +31,30 @@ class NginxMonitor:
 
     def load_profiles(self):
         if os.path.exists(self.profiles_file):
-            with open(self.profiles_file, 'r') as f:
+            with open(self.profiles_file, "r") as f:
                 return json.load(f)
         return {}
 
     def save_profile(self, name, host, username, key_path=None):
-        self.profiles[name] = {
-            'host': host,
-            'username': username,
-            'key_path': key_path
-        }
-        with open(self.profiles_file, 'w') as f:
+        self.profiles[name] = {"host": host, "username": username, "key_path": key_path}
+        with open(self.profiles_file, "w") as f:
             json.dump(self.profiles, f)
 
     def run_command(self, command, remote=False, host=None, username=None, key_path=None):
         try:
             if remote:
-                ssh_command = ['ssh']
+                ssh_command = ["ssh"]
                 if key_path:
-                    ssh_command.extend(['-i', key_path])
-                ssh_command.append(f'{username}@{host}')
+                    ssh_command.extend(["-i", key_path])
+                ssh_command.append(f"{username}@{host}")
                 ssh_command.append(command)
                 result = subprocess.run(ssh_command, capture_output=True, text=True)
             else:
                 # Dodaj sudo dla lokalnych poleceń, które tego wymagają
-                if command.startswith('sudo '):
+                if command.startswith("sudo "):
                     cmd_parts = command.split()
                 else:
-                    cmd_parts = ['sudo'] + command.split()
+                    cmd_parts = ["sudo"] + command.split()
                 result = subprocess.run(cmd_parts, capture_output=True, text=True)
             return result.stdout.strip(), result.returncode
         except Exception as e:
@@ -62,123 +62,123 @@ class NginxMonitor:
 
     def check_nginx(self, remote=False, host=None, username=None, key_path=None):
         results = {}
-        
+
         # Dodaj sprawdzanie lokalizacji plików konfiguracyjnych
         nginx_conf_cmd = "find /etc/nginx -name '*.conf' -type f"
         output, code = self.run_command(nginx_conf_cmd, remote, host, username, key_path)
-        results['config_files'] = output.split('\n') if output else []
-        
+        results["config_files"] = output.split("\n") if output else []
+
         # Znajdź ścieżki do logów
         log_paths = set()
-        for conf_file in results['config_files']:
+        for conf_file in results["config_files"]:
             grep_cmd = f"grep -E 'access_log|error_log' {conf_file}"
             output, code = self.run_command(grep_cmd, remote, host, username, key_path)
             if output:
-                for line in output.split('\n'):
-                    if 'access_log' in line or 'error_log' in line:
+                for line in output.split("\n"):
+                    if "access_log" in line or "error_log" in line:
                         parts = line.strip().split()
                         if len(parts) > 1:
                             log_path = parts[1]
-                            if log_path != 'off' and not log_path.startswith('syslog:'):
+                            if log_path != "off" and not log_path.startswith("syslog:"):
                                 log_paths.add(log_path)
-        
-        results['log_paths'] = list(log_paths)
+
+        results["log_paths"] = list(log_paths)
 
         # Sprawdzanie jednostki systemd
-        systemd_cmd = 'systemctl is-active nginx'
+        systemd_cmd = "systemctl is-active nginx"
         output, code = self.run_command(systemd_cmd, remote, host, username, key_path)
-        results['systemd_active'] = output == 'active' if output else False
+        results["systemd_active"] = output == "active" if output else False
 
         # Sprawdzanie procesu i portu
         netstat_cmd = "netstat -tulpn | grep ':80'"
         output, code = self.run_command(netstat_cmd, remote, host, username, key_path)
-        
+
         # Domyślne wartości
-        results['port_80_active'] = False
-        results['port_80_process'] = None
-        results['port_80_pid'] = None
-        results['port_80_ipv4'] = None
-        results['port_80_ipv6'] = None
-        results['port_80_details'] = None
+        results["port_80_active"] = False
+        results["port_80_process"] = None
+        results["port_80_pid"] = None
+        results["port_80_ipv4"] = None
+        results["port_80_ipv6"] = None
+        results["port_80_details"] = None
 
         if output:
-            for line in output.split('\n'):
-                # tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      37273/nginx: master 
-                if ':80' in line:
-                    results['port_80_active'] = True
+            for line in output.split("\n"):
+                # tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      37273/nginx: master
+                if ":80" in line:
+                    results["port_80_active"] = True
                     parts = line.strip().split()
                     # Znajdź część z PID/procesem (ostatnia kolumna)
                     process_info = parts[-2]  # np. "37273/nginx: master"
-                    if '/' in process_info:
-                        pid, process = process_info.split('/', 1)
-                        results['port_80_pid'] = pid
-                        results['port_80_process'] = process.strip()
+                    if "/" in process_info:
+                        pid, process = process_info.split("/", 1)
+                        results["port_80_pid"] = pid
+                        results["port_80_process"] = process.strip()
 
                     # Znajdź adres IP (czwarta kolumna)
                     local_addr = parts[3]  # np. "0.0.0.0:80" lub ":::80"
-                    if parts[0] == 'tcp':
-                        results['port_80_ipv4'] = local_addr
-                    elif parts[0] == 'tcp6':
-                        results['port_80_ipv6'] = local_addr
+                    if parts[0] == "tcp":
+                        results["port_80_ipv4"] = local_addr
+                    elif parts[0] == "tcp6":
+                        results["port_80_ipv6"] = local_addr
 
-                    if results['port_80_pid']:
+                    if results["port_80_pid"]:
                         ps_cmd = f'ps -p {results["port_80_pid"]} -o comm,args'
                         ps_output, _ = self.run_command(ps_cmd, remote, host, username, key_path)
                         if ps_output:
-                            results['port_80_details'] = ps_output.split('\n')[-1]
+                            results["port_80_details"] = ps_output.split("\n")[-1]
                     break  # Weź pierwszy znaleziony wpis dla portu 80
 
         # Sprawdzanie wersji nginx
-        nginx_cmd = 'nginx -v 2>&1'
+        nginx_cmd = "nginx -v 2>&1"
         output, code = self.run_command(nginx_cmd, remote, host, username, key_path)
-        results['version'] = output if output else "Nie znaleziono"
-        
+        results["version"] = output if output else "Nie znaleziono"
+
         return results
 
     def display_results(self, results, location):
         table = Table(title=f"Status Nginx na {location}")
         table.add_column("Sprawdzenie", style="cyan")
         table.add_column("Status", style="green")
-        
+
         table.add_row(
             "Jednostka systemd",
-            "✓ Aktywna" if results['systemd_active'] else "✗ Nieaktywna"
+            "✓ Aktywna" if results["systemd_active"] else "✗ Nieaktywna",
         )
-        
-        if results['port_80_active']:
+
+        if results["port_80_active"]:
             port_info = []
-            if results['port_80_process']:
+            if results["port_80_process"]:
                 port_info.append(f"Program: {results['port_80_process']}")
-            if results['port_80_pid']:
+            if results["port_80_pid"]:
                 port_info.append(f"PID: {results['port_80_pid']}")
-            if results['port_80_ipv4']:
+            if results["port_80_ipv4"]:
                 port_info.append(f"IPv4: {results['port_80_ipv4']}")
-            if results['port_80_ipv6']:
+            if results["port_80_ipv6"]:
                 port_info.append(f"IPv6: {results['port_80_ipv6']}")
-            if results['port_80_details']:
+            if results["port_80_details"]:
                 port_info.append(f"Szczegóły: {results['port_80_details']}")
-                
+
             port_status = "\n".join(port_info)
-            if 'nginx' in str(results['port_80_process']).lower():
+            if "nginx" in str(results["port_80_process"]).lower():
                 table.add_row("Port 80", f"✓ Nasłuchuje (nginx)\n{port_status}")
             else:
                 table.add_row("Port 80", f"⚠ Zajęty przez inny proces\n{port_status}")
         else:
             table.add_row("Port 80", "✗ Nie nasłuchuje")
-            
-        table.add_row("Wersja Nginx", results['version'])
-        
+
+        table.add_row("Wersja Nginx", results["version"])
+
         # Dodaj sekcję z informacjami o logach
-        if results.get('config_files'):
+        if results.get("config_files"):
             self.console.print("\nZnalezione pliki konfiguracyjne:")
-            for conf in results['config_files']:
+            for conf in results["config_files"]:
                 self.console.print(f"  • {conf}")
-            
-        if results.get('log_paths'):
+
+        if results.get("log_paths"):
             self.console.print("\nŚcieżki do logów:")
-            for log_path in results['log_paths']:
+            for log_path in results["log_paths"]:
                 self.console.print(f"  • {log_path}")
-        
+
         self.console.print(table)
 
     def getch():
@@ -197,7 +197,7 @@ class NginxMonitor:
         layout.split_row(
             Layout(name="apps", ratio=1),
             Layout(name="logs", ratio=1),
-            Layout(name="content", ratio=2)
+            Layout(name="content", ratio=2),
         )
         return layout
 
@@ -229,21 +229,35 @@ class NginxMonitor:
 
             def generate_content_panel():
                 # Zawartość logów
-                visible_lines = log_lines[-console.height:] if auto_scroll else log_lines[scroll_position:scroll_position + console.height]
+                visible_lines = (
+                    log_lines[-console.height :]
+                    if auto_scroll
+                    else log_lines[scroll_position : scroll_position + console.height]
+                )
                 return Panel("\n".join(visible_lines), title="Zawartość logów")
 
             # Konfiguracja tail
             if remote:
                 tail_cmd = f"tail -n 100 -f {log_path}"
-                ssh_command = ['ssh']
+                ssh_command = ["ssh"]
                 if key_path:
-                    ssh_command.extend(['-i', key_path])
-                ssh_command.append(f'{username}@{host}')
-                ssh_command.append(f'sudo {tail_cmd}')
-                process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                    ssh_command.extend(["-i", key_path])
+                ssh_command.append(f"{username}@{host}")
+                ssh_command.append(f"sudo {tail_cmd}")
+                process = subprocess.Popen(
+                    ssh_command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
             else:
                 tail_cmd = f"sudo tail -n 100 -f {log_path}"
-                process = subprocess.Popen(tail_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.Popen(
+                    tail_cmd.split(),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
 
             def update_layout():
                 layout["apps"].update(generate_apps_panel())
@@ -260,19 +274,19 @@ class NginxMonitor:
                         log_lines.append(formatted_line)
                         if len(log_lines) > max_lines:
                             log_lines.pop(0)
-                    
+
                     # Sprawdź klawisze
                     if sys.stdin in select_module.select([sys.stdin], [], [], 0)[0]:
                         key = sys.stdin.read(1)
-                        if key == 'k':  # Scroll up
+                        if key == "k":  # Scroll up
                             auto_scroll = False
                             scroll_position = max(0, scroll_position - 1)
-                        elif key == 'j':  # Scroll down
+                        elif key == "j":  # Scroll down
                             auto_scroll = False
                             scroll_position += 1
-                        elif key == 'a':  # Toggle auto-scroll
+                        elif key == "a":  # Toggle auto-scroll
                             auto_scroll = not auto_scroll
-                    
+
                     live.update(update_layout())
 
         except KeyboardInterrupt:
@@ -285,80 +299,77 @@ class NginxMonitor:
         """Pomocnicza funkcja do formatowania linii logu"""
         try:
             # Dla access.log
-            if 'access.log' in log_path:
+            if "access.log" in log_path:
                 # Kolorowanie różnych typów requestów
-                if 'GET' in line:
-                    line = line.replace('GET', '[green]GET[/green]')
-                elif 'POST' in line:
-                    line = line.replace('POST', '[blue]POST[/blue]')
-                elif 'DELETE' in line:
-                    line = line.replace('DELETE', '[red]DELETE[/red]')
-                
+                if "GET" in line:
+                    line = line.replace("GET", "[green]GET[/green]")
+                elif "POST" in line:
+                    line = line.replace("POST", "[blue]POST[/blue]")
+                elif "DELETE" in line:
+                    line = line.replace("DELETE", "[red]DELETE[/red]")
+
                 # Kolorowanie kodów odpowiedzi
-                for status_code in ['200', '201', '204']:
-                    line = line.replace(f' {status_code} ', f' [green]{status_code}[/green] ')
-                for status_code in ['404', '400', '401', '403']:
-                    line = line.replace(f' {status_code} ', f' [yellow]{status_code}[/yellow] ')
-                for status_code in ['500', '502', '503', '504']:
-                    line = line.replace(f' {status_code} ', f' [red]{status_code}[/red] ')
-            
+                for status_code in ["200", "201", "204"]:
+                    line = line.replace(f" {status_code} ", f" [green]{status_code}[/green] ")
+                for status_code in ["404", "400", "401", "403"]:
+                    line = line.replace(f" {status_code} ", f" [yellow]{status_code}[/yellow] ")
+                for status_code in ["500", "502", "503", "504"]:
+                    line = line.replace(f" {status_code} ", f" [red]{status_code}[/red] ")
+
             # Dla error.log
-            elif 'error.log' in log_path:
-                if 'error' in line.lower():
-                    line = f'[red]{line}[/red]'
-                elif 'warn' in line.lower():
-                    line = f'[yellow]{line}[/yellow]'
+            elif "error.log" in log_path:
+                if "error" in line.lower():
+                    line = f"[red]{line}[/red]"
+                elif "warn" in line.lower():
+                    line = f"[yellow]{line}[/yellow]"
                 else:
-                    line = f'[blue]{line}[/blue]'
+                    line = f"[blue]{line}[/blue]"
         except:
             pass
-        
+
         return line
 
     def analyze_nginx_logs(self, remote=False, host=None, username=None, key_path=None):
         """Analizuje wszystkie logi NGINX"""
         logs = {
-            'default': {
-                'name': 'Domyślne logi NGINX',
-                'logs': {
-                    'access': ['/var/log/nginx/access.log'],
-                    'error': ['/var/log/nginx/error.log']
-                }
+            "default": {
+                "name": "Domyślne logi NGINX",
+                "logs": {
+                    "access": ["/var/log/nginx/access.log"],
+                    "error": ["/var/log/nginx/error.log"],
+                },
             }
         }
-        
+
         # Sprawdź standardowe lokalizacje konfiguracji
-        config_locations = [
-            "/etc/nginx/sites-enabled/",
-            "/etc/nginx/conf.d/"
-        ]
-        
+        config_locations = ["/etc/nginx/sites-enabled/", "/etc/nginx/conf.d/"]
+
         for location in config_locations:
             ls_cmd = f"ls -1 {location} 2>/dev/null"
             output, code = self.run_command(ls_cmd, remote, host, username, key_path)
-            
+
             if output:
                 self.console.print(f"\nZnaleziono konfiguracje w {location}:")
-                for site in output.split('\n'):
-                    if site and (site.endswith('.conf') or not '.' in site):
-                        app_info = {'name': site, 'logs': {'access': [], 'error': []}}
-                        
+                for site in output.split("\n"):
+                    if site and (site.endswith(".conf") or "." not in site):
+                        app_info = {"name": site, "logs": {"access": [], "error": []}}
+
                         cat_cmd = f"cat {location}{site}"
                         conf_output, _ = self.run_command(cat_cmd, remote, host, username, key_path)
-                        
+
                         if conf_output:
-                            for line in conf_output.split('\n'):
+                            for line in conf_output.split("\n"):
                                 line = line.strip()
-                                if 'access_log' in line:
+                                if "access_log" in line:
                                     parts = line.split()
-                                    if len(parts) > 1 and parts[1] != 'off':
-                                        app_info['logs']['access'].append(parts[1])
-                                elif 'error_log' in line:
+                                    if len(parts) > 1 and parts[1] != "off":
+                                        app_info["logs"]["access"].append(parts[1])
+                                elif "error_log" in line:
                                     parts = line.split()
-                                    if len(parts) > 1 and parts[1] != 'off':
-                                        app_info['logs']['error'].append(parts[1])
-                        
-                        if app_info['logs']['access'] or app_info['logs']['error']:
+                                    if len(parts) > 1 and parts[1] != "off":
+                                        app_info["logs"]["error"].append(parts[1])
+
+                        if app_info["logs"]["access"] or app_info["logs"]["error"]:
                             logs[site] = app_info
 
         return logs
@@ -375,8 +386,8 @@ class NginxMonitor:
         table.add_column("Error Logi", style="red")
 
         for name, info in logs.items():
-            access_logs = "\n".join(info['logs']['access']) or "Brak"
-            error_logs = "\n".join(info['logs']['error']) or "Brak"
+            access_logs = "\n".join(info["logs"]["access"]) or "Brak"
+            error_logs = "\n".join(info["logs"]["error"]) or "Brak"
             table.add_row(name, access_logs, error_logs)
 
         self.console.print(table)
@@ -392,22 +403,23 @@ class NginxMonitor:
         self.display_results(results, host)
 
         # Jeśli Nginx działa, uruchom monitor
-        if results['systemd_active']:
+        if results["systemd_active"]:
             self.console.print("\n[green]Nginx działa! Uruchamiam monitor...[/green]")
-            
+
             logs = self.analyze_nginx_logs(
                 remote=(mode == "z"),
                 host=host if mode == "z" else None,
                 username=username if mode == "z" else None,
-                key_path=key_path if mode == "z" else None
+                key_path=key_path if mode == "z" else None,
             )
-            
+
             try:
                 self.run_monitor(logs, mode, host, username, key_path)
             except KeyboardInterrupt:
                 self.console.print("\n[yellow]Zatrzymano monitor[/yellow]")
         else:
             self.console.print("\n[red]Nginx nie jest aktywny![/red]")
+
 
 class NginxMonitorApp(App):
     BINDINGS = [
@@ -434,7 +446,7 @@ class NginxMonitorApp(App):
                 Tree("Aplikacje", id="apps_tree"),
                 Tree("Logi", id="logs_tree"),
                 ScrollView(Static(id="log_content")),
-                id="main_container"
+                id="main_container",
             )
         )
         yield Footer()
@@ -453,7 +465,7 @@ class NginxMonitorApp(App):
             logs_tree = self.query_one("#logs_tree", Tree)
             logs_tree.clear()
             if self.selected_app in self.logs:
-                for log_type, paths in self.logs[self.selected_app]['logs'].items():
+                for log_type, paths in self.logs[self.selected_app]["logs"].items():
                     for path in paths:
                         logs_tree.root.add(path)
         elif tree_id == "logs_tree":
@@ -465,28 +477,39 @@ class NginxMonitorApp(App):
         # Konfiguracja procesu tail
         if self.mode == "z":
             tail_cmd = f"tail -n 100 -f {log_path}"
-            ssh_command = ['ssh']
+            ssh_command = ["ssh"]
             if self.key_path:
-                ssh_command.extend(['-i', self.key_path])
-            ssh_command.append(f'{self.username}@{self.host}')
-            ssh_command.append(f'sudo {tail_cmd}')
-            process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                ssh_command.extend(["-i", self.key_path])
+            ssh_command.append(f"{self.username}@{self.host}")
+            ssh_command.append(f"sudo {tail_cmd}")
+            process = subprocess.Popen(
+                ssh_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
         else:
             tail_cmd = f"sudo tail -n 100 -f {log_path}"
-            process = subprocess.Popen(tail_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            process = subprocess.Popen(
+                tail_cmd.split(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
 
         def update_log_content():
             content = self.query_one("#log_content", Static)
             while True:
                 line = process.stdout.readline()
                 if line:
-                    formatted_line = self.nginx_monitor.format_and_display_log_line(line.strip(), log_path)
+                    formatted_line = self.nginx_monitor.format_and_display_log_line(
+                        line.strip(), log_path
+                    )
                     content.update(Text(formatted_line))
                 if process.poll() is not None:
                     break
 
         # Uruchom wątek monitorujący
-        import threading
         monitor_thread = threading.Thread(target=update_log_content, daemon=True)
         monitor_thread.start()
 
@@ -498,9 +521,11 @@ class NginxMonitorApp(App):
         # Implementacja przełączania między panelami
         pass
 
+
 def run_monitor(self, logs, mode, host=None, username=None, key_path=None):
     app = NginxMonitorApp(self, logs, mode, host, username, key_path)
     app.run()
+
 
 if __name__ == "__main__":
     monitor = NginxMonitor()

@@ -9,8 +9,10 @@ class ExecutionMode(Enum):
     - LOCAL: Execute on the local host.
     - REMOTE: Execute on a remote host via SSH.
     """
+
     LOCAL = auto()
     REMOTE = auto()
+
 
 @dataclass
 class RemoteHostInfo:
@@ -32,6 +34,7 @@ class RemoteHostInfo:
         sudo_password: Sudo password if required.
         ssh_options: Extra SSH options as a dictionary.
     """
+
     host: str
     user: Optional[str] = None
     port: int = 22
@@ -50,6 +53,7 @@ class RemoteHostInfo:
     # Extra SSH options
     ssh_options: Dict[str, str] = field(default_factory=dict)
 
+
 @dataclass
 class CommandContext:
     """Command execution context.
@@ -62,13 +66,14 @@ class CommandContext:
         execution_mode: Local or remote execution mode.
         remote_host: Remote host parameters when in REMOTE mode.
     """
+
     current_directory: str = "."
     environment_variables: Dict[str, str] = field(default_factory=dict)
     command_history: List[str] = field(default_factory=list)
     parameters: Dict[str, Any] = field(default_factory=dict)
     execution_mode: ExecutionMode = ExecutionMode.LOCAL
     remote_host: Optional[RemoteHostInfo] = None
-    
+
     def change_directory(self, new_directory: str) -> None:
         """Change the working directory in this context."""
         self.current_directory = new_directory
@@ -85,14 +90,23 @@ class CommandContext:
         """Return a context parameter by key, or default if not set."""
         return self.parameters.get(key, default)
 
-    def set_remote_execution(self, host: str, user: Optional[str] = None,
-                           port: int = 22, key_file: Optional[str] = None,
-                           password: Optional[str] = None, use_sudo: bool = False,
-                           sudo_password: Optional[str] = None, use_agent: bool = False,
-                           certificate_file: Optional[str] = None, identity_only: bool = False,
-                           gssapi_auth: bool = False, gssapi_keyex: bool = False,
-                           gssapi_delegate_creds: bool = False,
-                           ssh_options: Optional[Dict[str, str]] = None) -> None:
+    def set_remote_execution(
+        self,
+        host: str,
+        user: Optional[str] = None,
+        port: int = 22,
+        key_file: Optional[str] = None,
+        password: Optional[str] = None,
+        use_sudo: bool = False,
+        sudo_password: Optional[str] = None,
+        use_agent: bool = False,
+        certificate_file: Optional[str] = None,
+        identity_only: bool = False,
+        gssapi_auth: bool = False,
+        gssapi_keyex: bool = False,
+        gssapi_delegate_creds: bool = False,
+        ssh_options: Optional[Dict[str, str]] = None,
+    ) -> None:
         """Configure remote execution mode.
 
         Args:
@@ -131,7 +145,7 @@ class CommandContext:
             gssapi_auth=gssapi_auth,
             gssapi_keyex=gssapi_keyex,
             gssapi_delegate_creds=gssapi_delegate_creds,
-            ssh_options=options
+            ssh_options=options,
         )
 
     def set_local_execution(self) -> None:
@@ -143,7 +157,8 @@ class CommandContext:
         """Return True if the context is in REMOTE mode."""
         return self.execution_mode == ExecutionMode.REMOTE
 
-    def clone(self) -> 'CommandContext':
+    def clone(self) -> "CommandContext":
         """Return a deep copy of this context."""
         import copy
+
         return copy.deepcopy(self)

@@ -1,6 +1,7 @@
 """
 Kompleksowe testy dla BashBackend - zwiększenie pokrycia do 80%+
 """
+
 import os
 import subprocess
 import time
@@ -15,107 +16,108 @@ from mancer.infrastructure.backend.bash_backend import BashBackend
 
 class TestBashBackendComprehensive:
     """Kompleksowe testy BashBackend"""
-    
+
     def setup_method(self):
         """Setup przed każdym testem"""
         self.backend = BashBackend()
-    
+
     def test_execute_command_basic(self):
         """Test podstawowego wykonania komendy"""
         result = self.backend.execute_command("echo 'test'")
-        
+
         assert isinstance(result, CommandResult)
         assert result.success
         assert result.exit_code == 0
         assert "test" in result.raw_output
         assert result.structured_output == ["test"]
-    
+
     def test_execute_command_with_working_dir(self):
         """Test wykonania komendy z working_dir"""
         # Użyj katalogu, który na pewno istnieje
         test_dir = "/tmp"
         result = self.backend.execute_command("pwd", working_dir=test_dir)
-        
+
         assert result.success
         assert test_dir in result.raw_output
-    
+
     def test_execute_command_with_env_vars(self):
         """Test wykonania komendy ze zmiennymi środowiskowymi"""
         env_vars = {"TEST_VAR": "test_value"}
         result = self.backend.execute_command("echo $TEST_VAR", env_vars=env_vars)
-        
+
         assert result.success
         assert "test_value" in result.raw_output
-    
+
     def test_execute_command_with_stdin(self):
         """Test wykonania komendy z stdin"""
         result = self.backend.execute_command("cat", stdin="hello world")
-        
+
         assert result.success
         assert "hello world" in result.raw_output
-    
+
     def test_execute_command_failing(self):
         """Test wykonania komendy która kończy się błędem"""
         result = self.backend.execute_command("exit 1")
-        
+
         assert not result.success
         assert result.exit_code == 1
-    
+
     def test_execute_command_nonexistent(self):
         """Test wykonania nieistniejącej komendy"""
         result = self.backend.execute_command("nonexistent_command_12345")
-        
+
         assert not result.success
         assert result.exit_code != 0
         assert result.error_message is not None
-    
-    @patch('subprocess.run')
+
+    @patch("subprocess.run")
     def test_execute_command_exception_handling(self, mock_run):
         """Test obsługi wyjątków podczas wykonywania komendy"""
         # Symuluj wyjątek
         mock_run.side_effect = Exception("Test exception")
-        
+
         result = self.backend.execute_command("echo test")
-        
+
         assert not result.success
         assert result.exit_code == -1
         assert "Test exception" in result.error_message
         assert "Traceback" in result.error_message
-    
+
     def test_execute_command_with_live_output(self):
         """Test wykonania komendy z live output"""
-        context_params = {
-            "live_output": True,
-            "live_output_interval": 0.05
-        }
-        
+        context_params = {"live_output": True, "live_output_interval": 0.05}
+
         # Użyj prostej komendy która szybko się wykona
         result = self.backend.execute_command("echo 'live test'", context_params=context_params)
-        
+
         assert isinstance(result, CommandResult)
         # Live output może mieć różne zachowanie, ale powinien zwrócić wynik
         assert "live test" in result.raw_output or result.raw_output == ""
-    
-    @patch('subprocess.Popen')
+
+    @patch("subprocess.Popen")
     def test_execute_command_live_output_with_mock(self, mock_popen):
         """Test live output z mockiem dla kontrolowanego środowiska"""
         # Mock procesu
         mock_process = Mock()
         mock_process.stdout.readline.side_effect = ["line1\n", "line2\n", ""]
         mock_process.stderr.readline.side_effect = ["", "", ""]
-        mock_process.poll.side_effect = [None, None, 0]  # Proces kończy się po 3 wywołaniach
+        mock_process.poll.side_effect = [
+            None,
+            None,
+            0,
+        ]  # Proces kończy się po 3 wywołaniach
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         context_params = {"live_output": True}
         result = self.backend.execute_command("echo test", context_params=context_params)
-        
+
         # Sprawdź czy Popen został wywołany z odpowiednimi parametrami
         mock_popen.assert_called_once()
         call_args = mock_popen.call_args
-        assert call_args[1]['shell']
-        assert call_args[1]['stdout'] == subprocess.PIPE
-        assert call_args[1]['stderr'] == subprocess.PIPE
+        assert call_args[1]["shell"]
+        assert call_args[1]["stdout"] == subprocess.PIPE
+        assert call_args[1]["stderr"] == subprocess.PIPE
 
     def test_execute_method_basic(self):
         """Test metody execute (używanej przez Command classes)"""
@@ -139,7 +141,7 @@ class TestBashBackendComprehensive:
         assert exit_code == 0
         assert "/tmp" in stdout
 
-    @patch('subprocess.Popen')
+    @patch("subprocess.Popen")
     def test_execute_method_timeout(self, mock_popen):
         """Test timeout w metodzie execute"""
         # Mock procesu który się zawiesza
@@ -154,7 +156,7 @@ class TestBashBackendComprehensive:
         assert exit_code == -1
         assert "timed out" in stderr
 
-    @patch('subprocess.Popen')
+    @patch("subprocess.Popen")
     def test_execute_method_keyboard_interrupt(self, mock_popen):
         """Test KeyboardInterrupt w metodzie execute"""
         # Mock procesu
@@ -214,7 +216,9 @@ class TestBashBackendComprehensive:
 
     def test_build_command_string_with_flags(self):
         """Test budowania komendy z flagami"""
-        command = self.backend.build_command_string("ls", [], {}, ["--recursive", "--human-readable"])
+        command = self.backend.build_command_string(
+            "ls", [], {}, ["--recursive", "--human-readable"]
+        )
         assert command == "ls --recursive --human-readable"
 
     def test_build_command_string_with_short_params(self):
@@ -230,10 +234,7 @@ class TestBashBackendComprehensive:
     def test_build_command_string_complex(self):
         """Test budowania złożonej komendy"""
         command = self.backend.build_command_string(
-            "find",
-            ["-type", "f"],
-            {"name": "*.py", "d": "2"},
-            ["--follow-symlinks"]
+            "find", ["-type", "f"], {"name": "*.py", "d": "2"}, ["--follow-symlinks"]
         )
 
         # Sprawdź podstawowe części

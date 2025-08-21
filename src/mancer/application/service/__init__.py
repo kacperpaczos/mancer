@@ -2,9 +2,9 @@ from .remote_config_manager import ConfigSyncTask, RemoteConfigManager, SyncResu
 from .systemd_inspector import SystemdInspector, SystemdUnit
 
 __all__ = [
-    'SystemdInspector',
-    'SystemdUnit',
-    'RemoteConfigManager',
-    'ConfigSyncTask',
-    'SyncResult'
-] 
+    "SystemdInspector",
+    "SystemdUnit",
+    "RemoteConfigManager",
+    "ConfigSyncTask",
+    "SyncResult",
+]

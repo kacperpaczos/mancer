@@ -14,30 +14,31 @@ Wymagania:
 - Zainstalowane dependencies: pip install pytest pytest-docker-compose
 """
 
-import sys
 import json
-import time
 import subprocess
-from pathlib import Path
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 
 # Dodaj ścieżkę do testów
 sys.path.append(str(Path(__file__).parent.parent / "tests" / "integration"))
 from test_utils import MancerDockerTestUtils
 
+
 class MancerFrameworkTester:
     """Klasa do testowania core frameworka Mancer przez docker exec i bash commands"""
-    
-    def __init__(self, container_name='mancer-test-1'):
+
+    def __init__(self, container_name="mancer-test-1"):
         self.container_name = container_name
         self.results = {
             "session_start": datetime.now().isoformat(),
             "container_name": container_name,
             "framework_tests": [],
             "metrics": [],
-            "errors": []
+            "errors": [],
         }
-    
+
     def check_container_ready(self):
         """Sprawdź czy kontener jest gotowy"""
         try:
@@ -55,32 +56,37 @@ class MancerFrameworkTester:
             print(error_msg)
             self.results["errors"].append(error_msg)
             return False
-    
+
     def test_framework_core_validation(self):
         """Test walidacji core komponentów frameworka"""
         print("\n🔧 Testowanie core komponentów frameworka Mancer...")
-        
+
         test_result = {
             "test_name": "framework_core_validation",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
             validation = MancerDockerTestUtils.validate_mancer_framework(self.container_name)
-            
+
             # Sprawdź wszystkie core komponenty
-            required_components = ["python_available", "mancer_importable", "shell_runner_available", 
-                                 "bash_backend_working", "command_factory_working"]
-            
+            required_components = [
+                "python_available",
+                "mancer_importable",
+                "shell_runner_available",
+                "bash_backend_working",
+                "command_factory_working",
+            ]
+
             all_working = all(validation.get(comp, False) for comp in required_components)
-            
+
             if all_working:
                 test_result["status"] = "passed"
                 test_result["details"] = validation
                 print("  ✅ Wszystkie core komponenty frameworka działają")
-                
+
                 for comp, status in validation.items():
                     status_icon = "✅" if status else "❌"
                     print(f"    {status_icon} {comp}: {status}")
@@ -88,75 +94,75 @@ class MancerFrameworkTester:
                 test_result["status"] = "failed"
                 test_result["details"] = validation
                 print("  ❌ Niektóre core komponenty frameworka nie działają:")
-                
+
                 for comp, status in validation.items():
                     status_icon = "✅" if status else "❌"
                     print(f"    {status_icon} {comp}: {status}")
-            
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas walidacji frameworka: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def test_shell_runner_functionality(self):
         """Test funkcjonalności ShellRunner - głównej klasy frameworka"""
         print("\n🧪 Testowanie ShellRunner - core frameworka...")
-        
+
         test_result = {
             "test_name": "shell_runner_core_functionality",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
             results = MancerDockerTestUtils.test_mancer_core_commands(self.container_name)
-            
+
             if "error" not in results:
                 test_result["status"] = "passed"
                 test_result["details"] = results
-                
+
                 commands_tested = results.get("commands_tested", [])
                 successful = len([cmd for cmd in commands_tested if cmd.get("success", False)])
                 total = len(commands_tested)
-                
+
                 print(f"  ✅ ShellRunner core test: {successful}/{total} komend successful")
-                
+
                 for cmd in commands_tested:
                     cmd_name = cmd.get("command_name", "unknown")
                     success = cmd.get("success", False)
                     status_icon = "✅" if success else "❌"
                     print(f"    {status_icon} {cmd_name}: {success}")
-                    
+
             else:
                 test_result["status"] = "failed"
                 test_result["details"] = results
                 print(f"  ❌ ShellRunner core test failed: {results}")
-            
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas testu ShellRunner: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def test_bash_backend_directly(self):
         """Test bezpośredni BashBackend - core backend frameworka"""
         print("\n🔨 Testowanie BashBackend - core backend...")
-        
+
         test_result = {
             "test_name": "bash_backend_direct_test",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
-            test_script = '''
+            test_script = """
 import sys
 sys.path.append("/home/mancer1/mancer/src")
 import json
@@ -196,54 +202,63 @@ try:
     
 except Exception as e:
     print("BASH_BACKEND_DIRECT_ERROR:", str(e))
-'''
-            
+"""
+
             stdout, stderr, exit_code = MancerDockerTestUtils.execute_bash_command_in_container(
                 self.container_name, f"python3 -c '{test_script}'"
             )
-            
+
             if "BASH_BACKEND_DIRECT_RESULTS:" in stdout:
                 json_part = stdout.split("BASH_BACKEND_DIRECT_RESULTS:")[1].strip()
                 results = json.loads(json_part)
-                
+
                 successful = [r for r in results if r.get("success", False)]
                 total = len(results)
-                
+
                 if len(successful) > 0:
                     test_result["status"] = "passed"
-                    test_result["details"] = {"results": results, "successful": len(successful), "total": total}
-                    print(f"  ✅ BashBackend direct test: {len(successful)}/{total} komend successful")
+                    test_result["details"] = {
+                        "results": results,
+                        "successful": len(successful),
+                        "total": total,
+                    }
+                    print(
+                        f"  ✅ BashBackend direct test: {len(successful)}/{total} komend successful"
+                    )
                 else:
                     test_result["status"] = "failed"
-                    test_result["details"] = {"results": results, "error": "No commands succeeded"}
-                    print(f"  ❌ BashBackend direct test: żadne komendy nie przeszły")
-                    
+                    test_result["details"] = {
+                        "results": results,
+                        "error": "No commands succeeded",
+                    }
+                    print("  ❌ BashBackend direct test: żadne komendy nie przeszły")
+
             else:
                 test_result["status"] = "failed"
                 test_result["details"] = {"stdout": stdout, "stderr": stderr}
                 print(f"  ❌ BashBackend direct test failed: {stderr}")
-            
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas testu BashBackend: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def test_command_factory_functionality(self):
         """Test funkcjonalności CommandFactory - core factory frameworka"""
         print("\n🏭 Testowanie CommandFactory - core factory...")
-        
+
         test_result = {
             "test_name": "command_factory_functionality",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
-            test_script = '''
+            test_script = """
 import sys
 sys.path.append("/home/mancer1/mancer/src")
 import json
@@ -276,24 +291,28 @@ try:
     
 except Exception as e:
     print("COMMAND_FACTORY_ERROR:", str(e))
-'''
-            
+"""
+
             stdout, stderr, exit_code = MancerDockerTestUtils.execute_bash_command_in_container(
                 self.container_name, f"python3 -c '{test_script}'"
             )
-            
+
             if "COMMAND_FACTORY_RESULTS:" in stdout:
                 json_part = stdout.split("COMMAND_FACTORY_RESULTS:")[1].strip()
                 results = json.loads(json_part)
-                
+
                 created = [r for r in results if r.get("created", False)]
                 total = len(results)
-                
+
                 if len(created) > 0:
                     test_result["status"] = "passed"
-                    test_result["details"] = {"results": results, "created": len(created), "total": total}
+                    test_result["details"] = {
+                        "results": results,
+                        "created": len(created),
+                        "total": total,
+                    }
                     print(f"  ✅ CommandFactory test: {len(created)}/{total} komend utworzonych")
-                    
+
                     for r in results:
                         cmd_type = r.get("command_type", "unknown")
                         created_status = r.get("created", False)
@@ -302,96 +321,103 @@ except Exception as e:
                         print(f"    {status_icon} {cmd_type}: {class_name}")
                 else:
                     test_result["status"] = "failed"
-                    test_result["details"] = {"results": results, "error": "No commands created"}
-                    print(f"  ❌ CommandFactory test: żadne komendy nie zostały utworzone")
-                    
+                    test_result["details"] = {
+                        "results": results,
+                        "error": "No commands created",
+                    }
+                    print("  ❌ CommandFactory test: żadne komendy nie zostały utworzone")
+
             else:
                 test_result["status"] = "failed"
                 test_result["details"] = {"stdout": stdout, "stderr": stderr}
                 print(f"  ❌ CommandFactory test failed: {stderr}")
-            
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas testu CommandFactory: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def test_framework_cache_functionality(self):
         """Test funkcjonalności cache frameworka"""
         print("\n💾 Testowanie cache frameworka...")
-        
+
         test_result = {
             "test_name": "framework_cache_functionality",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
-            cache_results = MancerDockerTestUtils.test_framework_cache_functionality(self.container_name)
-            
+            cache_results = MancerDockerTestUtils.test_framework_cache_functionality(
+                self.container_name
+            )
+
             if "error" not in cache_results:
                 test_result["status"] = "passed"
                 test_result["details"] = cache_results
-                
+
                 cache_tests = cache_results.get("cache_tests", [])
                 successful_tests = len([t for t in cache_tests if t.get("success", False)])
-                
-                print(f"  ✅ Framework cache test: {successful_tests}/{len(cache_tests)} testów successful")
-                
+
+                print(
+                    f"  ✅ Framework cache test: {successful_tests}/{len(cache_tests)} testów successful"
+                )
+
                 if "cache_stats" in cache_results:
                     print(f"  📊 Cache stats: {cache_results['cache_stats']}")
             else:
                 test_result["status"] = "failed"
                 test_result["details"] = cache_results
                 print(f"  ❌ Framework cache test failed: {cache_results}")
-            
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas testu cache: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def collect_framework_performance_metrics(self):
         """Zbierz metryki wydajności frameworka"""
-        print(f"\n📊 Zbieranie metryk wydajności frameworka...")
-        
+        print("\n📊 Zbieranie metryk wydajności frameworka...")
+
         try:
             metrics = MancerDockerTestUtils.collect_container_metrics(self.container_name)
             metrics["collection_time"] = datetime.now().isoformat()
             metrics["framework_focus"] = True
-            
+
             print(f"  📈 CPU usage: {metrics.get('cpu_usage', 'N/A')}")
             print(f"  🧠 Memory usage: {metrics.get('memory_usage', 'N/A')}")
             print(f"  🔢 Process count: {metrics.get('process_count', 'N/A')}")
-            
+
             self.results["metrics"].append(metrics)
             return metrics
-            
+
         except Exception as e:
             error_msg = f"Błąd zbierania metryk frameworka: {e}"
             print(f"  ❌ {error_msg}")
             self.results["errors"].append(error_msg)
             return None
-    
+
     def run_framework_end_to_end_test(self):
         """Uruchom kompletny test end-to-end frameworka"""
         print("\n🚀 Testowanie frameworka end-to-end...")
-        
+
         test_result = {
             "test_name": "framework_end_to_end",
             "timestamp": datetime.now().isoformat(),
             "status": "running",
-            "details": {}
+            "details": {},
         }
-        
+
         try:
             # Kompletny test e2e frameworka
-            test_script = '''
+            test_script = """
 import sys
 sys.path.append("/home/mancer1/mancer/src")
 import json
@@ -476,24 +502,26 @@ except Exception as e:
         "timestamp": datetime.now().isoformat()
     }
     print("FRAMEWORK_E2E_ERROR:", json.dumps(error_result))
-'''
-            
+"""
+
             stdout, stderr, exit_code = MancerDockerTestUtils.execute_bash_command_in_container(
                 self.container_name, f"python3 -c '{test_script}'"
             )
-            
+
             if "FRAMEWORK_E2E_RESULTS:" in stdout:
                 json_part = stdout.split("FRAMEWORK_E2E_RESULTS:")[1].strip()
                 results = json.loads(json_part)
-                
+
                 integration_tests = results.get("integration_tests", [])
                 successful = [t for t in integration_tests if t.get("success", False)]
-                
+
                 if len(successful) > 0:
                     test_result["status"] = "passed"
                     test_result["details"] = results
-                    print(f"  ✅ Framework E2E: {len(successful)}/{len(integration_tests)} testów successful")
-                    
+                    print(
+                        f"  ✅ Framework E2E: {len(successful)}/{len(integration_tests)} testów successful"
+                    )
+
                     for test in integration_tests:
                         test_name = test.get("test", "unknown")
                         success = test.get("success", False)
@@ -502,8 +530,8 @@ except Exception as e:
                 else:
                     test_result["status"] = "failed"
                     test_result["details"] = results
-                    print(f"  ❌ Framework E2E: żadne testy nie przeszły")
-                    
+                    print("  ❌ Framework E2E: żadne testy nie przeszły")
+
             elif "FRAMEWORK_E2E_ERROR:" in stdout:
                 error_part = stdout.split("FRAMEWORK_E2E_ERROR:")[1].strip()
                 error_results = json.loads(error_part)
@@ -513,81 +541,82 @@ except Exception as e:
             else:
                 test_result["status"] = "failed"
                 test_result["details"] = {"stdout": stdout, "stderr": stderr}
-                print(f"  ❌ Framework E2E: brak wyników")
-            
+                print("  ❌ Framework E2E: brak wyników")
+
         except Exception as e:
             test_result["status"] = "error"
             test_result["details"]["exception"] = str(e)
             print(f"  ❌ Wyjątek podczas E2E test: {e}")
-        
+
         self.results["framework_tests"].append(test_result)
         return test_result
-    
+
     def save_results(self, filename="mancer_framework_test_results.json"):
         """Zapisz wyniki testów frameworka do pliku"""
         self.results["session_end"] = datetime.now().isoformat()
-        
+
         output_path = Path("logs") / filename
         output_path.parent.mkdir(exist_ok=True)
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
+
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
-        
+
         print(f"\n💾 Wyniki frameworka zapisane do: {output_path}")
-        
+
         # Podsumowanie testów frameworka
         total_tests = len(self.results["framework_tests"])
         passed_tests = len([t for t in self.results["framework_tests"] if t["status"] == "passed"])
         failed_tests = len([t for t in self.results["framework_tests"] if t["status"] == "failed"])
-        
-        print(f"\n📋 Podsumowanie testów frameworka Mancer:")
+
+        print("\n📋 Podsumowanie testów frameworka Mancer:")
         print(f"  📊 Łącznie testów: {total_tests}")
         print(f"  ✅ Przeszło: {passed_tests}")
         print(f"  ❌ Nie przeszło: {failed_tests}")
         print(f"  🔍 Metryki zebrane: {len(self.results['metrics'])}")
         print(f"  ⚠️ Błędy: {len(self.results['errors'])}")
 
+
 def main():
     """Główna funkcja przykładu testowania frameworka"""
     print("🐳 Przykład testowania core frameworka Mancer w Docker")
     print("=" * 60)
-    
+
     # Sprawdź czy Docker test environment jest uruchomiony
     print("🔍 Sprawdzanie środowiska Docker...")
-    
+
     tester = MancerFrameworkTester()
-    
+
     if not tester.check_container_ready():
         print("❌ Kontener nie jest gotowy. Upewnij się, że:")
         print("  1. Docker test environment jest uruchomione")
         print("  2. Uruchom: cd development/docker_test && sudo ./start_test.sh")
         return 1
-    
+
     try:
         # Test 1: Walidacja core frameworka
         tester.test_framework_core_validation()
-        
+
         # Test 2: ShellRunner functionality
         tester.test_shell_runner_functionality()
-        
+
         # Test 3: BashBackend direct test
         tester.test_bash_backend_directly()
-        
+
         # Test 4: CommandFactory functionality
         tester.test_command_factory_functionality()
-        
+
         # Test 5: Framework cache functionality
         tester.test_framework_cache_functionality()
-        
+
         # Test 6: Framework E2E test
         tester.run_framework_end_to_end_test()
-        
+
         # Zbierz metryki wydajności
         tester.collect_framework_performance_metrics()
-        
+
         # Zapisz wyniki
         tester.save_results()
-        
+
     except KeyboardInterrupt:
         print("\n⏹️ Test frameworka przerwany przez użytkownika")
         tester.save_results("interrupted_framework_test_results.json")
@@ -597,9 +626,10 @@ def main():
         tester.results["errors"].append(f"Unexpected error: {e}")
         tester.save_results("error_framework_test_results.json")
         return 1
-    
+
     print("\n🏁 Test frameworka Mancer zakończony pomyślnie!")
     return 0
 
+
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main())

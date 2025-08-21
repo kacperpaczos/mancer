@@ -7,8 +7,8 @@ pip install mkdocs-material mkdocstrings[python]
 ```
 Run docs server or build:
 ```bash
-./dev_tools/mancer_tools.sh --docs dev    # mkdocs serve
-./dev_tools/mancer_tools.sh --docs build  # mkdocs build
+./tools/mancer_tools.sh --docs dev    # mkdocs serve
+./tools/mancer_tools.sh --docs build  # mkdocs build
 ```
 
 ## Architecture for Developers
@@ -273,13 +273,13 @@ The project uses GitHub Actions for CI/CD. See `.github/workflows/` for configur
 Run CI checks locally:
 ```bash
 # Run all CI checks
-./scripts/pipeline/local.sh
+./build/scripts/local.sh
 
 # Run specific stage
-./scripts/pipeline/stage.sh
+./build/scripts/stage.sh
 
 # Run quick checks
-./scripts/pipeline/quick.sh
+./build/scripts/quick.sh
 ```
 
 ## Troubleshooting

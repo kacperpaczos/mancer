@@ -131,7 +131,7 @@ python setup.py sdist bdist_wheel
 ### Local Testing
 ```bash
 # Test the built package locally
-./dev_tools/build_package.py --install
+./tools/scripts/build_package.py --install
 
 # Verify installation
 python -c "import mancer; print(mancer.__version__)"

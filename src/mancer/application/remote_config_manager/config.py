@@ -1,6 +1,7 @@
 """
 Moduł definiujący klasy konfiguracyjne dla RemoteConfigManager.
 """
+
 from dataclasses import dataclass
 from typing import List
 
@@ -10,6 +11,7 @@ class ServerConfig:
     """
     Klasa przechowująca konfigurację serwera.
     """
+
     host: str
     username: str
     password: str
@@ -23,5 +25,6 @@ class AppConfig:
     """
     Klasa przechowująca konfigurację aplikacji.
     """
+
     name: str
-    server: ServerConfig 
+    server: ServerConfig

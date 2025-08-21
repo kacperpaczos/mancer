@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+!build/scripts/
 develop-eggs/
 dist/
 downloads/
@@ -38,6 +39,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+coverage_html/
 .tox/
 .nox/
 .coverage
@@ -130,6 +132,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-*
 env/
 venv/
 ENV/

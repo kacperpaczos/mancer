@@ -1,8 +1,8 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import find_namespace_packages, setup
 
 setup(
     name="mancer",
-    version="0.1.4",
+    version="0.1.5",
     package_dir={"": "src"},
     packages=find_namespace_packages(where="src"),
     description="Multisystem Programmable Engine - A framework for programmable system automation with bash and PowerShell support",
