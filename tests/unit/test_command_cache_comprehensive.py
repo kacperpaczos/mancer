@@ -1,11 +1,12 @@
 """
 Kompleksowe testy dla CommandCache - zwiększenie pokrycia do 85%+
 """
-import pytest
-import time
 import threading
+import time
 from datetime import datetime
 from unittest.mock import Mock, patch
+
+import pytest
 
 from mancer.application.command_cache import CommandCache
 from mancer.domain.model.command_result import CommandResult
@@ -31,7 +32,7 @@ class TestCommandCacheComprehensive:
         cache = CommandCache()
         
         assert cache._max_size == 100  # domyślny rozmiar
-        assert cache._auto_refresh == False
+        assert not cache._auto_refresh
         assert cache._refresh_interval == 5
         assert len(cache._cache) == 0
         assert len(cache._history) == 0
@@ -42,10 +43,10 @@ class TestCommandCacheComprehensive:
         cache = CommandCache(max_size=10, auto_refresh=True, refresh_interval=2)
         
         assert cache._max_size == 10
-        assert cache._auto_refresh == True
+        assert cache._auto_refresh
         assert cache._refresh_interval == 2
         assert cache._refresh_thread is not None
-        assert cache._refresh_thread.daemon == True
+        assert cache._refresh_thread.daemon
         
         # Cleanup
         cache.clear()
@@ -60,7 +61,7 @@ class TestCommandCacheComprehensive:
 
         assert retrieved is not None
         assert retrieved.raw_output == "test output"
-        assert retrieved.success == True
+        assert retrieved.success
         assert len(self.cache._history) == 1
 
     def test_store_with_metadata(self):
@@ -164,7 +165,7 @@ class TestCommandCacheComprehensive:
         assert len(success_history) == 2  # tylko success_cmd_0 i success_cmd_2
         
         for entry in success_history:
-            assert entry[2] == True  # wszystkie successful
+            assert entry[2]  # wszystkie successful
     
     def test_clear_cache(self):
         """Test czyszczenia cache"""
@@ -200,7 +201,7 @@ class TestCommandCacheComprehensive:
         assert stats["error_count"] == 2
         assert stats["cache_size"] == 5
         assert stats["max_size"] == 5
-        assert stats["auto_refresh"] == False
+        assert not stats["auto_refresh"]
         assert stats["refresh_interval"] == 5
     
     def test_threading_safety(self):
@@ -271,12 +272,12 @@ class TestCommandCacheComprehensive:
         """Test włączania auto-refresh"""
         cache = CommandCache(auto_refresh=False)
 
-        assert cache._auto_refresh == False
+        assert not cache._auto_refresh
         assert cache._refresh_thread is None
 
         cache.set_auto_refresh(True, interval=3)
 
-        assert cache._auto_refresh == True
+        assert cache._auto_refresh
         assert cache._refresh_interval == 3
         assert cache._refresh_thread is not None
 
@@ -287,12 +288,12 @@ class TestCommandCacheComprehensive:
         """Test wyłączania auto-refresh"""
         cache = CommandCache(auto_refresh=True, refresh_interval=1)
 
-        assert cache._auto_refresh == True
+        assert cache._auto_refresh
         assert cache._refresh_thread is not None
 
         cache.set_auto_refresh(False)
 
-        assert cache._auto_refresh == False
+        assert not cache._auto_refresh
         # Wątek powinien zostać zatrzymany
 
         # Cleanup
@@ -349,7 +350,7 @@ class TestCommandCacheComprehensive:
         assert cmd_id in export["results"]
         result_data = export["results"][cmd_id]
 
-        assert result_data["success"] == True
+        assert result_data["success"]
         assert result_data["exit_code"] == 0
         assert result_data["raw_output"] == "test output"
         assert result_data["structured_output"] == ["test", "output"]

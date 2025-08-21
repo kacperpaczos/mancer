@@ -1,18 +1,18 @@
 """
 Testy unit dla core komend frameworka Mancer
 """
-import pytest
-import sys
 import os
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
 
-
-from mancer.infrastructure.factory.command_factory import CommandFactory
-from mancer.infrastructure.backend.bash_backend import BashBackend
-from mancer.domain.model.command_result import CommandResult
 from mancer.domain.model.command_context import CommandContext
+from mancer.domain.model.command_result import CommandResult
+from mancer.infrastructure.backend.bash_backend import BashBackend
+from mancer.infrastructure.factory.command_factory import CommandFactory
+
 
 class TestCommandFactory:
     """Testy unit dla CommandFactory"""
@@ -109,7 +109,7 @@ class TestBashBackend:
         result = backend.execute_command("echo test")
         
         assert isinstance(result, CommandResult)
-        assert result.success == True
+        assert result.success
         assert result.exit_code == 0
         assert "test output" in result.raw_output
     
@@ -127,7 +127,7 @@ class TestBashBackend:
         result = backend.execute_command("nonexistent_command")
         
         assert isinstance(result, CommandResult)
-        assert result.success == False
+        assert not result.success
         assert result.exit_code == 1
         assert "command not found" in result.error_message
     
@@ -143,7 +143,7 @@ class TestBashBackend:
         backend = BashBackend()
         result = backend.execute_command("pwd", working_dir="/tmp")
         
-        assert result.success == True
+        assert result.success
         # Sprawdź czy subprocess.run został wywołany z odpowiednim cwd
         mock_run.assert_called_once()
         call_args = mock_run.call_args
@@ -162,7 +162,7 @@ class TestBashBackend:
         env_vars = {"TEST_VAR": "test_value"}
         result = backend.execute_command("echo $TEST_VAR", env_vars=env_vars)
         
-        assert result.success == True
+        assert result.success
         # Sprawdź czy subprocess.run został wywołany z odpowiednim env
         mock_run.assert_called_once()
         call_args = mock_run.call_args
@@ -277,7 +277,7 @@ class TestCommandExecution:
         result = echo_cmd.execute(context)
         
         assert isinstance(result, CommandResult)
-        assert result.success == True
+        assert result.success
         assert result.exit_code == 0
         assert "test output" in result.raw_output
         

@@ -1,15 +1,16 @@
 """
 Kompleksowe testy dla BashBackend - zwiększenie pokrycia do 80%+
 """
-import pytest
+import os
 import subprocess
 import time
-import os
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from mancer.infrastructure.backend.bash_backend import BashBackend
+import pytest
+
 from mancer.domain.model.command_result import CommandResult
+from mancer.infrastructure.backend.bash_backend import BashBackend
 
 
 class TestBashBackendComprehensive:
@@ -24,7 +25,7 @@ class TestBashBackendComprehensive:
         result = self.backend.execute_command("echo 'test'")
         
         assert isinstance(result, CommandResult)
-        assert result.success == True
+        assert result.success
         assert result.exit_code == 0
         assert "test" in result.raw_output
         assert result.structured_output == ["test"]
@@ -35,7 +36,7 @@ class TestBashBackendComprehensive:
         test_dir = "/tmp"
         result = self.backend.execute_command("pwd", working_dir=test_dir)
         
-        assert result.success == True
+        assert result.success
         assert test_dir in result.raw_output
     
     def test_execute_command_with_env_vars(self):
@@ -43,28 +44,28 @@ class TestBashBackendComprehensive:
         env_vars = {"TEST_VAR": "test_value"}
         result = self.backend.execute_command("echo $TEST_VAR", env_vars=env_vars)
         
-        assert result.success == True
+        assert result.success
         assert "test_value" in result.raw_output
     
     def test_execute_command_with_stdin(self):
         """Test wykonania komendy z stdin"""
         result = self.backend.execute_command("cat", stdin="hello world")
         
-        assert result.success == True
+        assert result.success
         assert "hello world" in result.raw_output
     
     def test_execute_command_failing(self):
         """Test wykonania komendy która kończy się błędem"""
         result = self.backend.execute_command("exit 1")
         
-        assert result.success == False
+        assert not result.success
         assert result.exit_code == 1
     
     def test_execute_command_nonexistent(self):
         """Test wykonania nieistniejącej komendy"""
         result = self.backend.execute_command("nonexistent_command_12345")
         
-        assert result.success == False
+        assert not result.success
         assert result.exit_code != 0
         assert result.error_message is not None
     
@@ -76,7 +77,7 @@ class TestBashBackendComprehensive:
         
         result = self.backend.execute_command("echo test")
         
-        assert result.success == False
+        assert not result.success
         assert result.exit_code == -1
         assert "Test exception" in result.error_message
         assert "Traceback" in result.error_message
@@ -112,7 +113,7 @@ class TestBashBackendComprehensive:
         # Sprawdź czy Popen został wywołany z odpowiednimi parametrami
         mock_popen.assert_called_once()
         call_args = mock_popen.call_args
-        assert call_args[1]['shell'] == True
+        assert call_args[1]['shell']
         assert call_args[1]['stdout'] == subprocess.PIPE
         assert call_args[1]['stderr'] == subprocess.PIPE
 
@@ -179,7 +180,7 @@ class TestBashBackendComprehensive:
         """Test parsowania wyjścia dla udanej komendy"""
         result = self.backend.parse_output("echo test", "line1\nline2\n", 0, "")
 
-        assert result.success == True
+        assert result.success
         assert result.exit_code == 0
         assert result.raw_output == "line1\nline2\n"
         assert result.structured_output == ["line1", "line2"]
@@ -189,7 +190,7 @@ class TestBashBackendComprehensive:
         """Test parsowania wyjścia dla nieudanej komendy"""
         result = self.backend.parse_output("false", "", 1, "error message")
 
-        assert result.success == False
+        assert not result.success
         assert result.exit_code == 1
         assert result.raw_output == ""
         assert result.structured_output == []

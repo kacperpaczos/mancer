@@ -1,17 +1,17 @@
 """
 Testy unit dla łańcuchów komend (command chains) frameworka Mancer
 """
-import pytest
-import sys
 import os
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-
+import pytest
 
 from mancer.application.shell_runner import ShellRunner
-from mancer.domain.model.command_result import CommandResult
 from mancer.domain.model.command_context import CommandContext
+from mancer.domain.model.command_result import CommandResult
+
 
 class TestShellRunner:
     """Testy unit dla ShellRunner - głównej klasy frameworka"""
@@ -34,7 +34,7 @@ class TestShellRunner:
         )
         
         assert runner is not None
-        assert runner._cache_enabled == True
+        assert runner._cache_enabled
         assert runner._command_cache is not None
     
     def test_shell_runner_create_command(self):
@@ -79,7 +79,7 @@ class TestShellRunner:
         result = runner.execute(echo_cmd)
         
         assert isinstance(result, CommandResult)
-        assert result.success == True
+        assert result.success
         assert result.exit_code == 0
         assert "test output" in result.raw_output
         
@@ -117,19 +117,19 @@ class TestShellRunner:
         # Wykonaj różne komendy
         ls_cmd = runner.create_command("ls")
         ls_result = runner.execute(ls_cmd)
-        assert ls_result.success == True
+        assert ls_result.success
         assert "files list" in ls_result.raw_output
         
         hostname_cmd = runner.create_command("hostname")
         hostname_result = runner.execute(hostname_cmd)
-        assert hostname_result.success == True
+        assert hostname_result.success
         assert "test-hostname" in hostname_result.raw_output
         
         echo_cmd = runner.create_command("echo")
         if hasattr(echo_cmd, 'text'):
             echo_cmd = echo_cmd.text("hello world")
         echo_result = runner.execute(echo_cmd)
-        assert echo_result.success == True
+        assert echo_result.success
         assert "hello world" in echo_result.raw_output
         
         # Sprawdź czy backend został wywołany 3 razy
@@ -171,10 +171,10 @@ class TestCommandChaining:
         
         # Wykonaj komendy w sekwencji
         first_result = runner.execute(first_cmd)
-        assert first_result.success == True
+        assert first_result.success
         
         second_result = runner.execute(second_cmd)
-        assert second_result.success == True
+        assert second_result.success
         
         # Sprawdź czy obie komendy zostały wykonane
         assert mock_execute.call_count == 2
@@ -206,13 +206,13 @@ class TestCommandChaining:
             chained_cmd = first_cmd.then(second_cmd)
             result = runner.execute(chained_cmd)
             
-            assert result.success == True
+            assert result.success
             # Chained command wywołuje execute_command dla każdej komendy w łańcuchu
             assert mock_execute.call_count >= 1
         else:
             # Jeśli nie ma metody then, po prostu wykonaj komendy oddzielnie
             result = runner.execute(first_cmd)
-            assert result.success == True
+            assert result.success
     
     @patch('mancer.infrastructure.backend.bash_backend.BashBackend.execute_command')
     def test_command_pipe_chain(self, mock_execute):
@@ -243,7 +243,7 @@ class TestCommandChaining:
         else:
             # Jeśli nie ma metody pipe, wykonaj komendy oddzielnie
             ls_result = runner.execute(ls_cmd)
-            assert ls_result.success == True
+            assert ls_result.success
 
 class TestShellRunnerAdvanced:
     """Zaawansowane testy ShellRunner"""
@@ -285,7 +285,7 @@ class TestShellRunnerAdvanced:
                 user="testuser"
             )
             # Sprawdź czy kontekst został zaktualizowany
-            assert runner._context.is_remote() == True
+            assert runner._context.is_remote()
         except Exception:
             # Jeśli wystąpi błąd (np. brak parametrów), to jest OK dla testu unit
             pass
@@ -314,7 +314,7 @@ class TestShellRunnerAdvanced:
         
         # Sprawdź czy błąd został poprawnie obsłużony
         assert isinstance(result, CommandResult)
-        assert result.success == False
+        assert not result.success
         assert result.exit_code == 127
         assert "command not found" in result.error_message
 
@@ -329,7 +329,7 @@ class TestCommandCaching:
             cache_size=100
         )
         
-        assert runner._cache_enabled == True
+        assert runner._cache_enabled
         assert runner._command_cache is not None
         assert hasattr(runner, 'get_cache_statistics')
     
@@ -340,7 +340,7 @@ class TestCommandCaching:
             enable_cache=False
         )
         
-        assert runner._cache_enabled == False
+        assert not runner._cache_enabled
     
     @patch('mancer.infrastructure.backend.bash_backend.BashBackend.execute_command')
     def test_command_caching_functionality(self, mock_execute):
@@ -366,11 +366,11 @@ class TestCommandCaching:
         
         # Wykonaj komendę pierwszy raz
         result1 = runner.execute(echo_cmd)
-        assert result1.success == True
+        assert result1.success
         
         # Wykonaj tę samą komendę ponownie
         result2 = runner.execute(echo_cmd)
-        assert result2.success == True
+        assert result2.success
         
         # W zależności od implementacji cache, backend może być wywołany 1 lub 2 razy
         assert mock_execute.call_count >= 1

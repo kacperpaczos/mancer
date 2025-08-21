@@ -1,12 +1,13 @@
 """
 Testy integracyjne dla frameworka Mancer w środowisku Docker - testowanie core frameworka
 """
-import pytest
-import subprocess
-import time
 import json
 import os
+import subprocess
+import time
 from pathlib import Path
+
+import pytest
 from test_utils import MancerDockerTestUtils
 
 # Aktywuj plugin docker-compose

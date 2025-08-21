@@ -2,10 +2,10 @@
 Utilities do testów integracyjnych Docker dla Mancer - używające docker exec i bash commands
 """
 import json
-import time
-import subprocess
 import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 

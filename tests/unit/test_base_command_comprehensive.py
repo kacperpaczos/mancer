@@ -1,8 +1,9 @@
 """
 Kompleksowe testy dla BaseCommand - zwiększenie pokrycia do 85%+
 """
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from mancer.application.commands.base_command import BaseCommand
 from mancer.domain.model.command_context import CommandContext
