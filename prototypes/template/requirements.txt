@@ -1,0 +1,12 @@
+# Framework Mancer (może być w trybie develop)
+-e ../../src/
+
+# Zależności specyficzne dla prototypu
+# paramiko>=3.0.0
+# rich>=13.0.0
+# click>=8.0.0
+
+# Zależności deweloperskie (opcjonalne)
+# pytest>=7.0.0
+# black>=24.0.0
+# ruff>=0.4.0
