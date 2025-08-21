@@ -28,7 +28,7 @@ show_help() {
     echo "  -u, --uninstall         Remove development environment"
     echo "  -v, --version           Display current Mancer version"
     echo "  -f, --force             Force operations without asking (for -i, -u)"
-    echo "  -d, --docs [action]     Zarządzanie dokumentacją (dev, build, deploy)"
+    echo "  -d, --docs [action]     Documentation management (dev, build, deploy)"
     echo
     echo "Examples:"
     echo "  $0                      Run interactive menu"
@@ -57,10 +57,11 @@ show_menu() {
     echo "4) Build package"
     echo "5) Remove development environment"
     echo "6) Check Mancer version"
-    echo "7) Zarządzanie dokumentacją"
+    echo "7) Documentation management"
+    echo "8) Version management"
     echo "0) Exit"
     echo
-    echo -n "Your choice [0-7]: "
+    echo -n "Your choice [0-8]: "
 }
 
 # Function checking if we're in virtualenv
@@ -138,22 +139,23 @@ update_version() {
 install_dev_env() {
     echo -e "${YELLOW}Installing development environment...${RESET}"
     
-    # Update version
-    update_version
+    # Note: Version management is now available in option 8 (Version management)
     
     # Check if virtualenv already exists
-    if [ -d ".venv" ] && [ "$FORCE_MODE" != "true" ]; then
-        echo -e "${YELLOW}Virtual environment already exists.${RESET}"
-        read -rp "Do you want to replace it? [y/N]: " response
-        if [[ $response =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}Removing existing environment...${RESET}"
-            rm -rf .venv
+    if [ -d ".venv" ] || ls -d .venv-* 2>/dev/null | grep -q .; then
+        if [ "$FORCE_MODE" != "true" ]; then
+            echo -e "${YELLOW}Virtual environment(s) already exist.${RESET}"
+            read -rp "Do you want to replace them? [y/N]: " response
+            if [[ $response =~ ^[Yy]$ ]]; then
+                echo -e "${YELLOW}Removing existing environment(s)...${RESET}"
+                rm -rf .venv .venv-*
+            else
+                echo -e "${YELLOW}Skipping environment creation.${RESET}"
+            fi
         else
-            echo -e "${YELLOW}Skipping environment creation.${RESET}"
+            echo -e "${YELLOW}Virtual environment(s) already exist. Removing (forced mode)...${RESET}"
+            rm -rf .venv .venv-*
         fi
-    elif [ -d ".venv" ] && [ "$FORCE_MODE" == "true" ]; then
-        echo -e "${YELLOW}Virtual environment already exists. Removing (forced mode)...${RESET}"
-        rm -rf .venv
     fi
     
     # Create virtual environment if it doesn't exist
@@ -436,9 +438,9 @@ uninstall_dev_env() {
     fi
     
     # Remove environment
-    if [ -d ".venv" ]; then
-        echo -e "${YELLOW}Removing virtual environment...${RESET}"
-        rm -rf .venv
+    if [ -d ".venv" ] || ls -d .venv-* 2>/dev/null | grep -q .; then
+        echo -e "${YELLOW}Removing virtual environment(s)...${RESET}"
+        rm -rf .venv .venv-*
     fi
     
     # Remove installation files
@@ -459,11 +461,11 @@ uninstall_dev_env() {
 
 # Function managing documentation
 docs_management() {
-    echo -e "${YELLOW}Zarządzanie dokumentacją${RESET}"
-    echo "1) Uruchom serwer dokumentacji (dev)"
-    echo "2) Zbuduj dokumentację (build)"
-    echo "3) Wdróż na GitHub Pages (deploy)"
-    echo "0) Powrót do menu"
+    echo -e "${YELLOW}Documentation management${RESET}"
+    echo "1) Start documentation server (dev)"
+    echo "2) Build documentation (build)"
+    echo "3) Deploy to GitHub Pages (deploy)"
+    echo "0) Return to main menu"
     read -r docs_choice
     case $docs_choice in
         1)
@@ -479,15 +481,132 @@ docs_management() {
             return
             ;;
         *)
-            echo "Nieprawidłowy wybór."
+            echo "Invalid choice."
             ;;
     esac
 }
 
 # Function deploying documentation
 deploy_docs() {
-    echo -e "${YELLOW}Wdrażanie dokumentacji na GitHub Pages...${RESET}"
+    echo -e "${YELLOW}Deploying documentation to GitHub Pages...${RESET}"
     mkdocs gh-deploy
+}
+
+# Function managing versions
+version_management() {
+    echo -e "${YELLOW}Version management${RESET}"
+    echo "1) Check current version"
+    echo "2) Increment version (patch)"
+    echo "3) Increment version (minor)"
+    echo "4) Increment version (major)"
+    echo "5) Set specific version"
+    echo "0) Return to main menu"
+    read -r version_choice
+    
+    case $version_choice in
+        1)
+            get_version
+            ;;
+        2)
+            increment_version "patch"
+            ;;
+        3)
+            increment_version "minor"
+            ;;
+        4)
+            increment_version "major"
+            ;;
+        5)
+            set_specific_version
+            ;;
+        0)
+            return
+            ;;
+        *)
+            echo "Invalid choice."
+            ;;
+    esac
+}
+
+# Function to increment version by type
+increment_version() {
+    local increment_type="$1"
+    
+    if [ -f "setup.py" ]; then
+        # Find current version
+        VERSION=$(grep -o 'version="[0-9]*\.[0-9]*\.[0-9]*"' setup.py | grep -o '[0-9]*\.[0-9]*\.[0-9]*')
+        
+        if [ -n "$VERSION" ]; then
+            # Get version components
+            X=$(echo "$VERSION" | cut -d. -f1)
+            Y=$(echo "$VERSION" | cut -d. -f2)
+            Z=$(echo "$VERSION" | cut -d. -f3)
+            
+            case $increment_type in
+                "patch")
+                    Z=$((Z + 1))
+                    NEW_VERSION="$X.$Y.$Z"
+                    ;;
+                "minor")
+                    Y=$((Y + 1))
+                    Z=0
+                    NEW_VERSION="$X.$Y.$Z"
+                    ;;
+                "major")
+                    X=$((X + 1))
+                    Y=0
+                    Z=0
+                    NEW_VERSION="$X.$Y.$Z"
+                    ;;
+                *)
+                    echo -e "${RED}Invalid increment type: $increment_type${RESET}"
+                    return 1
+                    ;;
+            esac
+            
+            # Update setup.py file
+            sed -i "s/version=\"$VERSION\"/version=\"$NEW_VERSION\"/" setup.py
+            
+            echo -e "${GREEN}Updated version from ${YELLOW}$VERSION${GREEN} to ${YELLOW}$NEW_VERSION${RESET}"
+            return 0
+        else
+            echo -e "${RED}Version not found in setup.py file.${RESET}"
+            return 1
+        fi
+    else
+        echo -e "${RED}File setup.py not found.${RESET}"
+        return 1
+    fi
+}
+
+# Function to set specific version
+set_specific_version() {
+    echo -e "${YELLOW}Enter new version (format: X.Y.Z): ${RESET}"
+    read -r new_version
+    
+    if [[ $new_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        if [ -f "setup.py" ]; then
+            # Find current version
+            VERSION=$(grep -o 'version="[0-9]*\.[0-9]*\.[0-9]*"' setup.py | grep -o '[0-9]*\.[0-9]*\.[0-9]*')
+            
+            if [ -n "$VERSION" ]; then
+                # Update setup.py file
+                sed -i "s/version=\"$VERSION\"/version=\"$NEW_VERSION\"/" setup.py"
+                
+                echo -e "${GREEN}Updated version from ${YELLOW}$VERSION${GREEN} to ${YELLOW}$new_version${RESET}"
+                return 0
+            else
+                echo -e "${RED}Version not found in setup.py file.${RESET}"
+                return 1
+            fi
+        else
+            echo -e "${RED}File setup.py not found.${RESET}"
+            return 1
+        fi
+    else
+        echo -e "${RED}Invalid version format. Use X.Y.Z format.${RESET}"
+        return 1
+    fi
 }
 
 # Process command line parameters
@@ -689,6 +808,9 @@ interactive_mode() {
                 ;;
             7)
                 docs_management
+                ;;
+            8)
+                version_management
                 ;;
             *)
                 echo -e "${RED}Invalid choice. Try again.${RESET}"

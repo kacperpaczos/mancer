@@ -105,7 +105,7 @@ The framework provides several tools to facilitate work:
 ### Development Environment Setup Script
 
 ```bash
-./dev_tools/mancer_tools.sh
+./tools/mancer_tools.sh
 ```
 
 ### Running Tests
@@ -119,12 +119,12 @@ The framework provides several tools to facilitate work:
 ### Managing Tool Versions
 
 ```bash
-./dev_tools/mancer_tools.sh --versions list                # List all versions
-./dev_tools/mancer_tools.sh --versions list ls             # Versions for a specific tool
-./dev_tools/mancer_tools.sh --versions add grep 3.8        # Add a version manually
-./dev_tools/mancer_tools.sh --versions detect --all        # Detect and add all versions
-./dev_tools/mancer_tools.sh --versions detect ls grep      # Detect specific tools
-./dev_tools/mancer_tools.sh --versions remove df 2.34      # Remove a version
+./tools/mancer_tools.sh --versions list                # List all versions
+./tools/mancer_tools.sh --versions list ls             # Versions for a specific tool
+./tools/mancer_tools.sh --versions add grep 3.8        # Add a version manually
+./tools/mancer_tools.sh --versions detect --all        # Detect and add all versions
+./tools/mancer_tools.sh --versions detect ls grep      # Detect specific tools
+./tools/mancer_tools.sh --versions remove df 2.34      # Remove a version
 ```
 
 ## Usage Examples

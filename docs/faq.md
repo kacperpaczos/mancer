@@ -117,8 +117,8 @@ A: Mancer uses YAML configuration files. See [Configuration](user-guide/configur
 **Q: How do I manage tool versions?**
 A: Use the tool version management system. See [Tool Versioning](user-guide/versioning-compatibility.md) for details:
 ```bash
-./dev_tools/mancer_tools.sh --versions list
-./dev_tools/mancer_tools.sh --versions detect --all
+./tools/shell/mancer_tools.sh --versions list
+./tools/shell/mancer_tools.sh --versions detect --all
 ```
 
 **Q: How do I enable logging?**

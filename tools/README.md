@@ -7,7 +7,7 @@ This directory contains helper tools for working with the Mancer project in deve
 For a simpler experience, you can use the all-in-one development tool:
 
 ```bash
-./dev_tools/mancer_tools.sh
+./tools/mancer_tools.sh
 ```
 
 This interactive script provides a menu-based interface for all development tasks:
@@ -25,25 +25,25 @@ The script can also be used in non-interactive mode with command line parameters
 
 ```bash
 # Display help
-./dev_tools/mancer_tools.sh --help
+./tools/mancer_tools.sh --help
 
 # Install development environment
-./dev_tools/mancer_tools.sh --install
+./tools/mancer_tools.sh --install
 
 # Run application
-./dev_tools/mancer_tools.sh --run
+./tools/mancer_tools.sh --run
 
 # Run tests (with options)
-./dev_tools/mancer_tools.sh --test unit --verbose --coverage
+./tools/mancer_tools.sh --test unit --verbose --coverage
 
 # Build package
-./dev_tools/mancer_tools.sh --build wheel --install
+./tools/mancer_tools.sh --build wheel --install
 
 # Uninstall environment (force mode)
-./dev_tools/mancer_tools.sh --uninstall --force
+./tools/mancer_tools.sh --uninstall --force
 
 # Display version
-./dev_tools/mancer_tools.sh --version
+./tools/mancer_tools.sh --version
 ```
 
 Available options:
@@ -227,7 +227,7 @@ The `visualize_ddd.sh` script generates a graphical representation of the Domain
 ### Usage
 
 ```bash
-./dev_tools/visualize_ddd.sh [options]
+./docs/tools/visualize_ddd.py [options]
 ```
 
 ### Options
@@ -241,16 +241,16 @@ The `visualize_ddd.sh` script generates a graphical representation of the Domain
 
 ```bash
 # Generate standard diagram
-./dev_tools/visualize_ddd.sh
+./docs/tools/visualize_ddd.py
 
 # Generate detailed diagram
-./dev_tools/visualize_ddd.sh --detailed
+./docs/tools/visualize_ddd.py --detailed
 
 # Generate diagram in SVG format
-./dev_tools/visualize_ddd.sh --format svg
+./docs/tools/visualize_ddd.py --format svg
 
 # Generate diagram to a specific directory
-./dev_tools/visualize_ddd.sh --output-dir ./ddd_arch
+./docs/tools/visualize_ddd.py --output-dir ./ddd_arch
 ```
 
 The generated diagram shows DDD layers, modules, and dependencies between them. When using the `--detailed` option, the diagram includes additional information about subdomains and more precise dependencies.

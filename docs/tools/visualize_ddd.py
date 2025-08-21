@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 """
-DDD Architecture Visualization Tool for Mancer Project
------------------------------------------------------
+TODO: This visualization tool needs to be updated and integrated with MkDocs documentation system.
 
-This script generates a graphical representation of Domain-Driven Design (DDD)
-architecture dependencies between modules in the Mancer project. It creates
-a DOT file and renders it to the specified output format.
+Current status:
+- Basic DDD architecture visualization
+- Needs integration with MkDocs
+- Requires proper documentation formatting
+- Should be accessible from docs/ directory
 
-Usage:
-    python visualize_ddd.py [options]
-
-Options:
-    --output-dir PATH   Output directory for files (default: ./diagrams)
-    --format FORMAT     Output format (dot, png, svg, pdf) (default: png)
-    --detailed          Generate detailed diagram (default: False)
-    --help              Show this help
+Integration plan:
+1. Update to work with MkDocs
+2. Add proper documentation
+3. Create interactive diagrams
+4. Integrate with documentation build process
 """
 
 import os
