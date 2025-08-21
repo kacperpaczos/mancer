@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prototype-test-final"
+version = "0.1.0"
+description = "Test końcowy strategii prototypów używającego frameworka Mancer"
+requires-python = ">=3.8"
+authors = [
+    { name = "Developer", email = "dev@example.com" }
+]
+
+# Zależności specyficzne dla prototypu
+dependencies = [
+    # Framework Mancer (tryb develop)
+    # "mancer @ file://../../src",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=24.0.0",
+    "ruff>=0.4.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+# Konfiguracja narzędzi developerskich
+[tool.ruff]
+target-version = "py38"
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]

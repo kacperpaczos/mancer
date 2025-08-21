@@ -1,0 +1,9 @@
+rich>=13.0.0
+ncurses-python>=1.0.0
+pyyaml>=6.0
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.0
+cryptography>=41.0.0
+paramiko>=3.0.0
+psutil>=5.9.0
+watchdog>=3.0.0
