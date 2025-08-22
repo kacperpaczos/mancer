@@ -1,0 +1,93 @@
+# Mancer Terminal Configuration
+# Terminal interface configuration
+
+# Terminal appearance
+terminal:
+  theme: "default"
+  colors:
+    primary: "blue"
+    secondary: "green"
+    warning: "yellow"
+    error: "red"
+    success: "green"
+    info: "cyan"
+  
+  # Display settings
+  display:
+    show_banner: true
+    show_progress: true
+    compact_mode: false
+    max_width: 120
+    
+  # Interactive mode
+  interactive:
+    enable_menu: true
+    enable_history: true
+    enable_auto_completion: true
+    history_size: 1000
+
+# Command settings
+commands:
+  # Systemd commands
+  systemd:
+    default_timeout: 30
+    enable_parallel: true
+    max_parallel: 5
+    
+  # SSH commands
+  ssh:
+    connection_timeout: 30
+    retry_attempts: 3
+    keep_alive: true
+    
+  # Configuration commands
+  config:
+    auto_reload: true
+    validate_on_save: true
+    backup_on_change: true
+
+# Output formatting
+output:
+  # Table formatting
+  tables:
+    style: "grid"
+    max_rows: 100
+    show_index: false
+    
+  # Progress bars
+  progress:
+    show_percentage: true
+    show_speed: true
+    show_eta: true
+    
+  # Logging
+  logging:
+    level: "INFO"
+    format: "rich"
+    show_timestamps: true
+
+# Integration settings
+integration:
+  # Mancer framework
+  mancer:
+    auto_import: true
+    use_cache: true
+    cache_ttl: 300
+    
+  # External tools
+  external:
+    enable_aliases: true
+    enable_wrappers: true
+
+# Security
+security:
+  # Command validation
+  validation:
+    strict_mode: false
+    allow_dangerous: false
+    
+  # History security
+  history:
+    mask_passwords: true
+    exclude_sensitive: true
+    max_age_days: 30

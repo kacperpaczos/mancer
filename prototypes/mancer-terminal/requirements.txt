@@ -1,0 +1,31 @@
+# Mancer Terminal - Prototyp Requirements
+# Core dependencies for terminal interface
+
+# CLI framework
+click>=8.1.0
+
+# Terminal UI and formatting
+rich>=13.7.0
+textual>=0.40.0
+prompt-toolkit>=3.0.0
+
+# Output formatting
+tabulate>=0.9.0
+colorama>=0.4.6
+
+# Configuration
+pyyaml>=6.0.1
+configparser
+
+# Logging
+loguru>=0.7.0
+
+# Utilities
+python-dotenv>=1.0.0
+pathlib2>=2.3.0
+
+# Development (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.11.0
+isort>=5.12.0
