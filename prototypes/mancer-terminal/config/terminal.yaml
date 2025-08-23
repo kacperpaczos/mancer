@@ -1,93 +1,133 @@
 # Mancer Terminal Configuration
-# Terminal interface configuration
+# Konfiguracja dla PyQt6-based SSH Terminal Emulator
 
-# Terminal appearance
+# Główne ustawienia terminala
 terminal:
-  theme: "default"
-  colors:
-    primary: "blue"
-    secondary: "green"
-    warning: "yellow"
-    error: "red"
-    success: "green"
-    info: "cyan"
+  theme: "dark"  # dark, light, system
+  font_family: "Monospace"
+  font_size: 10
+  tab_width: 4
+  scrollback_lines: 10000
   
-  # Display settings
-  display:
-    show_banner: true
-    show_progress: true
-    compact_mode: false
-    max_width: 120
-    
-  # Interactive mode
-  interactive:
-    enable_menu: true
-    enable_history: true
-    enable_auto_completion: true
-    history_size: 1000
-
-# Command settings
-commands:
-  # Systemd commands
-  systemd:
-    default_timeout: 30
-    enable_parallel: true
-    max_parallel: 5
-    
-  # SSH commands
-  ssh:
-    connection_timeout: 30
-    retry_attempts: 3
-    keep_alive: true
-    
-  # Configuration commands
-  config:
-    auto_reload: true
-    validate_on_save: true
-    backup_on_change: true
-
-# Output formatting
-output:
-  # Table formatting
-  tables:
-    style: "grid"
-    max_rows: 100
-    show_index: false
-    
-  # Progress bars
-  progress:
-    show_percentage: true
-    show_speed: true
-    show_eta: true
-    
-  # Logging
-  logging:
-    level: "INFO"
-    format: "rich"
-    show_timestamps: true
-
-# Integration settings
-integration:
-  # Mancer framework
-  mancer:
-    auto_import: true
-    use_cache: true
-    cache_ttl: 300
-    
-  # External tools
-  external:
-    enable_aliases: true
-    enable_wrappers: true
-
-# Security
+# Ustawienia sesji SSH
+sessions:
+  default_timeout: 30  # sekundy
+  max_sessions: 10
+  auto_reconnect: true
+  reconnect_delay: 5
+  session_cleanup_interval: 300  # 5 minut
+  
+# Ustawienia transferu plików
+file_transfer:
+  chunk_size: 8192  # bajty
+  progress_update_interval: 1000  # milisekundy
+  resume_support: true
+  max_concurrent_transfers: 5
+  temp_directory: "/tmp/mancer-terminal"
+  
+# Ustawienia proxy SSH
+proxy:
+  default_type: "http"  # http, socks, command
+  timeout: 10
+  retry_attempts: 3
+  retry_delay: 2
+  
+# Ustawienia uwierzytelniania
+authentication:
+  allow_password: true
+  allow_key: true
+  allow_agent: true
+  look_for_keys: true
+  key_types: ["rsa", "ed25519", "ecdsa", "dsa"]
+  
+# Ustawienia bezpieczeństwa
 security:
-  # Command validation
-  validation:
-    strict_mode: false
-    allow_dangerous: false
+  strict_host_key_checking: false
+  known_hosts_file: "~/.ssh/known_hosts"
+  max_auth_attempts: 3
+  connection_keepalive: 60
+  
+# Ustawienia interfejsu użytkownika
+ui:
+  # Rozmiary okien
+  main_window_width: 1400
+  main_window_height: 900
+  left_panel_width: 400
+  right_panel_width: 1000
+  
+  # Kolory
+  colors:
+    background: "#2b2b2b"
+    foreground: "#ffffff"
+    accent: "#007acc"
+    success: "#4caf50"
+    warning: "#ff9800"
+    error: "#f44336"
     
-  # History security
-  history:
-    mask_passwords: true
-    exclude_sensitive: true
-    max_age_days: 30
+  # Skróty klawiszowe
+  shortcuts:
+    new_session: "Ctrl+Shift+N"
+    connect: "Ctrl+Shift+C"
+    disconnect: "Ctrl+Shift+D"
+    upload_file: "Ctrl+Shift+U"
+    download_file: "Ctrl+Shift+L"
+    new_terminal: "Ctrl+Shift+T"
+    clear_terminal: "Ctrl+L"
+    
+# Ustawienia logowania
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "mancer-terminal.log"
+  max_file_size: "10MB"
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+# Ustawienia wydajności
+performance:
+  update_interval: 1000  # milisekundy
+  session_refresh_interval: 3000
+  transfer_refresh_interval: 2000
+  max_threads: 10
+  
+# Ustawienia integracji z Mancer
+mancer_integration:
+  ssh_backend_path: "src/mancer/infrastructure/backend/ssh_backend.py"
+  session_service_path: "src/mancer/domain/service/ssh_session_service.py"
+  config_manager_path: "src/mancer/domain/model/config_manager.py"
+  
+# Ustawienia domyślnych połączeń
+default_connections:
+  - name: "Local Development"
+    hostname: "localhost"
+    port: 22
+    username: "user"
+    key_filename: "~/.ssh/id_rsa"
+    
+  - name: "Production Server"
+    hostname: "192.168.1.100"
+    port: 22
+    username: "admin"
+    key_filename: "~/.ssh/production_key"
+    
+# Ustawienia proxy dla różnych środowisk
+proxy_profiles:
+  corporate:
+    type: "http"
+    host: "proxy.company.com"
+    port: 8080
+    username: "user"
+    password: ""
+    
+  development:
+    type: "socks"
+    host: "127.0.0.1"
+    port: 1080
+    
+# Ustawienia powiadomień
+notifications:
+  enabled: true
+  sound: true
+  desktop: true
+  session_events: true
+  transfer_events: true
+  error_events: true

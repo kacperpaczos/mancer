@@ -1,13 +1,47 @@
 import shlex
 import subprocess
+import threading
+import time
+from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 
+@dataclass
+class SSHSession:
+    """Reprezentuje sesję SSH"""
+
+    id: str
+    hostname: str
+    username: str
+    port: int
+    status: str = "disconnected"  # connected, disconnected, connecting, error
+    created_at: datetime = field(default_factory=datetime.now)
+    last_activity: datetime = field(default_factory=datetime.now)
+    connection_info: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class SCPTransfer:
+    """Reprezentuje transfer pliku przez SCP"""
+
+    id: str
+    source: str
+    destination: str
+    direction: str  # upload, download
+    status: str = "pending"  # pending, transferring, completed, failed
+    progress: float = 0.0
+    bytes_transferred: int = 0
+    total_bytes: int = 0
+    start_time: datetime = field(default_factory=datetime.now)
+    end_time: Optional[datetime] = None
+
+
 class SshBackend(BackendInterface):
-    """Backend executing commands over SSH on a remote host."""
+    """Backend executing commands over SSH on a remote host with session management and SCP support."""
 
     def __init__(
         self,
@@ -25,6 +59,7 @@ class SshBackend(BackendInterface):
         gssapi_kex: bool = False,
         gssapi_delegate_creds: bool = False,
         ssh_options: Optional[Dict[str, str]] = None,
+        proxy_config: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the SSH backend.
 
@@ -43,6 +78,7 @@ class SshBackend(BackendInterface):
             gssapi_kex: Enable GSSAPI key exchange.
             gssapi_delegate_creds: Delegate GSSAPI credentials.
             ssh_options: Additional SSH options as a dictionary.
+            proxy_config: SSH proxy configuration.
         """
         self.hostname = hostname
         self.username = username
@@ -58,20 +94,121 @@ class SshBackend(BackendInterface):
         self.gssapi_kex = gssapi_kex
         self.gssapi_delegate_creds = gssapi_delegate_creds
         self.ssh_options = ssh_options or {}
+        self.proxy_config = proxy_config or {}
+
+        # Session management
+        self.sessions: Dict[str, SSHSession] = {}
+        self.active_session: Optional[str] = None
+        self.session_lock = threading.Lock()
+
+        # SCP transfers
+        self.transfers: Dict[str, SCPTransfer] = {}
+        self.transfer_lock = threading.Lock()
+
+    def create_session(self, session_id: str, **kwargs) -> SSHSession:
+        """Tworzy nową sesję SSH"""
+        with self.session_lock:
+            # Wyciągnij podstawowe parametry z kwargs
+            hostname = kwargs.pop("hostname", self.hostname)
+            username = kwargs.pop("username", self.username)
+            port = kwargs.pop("port", self.port)
+
+            session = SSHSession(id=session_id, hostname=hostname, username=username, port=port)
+            self.sessions[session_id] = session
+            return session
+
+    def connect_session(self, session_id: str) -> bool:
+        """Łączy sesję SSH"""
+        if session_id not in self.sessions:
+            return False
+
+        session = self.sessions[session_id]
+        session.status = "connecting"
+
+        try:
+            # Test connection
+            test_result = self.execute_command("echo 'Connection test'", session_id=session_id)
+            if test_result.success:
+                session.status = "connected"
+                session.last_activity = datetime.now()
+                self.active_session = session_id
+                return True
+            else:
+                session.status = "error"
+                return False
+        except Exception:
+            session.status = "error"
+            return False
+
+    def disconnect_session(self, session_id: str) -> bool:
+        """Rozłącza sesję SSH"""
+        if session_id not in self.sessions:
+            return False
+
+        session = self.sessions[session_id]
+        session.status = "disconnected"
+
+        if self.active_session == session_id:
+            self.active_session = None
+
+        return True
+
+    def get_session_status(self, session_id: str) -> Optional[str]:
+        """Pobiera status sesji"""
+        if session_id in self.sessions:
+            return self.sessions[session_id].status
+        return None
+
+    def list_sessions(self) -> List[SSHSession]:
+        """Listuje wszystkie sesje"""
+        with self.session_lock:
+            return list(self.sessions.values())
+
+    def switch_session(self, session_id: str) -> bool:
+        """Przełącza na inną sesję"""
+        if session_id in self.sessions and self.sessions[session_id].status == "connected":
+            self.active_session = session_id
+            return True
+        return False
 
     def execute_command(
         self,
         command: str,
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        session_id: Optional[str] = None,
     ) -> CommandResult:
         """Execute a command over SSH on the remote host."""
+        # Użyj aktywnej sesji lub podanej
+        target_session = session_id or self.active_session
+        if not target_session or target_session not in self.sessions:
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message="No active SSH session",
+            )
+
+        session = self.sessions[target_session]
+        if session.status != "connected":
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message=f"Session {session_id} is not connected",
+            )
+
+        # Aktualizuj aktywność sesji
+        session.last_activity = datetime.now()
+
         # Budujemy komendę SSH
         ssh_command = ["ssh"]
 
         # Dodajemy opcje SSH
-        if self.port != 22:
-            ssh_command.extend(["-p", str(self.port)])
+        if session.port != 22:
+            ssh_command.extend(["-p", str(session.port)])
 
         # Obsługa różnych metod uwierzytelniania
 
@@ -99,171 +236,214 @@ class SshBackend(BackendInterface):
         if self.gssapi_auth:
             ssh_command.extend(["-o", "GSSAPIAuthentication=yes"])
 
-        if self.gssapi_kex:
-            ssh_command.extend(["-o", "GSSAPIKeyExchange=yes"])
+        # 7. Proxy support
+        if self.proxy_config:
+            ssh_command.extend(self._build_proxy_options())
 
-        if self.gssapi_delegate_creds:
-            ssh_command.extend(["-o", "GSSAPIDelegateCredentials=yes"])
-
-        # Dodajemy opcje dla automatycznego odpowiadania na pytania (non-interactive)
-        ssh_command.extend(["-o", "BatchMode=no"])
-        ssh_command.extend(["-o", "StrictHostKeyChecking=no"])
-
-        # Dodajemy dodatkowe opcje SSH
+        # Dodajemy opcje SSH z ssh_options
         for key, value in self.ssh_options.items():
             ssh_command.extend(["-o", f"{key}={value}"])
 
-        # Dodajemy użytkownika i hosta
-        target = self.hostname
-        if self.username:
-            target = f"{self.username}@{self.hostname}"
-
-        ssh_command.append(target)
-
-        # Przygotowanie środowiska
-        env_prefix = ""
-        if env_vars:
-            env_parts = []
-            for key, value in env_vars.items():
-                env_parts.append(f"export {key}={shlex.quote(value)}")
-            if env_parts:
-                env_prefix = "; ".join(env_parts) + "; "
-
-        # Przygotowanie katalogu roboczego
-        cd_prefix = ""
-        if working_dir:
-            cd_prefix = f"cd {shlex.quote(working_dir)} && "
-
-        # Łączymy wszystko w jedną komendę
-        remote_command = f"{env_prefix}{cd_prefix}{command}"
-
-        # Dodajemy komendę do wykonania na zdalnym hoście
-        ssh_command.append(remote_command)
-
-        # Jeśli mamy hasło do SSH, musimy użyć sshpass
-        if self.password:
-            # Używamy sshpass do podania hasła
-            final_command = ["sshpass", "-p", self.password]
-            final_command.extend(ssh_command)
+        # Dodajemy hostname i username
+        if session.username:
+            ssh_command.append(f"{session.username}@{session.hostname}")
         else:
-            final_command = ssh_command
+            ssh_command.append(session.hostname)
+
+        # Dodajemy komendę
+        ssh_command.append(command)
 
         try:
-            # Wykonanie komendy
-            process = subprocess.run(final_command, text=True, capture_output=True)
-
-            # Parsowanie wyniku
-            return self.parse_output(command, process.stdout, process.returncode, process.stderr)
-        except Exception:
-            # Obsługa błędów
-            return CommandResult(
-                raw_output="",
-                success=False,
-                structured_output=[],
-                exit_code=-1,
-                error_message="SSH Error occurred",
-            )
-
-    def execute(
-        self,
-        command: str,
-        input_data: Optional[str] = None,
-        working_dir: Optional[str] = None,
-    ) -> Tuple[int, str, str]:
-        """
-        Executes a command via SSH and returns exit code, stdout, and stderr.
-        This method is used by Command classes.
-
-        Args:
-            command: The command to execute
-            input_data: Optional input data to pass to stdin
-            working_dir: Optional working directory
-
-        Returns:
-            Tuple of (exit_code, stdout, stderr)
-        """
-        try:
-            # Build SSH command
-            ssh_command = ["ssh"]
-
-            # Add SSH options
-            if self.port != 22:
-                ssh_command.extend(["-p", str(self.port)])
-
-            # Handle authentication methods
-            if self.key_filename:
-                ssh_command.extend(["-i", self.key_filename])
-
-            if not self.look_for_keys:
-                ssh_command.extend(["-o", "IdentitiesOnly=yes"])
-
-            if self.allow_agent:
-                ssh_command.extend(["-o", "ForwardAgent=yes"])
-
-            if self.compress:
-                ssh_command.append("-C")
-
-            if self.timeout:
-                ssh_command.extend(["-o", f"ConnectTimeout={self.timeout}"])
-
-            if self.gssapi_auth:
-                ssh_command.extend(["-o", "GSSAPIAuthentication=yes"])
-
-            if self.gssapi_kex:
-                ssh_command.extend(["-o", "GSSAPIKeyExchange=yes"])
-
-            if self.gssapi_delegate_creds:
-                ssh_command.extend(["-o", "GSSAPIDelegateCredentials=yes"])
-
-            # Add options for non-interactive mode
-            ssh_command.extend(["-o", "BatchMode=no"])
-            ssh_command.extend(["-o", "StrictHostKeyChecking=no"])
-
-            # Add additional SSH options
-            for key, value in self.ssh_options.items():
-                ssh_command.extend(["-o", f"{key}={value}"])
-
-            # Add username and host
-            target = self.hostname
-            if self.username:
-                target = f"{self.username}@{self.hostname}"
-
-            ssh_command.append(target)
-
-            # Prepare working directory
-            cd_prefix = ""
-            if working_dir:
-                cd_prefix = f"cd {shlex.quote(working_dir)} && "
-
-            # Combine command
-            remote_command = f"{cd_prefix}{command}"
-
-            # Add command to execute on remote host
-            ssh_command.append(remote_command)
-
-            # If we have an SSH password, use sshpass
-            final_command = ssh_command
-            if self.password:
-                final_command = ["sshpass", "-p", self.password] + ssh_command
-
-            # Execute the command
-            stdin_pipe = subprocess.PIPE if input_data else None
-            process = subprocess.Popen(
-                final_command,
+            # Wykonujemy komendę SSH
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=stdin_pipe,
+                timeout=self.timeout or 30,
+                cwd=working_dir,
+                env=env_vars,
             )
 
-            # Send input data if provided
-            stdout, stderr = process.communicate(input=input_data)
-            exit_code = process.returncode
+            return CommandResult(
+                success=result.returncode == 0,
+                raw_output=result.stdout,
+                structured_output=result.stdout.split("\n") if result.stdout else [],
+                exit_code=result.returncode,
+                error_message=result.stderr if result.stderr else None,
+            )
 
-            return exit_code, stdout, stderr
+        except subprocess.TimeoutExpired:
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message="SSH command execution timed out",
+            )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message=f"SSH command execution failed: {str(e)}",
+            )
+
+    def _build_proxy_options(self) -> List[str]:
+        """Buduje opcje proxy dla SSH"""
+        options = []
+
+        if "proxy_command" in self.proxy_config:
+            options.extend(["-o", f"ProxyCommand={self.proxy_config['proxy_command']}"])
+
+        if "proxy_host" in self.proxy_config:
+            options.extend(["-o", f"ProxyHost={self.proxy_config['proxy_host']}"])
+
+        if "proxy_port" in self.proxy_config:
+            options.extend(["-o", f"ProxyPort={self.proxy_config['proxy_port']}"])
+
+        if "proxy_user" in self.proxy_config:
+            options.extend(["-o", f"ProxyUser={self.proxy_config['proxy_user']}"])
+
+        return options
+
+    def scp_upload(
+        self, local_path: str, remote_path: str, session_id: Optional[str] = None
+    ) -> SCPTransfer:
+        """Upload pliku przez SCP"""
+        target_session = session_id or self.active_session
+        if not target_session or target_session not in self.sessions:
+            raise ValueError("No active SSH session")
+
+        session = self.sessions[target_session]
+        transfer_id = f"upload_{int(time.time())}"
+
+        transfer = SCPTransfer(
+            id=transfer_id,
+            source=local_path,
+            destination=remote_path,
+            direction="upload",
+        )
+
+        with self.transfer_lock:
+            self.transfers[transfer_id] = transfer
+
+        # Uruchom transfer w osobnym wątku
+        threading.Thread(target=self._execute_scp_upload, args=(transfer, session)).start()
+
+        return transfer
+
+    def scp_download(
+        self, remote_path: str, local_path: str, session_id: Optional[str] = None
+    ) -> SCPTransfer:
+        """Download pliku przez SCP"""
+        target_session = session_id or self.active_session
+        if not target_session or target_session not in self.sessions:
+            raise ValueError("No active SSH session")
+
+        session = self.sessions[target_session]
+        transfer_id = f"download_{int(time.time())}"
+
+        transfer = SCPTransfer(
+            id=transfer_id,
+            source=remote_path,
+            destination=local_path,
+            direction="download",
+        )
+
+        with self.transfer_lock:
+            self.transfers[transfer_id] = transfer
+
+        # Uruchom transfer w osobnym wątku
+        threading.Thread(target=self._execute_scp_download, args=(transfer, session)).start()
+
+        return transfer
+
+    def _execute_scp_upload(self, transfer: SCPTransfer, session: SSHSession):
+        """Wykonuje upload SCP"""
+        transfer.status = "transferring"
+
+        try:
+            scp_command = ["scp"]
+
+            if session.port != 22:
+                scp_command.extend(["-P", str(session.port)])
+
+            if self.key_filename:
+                scp_command.extend(["-i", self.key_filename])
+
+            scp_command.extend(
+                [
+                    transfer.source,
+                    f"{session.username}@{session.hostname}:{transfer.destination}",
+                ]
+            )
+
+            result = subprocess.run(scp_command, capture_output=True, text=True)
+
+            if result.returncode == 0:
+                transfer.status = "completed"
+                transfer.progress = 100.0
+            else:
+                transfer.status = "failed"
 
         except Exception as e:
-            return -1, "", str(e)
+            transfer.status = "failed"
+
+        transfer.end_time = datetime.now()
+
+    def _execute_scp_download(self, transfer: SCPTransfer, session: SSHSession):
+        """Wykonuje download SCP"""
+        transfer.status = "transferring"
+
+        try:
+            scp_command = ["scp"]
+
+            if session.port != 22:
+                scp_command.extend(["-P", str(session.port)])
+
+            if self.key_filename:
+                scp_command.extend(["-i", self.key_filename])
+
+            scp_command.extend(
+                [
+                    f"{session.username}@{session.hostname}:{transfer.source}",
+                    transfer.destination,
+                ]
+            )
+
+            result = subprocess.run(scp_command, capture_output=True, text=True)
+
+            if result.returncode == 0:
+                transfer.status = "completed"
+                transfer.progress = 100.0
+            else:
+                transfer.status = "failed"
+
+        except Exception as e:
+            transfer.status = "failed"
+
+        transfer.end_time = datetime.now()
+
+    def get_transfer_status(self, transfer_id: str) -> Optional[SCPTransfer]:
+        """Pobiera status transferu"""
+        with self.transfer_lock:
+            return self.transfers.get(transfer_id)
+
+    def list_transfers(self) -> List[SCPTransfer]:
+        """Listuje wszystkie transfery"""
+        with self.transfer_lock:
+            return list(self.transfers.values())
+
+    def cancel_transfer(self, transfer_id: str) -> bool:
+        """Anuluje transfer"""
+        with self.transfer_lock:
+            if transfer_id in self.transfers:
+                transfer = self.transfers[transfer_id]
+                if transfer.status == "transferring":
+                    transfer.status = "cancelled"
+                    return True
+        return False
 
     def parse_output(
         self, command: str, raw_output: str, exit_code: int, error_output: str = ""
@@ -271,11 +451,10 @@ class SshBackend(BackendInterface):
         """Parse command output into a standard CommandResult."""
         success = exit_code == 0
 
-        # Próbujemy podstawowe strukturyzowanie wyniku (linie tekstu)
+        # Basic line-splitting structure
         structured_output = []
         if raw_output:
             structured_output = raw_output.strip().split("\n")
-            # Usuwamy puste linie
             structured_output = [line for line in structured_output if line]
 
         return CommandResult(
@@ -286,6 +465,87 @@ class SshBackend(BackendInterface):
             error_message=error_output if not success else None,
         )
 
+    def test_connection(self) -> bool:
+        """Testuje połączenie SSH bez tworzenia sesji"""
+        try:
+            # Buduj komendę SSH do testu
+            ssh_command = ["ssh"]
+
+            # Dodaj opcje SSH
+            if self.port != 22:
+                ssh_command.extend(["-p", str(self.port)])
+
+            if self.key_filename:
+                ssh_command.extend(["-i", self.key_filename])
+
+            if self.proxy_config:
+                ssh_command.extend(self._build_proxy_options())
+
+            # Dodaj timeout
+            if self.timeout:
+                ssh_command.extend(["-o", f"ConnectTimeout={self.timeout}"])
+            else:
+                ssh_command.extend(["-o", "ConnectTimeout=10"])
+
+            # Dodaj hostname i username
+            if self.username:
+                ssh_command.append(f"{self.username}@{self.hostname}")
+            else:
+                ssh_command.append(self.hostname)
+
+            # Dodaj prostą komendę testową
+            ssh_command.append("echo 'Connection test successful'")
+
+            # Wykonaj test
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=15,  # Krótki timeout dla testu
+            )
+
+            return result.returncode == 0
+
+        except Exception as e:
+            if hasattr(self, "logger") and self.logger:
+                self.logger.error(f"Błąd testu połączenia SSH: {e}")
+            return False
+
+    def check_host_key(self) -> tuple[bool, Optional[str], Optional[str]]:
+        """Check SSH host key - simplified approach
+
+        Returns:
+            Tuple (is_known, key_type, fingerprint)
+            - is_known: True if host is known in known_hosts
+            - key_type: Key type (e.g., "ED25519", "RSA")
+            - fingerprint: Key fingerprint
+        """
+        try:
+            # Simple check - just verify if host is in known_hosts
+            import os
+
+            known_hosts_file = os.path.expanduser("~/.ssh/known_hosts")
+
+            if not os.path.exists(known_hosts_file):
+                return False, None, None
+
+            host_entry = f"[{self.hostname}]:{self.port}" if self.port != 22 else self.hostname
+
+            with open(known_hosts_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[0] == host_entry:
+                            return True, None, None
+
+            return False, None, None
+
+        except Exception as e:
+            if hasattr(self, "logger") and self.logger:
+                self.logger.error(f"Error checking SSH host key: {e}")
+            return False, None, None
+
     def build_command_string(
         self,
         command_name: str,
@@ -293,23 +553,14 @@ class SshBackend(BackendInterface):
         params: Dict[str, Any],
         flags: List[str],
     ) -> str:
-        """Buduje string komendy zgodny z bashem (używanym przez SSH)"""
+        """Build an SSH-compatible command string."""
         parts = [command_name]
-
-        # Opcje (krótkie, np. -l)
         parts.extend(options)
-
-        # Flagi (długie, np. --recursive)
         parts.extend(flags)
-
-        # Parametry (--name=value lub -n value)
         for name, value in params.items():
             if len(name) == 1:
-                # Krótka opcja
                 parts.append(f"-{name}")
                 parts.append(shlex.quote(str(value)))
             else:
-                # Długa opcja
                 parts.append(f"--{name}={shlex.quote(str(value))}")
-
         return " ".join(parts)
