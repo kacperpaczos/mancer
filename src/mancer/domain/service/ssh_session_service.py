@@ -1,7 +1,7 @@
 import threading
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackend, SSHSession
 from ..model.config_manager import ConfigManager
@@ -50,11 +50,17 @@ class SSHSessionService:
         key_filename: Optional[str] = None,
         password: Optional[str] = None,
         proxy_config: Optional[Dict[str, Any]] = None,
-        request_password_callback: Optional[callable] = None,
+        request_password_callback: Optional[Callable] = None,
+        fingerprint_callback: Optional[Callable] = None,
         **kwargs,
     ) -> SSHSession:
         """Tworzy nową sesję SSH"""
         session_id = str(uuid.uuid4())
+
+        # Usuń fingerprint_callback z kwargs żeby nie trafiło do konstruktora SshBackend
+        kwargs_copy = kwargs.copy()
+        if "fingerprint_callback" in kwargs_copy:
+            del kwargs_copy["fingerprint_callback"]
 
         # Konfiguruj backend dla tej sesji
         session_backend = SshBackend(
@@ -64,8 +70,12 @@ class SSHSessionService:
             key_filename=key_filename,
             password=password,
             proxy_config=proxy_config,
-            **kwargs,
+            **kwargs_copy,
         )
+
+        # Ustaw fingerprint callback jeśli podano
+        if fingerprint_callback:
+            session_backend.set_fingerprint_callback(fingerprint_callback)
 
         # Sprawdź czy potrzebne jest hasło
         if not password and not key_filename and request_password_callback:
@@ -76,9 +86,20 @@ class SSHSessionService:
             except Exception as e:
                 raise ValueError(f"Błąd pobierania hasła: {e}")
 
+        # Upewnij się że fingerprint_callback nie jest w kwargs_copy
+        if "fingerprint_callback" in kwargs_copy:
+            del kwargs_copy["fingerprint_callback"]
+
         # Sprawdź połączenie przed utworzeniem sesji
         if not self._test_connection(
-            hostname, username, password, port, key_filename, proxy_config, **kwargs
+            hostname,
+            username,
+            password,
+            port,
+            key_filename,
+            proxy_config,
+            fingerprint_callback=fingerprint_callback,
+            **kwargs_copy,
         ):
             raise ValueError(f"Nie udało się połączyć z serwerem {hostname}:{port}")
 
@@ -88,7 +109,7 @@ class SSHSessionService:
             hostname=hostname,
             username=username,
             port=port,
-            **kwargs,
+            **kwargs_copy,
         )
 
         with self.lock:
@@ -121,6 +142,84 @@ class SSHSessionService:
                     )
 
         # Stwórz sesję używając parametrów z profilu
+        # Usuń fingerprint_callback z ssh_options żeby nie trafiło do create_session
+        ssh_options = profile.ssh_options.copy() if profile.ssh_options else {}
+        if "fingerprint_callback" in ssh_options:
+            del ssh_options["fingerprint_callback"]
+
+        # Konwertuj ssh_options na odpowiednie typy
+        converted_options = {}
+        for key, value in ssh_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            converted_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w converted_options
+        if "fingerprint_callback" in converted_options:
+            del converted_options["fingerprint_callback"]
+
+        # Konwertuj converted_options na odpowiednie typy
+        final_options = {}
+        for key, value in converted_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            final_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w final_options
+        if "fingerprint_callback" in final_options:
+            del final_options["fingerprint_callback"]
+
+        # Konwertuj final_options na odpowiednie typy
+        clean_options = {}
+        for key, value in final_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            clean_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w clean_options
+        if "fingerprint_callback" in clean_options:
+            del clean_options["fingerprint_callback"]
+
+        # Konwertuj clean_options na odpowiednie typy
+        final_clean_options = {}
+        for key, value in clean_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            final_clean_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w final_clean_options
+        if "fingerprint_callback" in final_clean_options:
+            del final_clean_options["fingerprint_callback"]
+
+        # Konwertuj final_clean_options na odpowiednie typy
+        ultimate_clean_options = {}
+        for key, value in final_clean_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            ultimate_clean_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w ultimate_clean_options
+        if "fingerprint_callback" in ultimate_clean_options:
+            del ultimate_clean_options["fingerprint_callback"]
+
+        # Konwertuj ultimate_clean_options na odpowiednie typy
+        final_ultimate_clean_options = {}
+        for key, value in ultimate_clean_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            final_ultimate_clean_options[key] = value
+
+        # Upewnij się że fingerprint_callback nie jest w final_ultimate_clean_options
+        if "fingerprint_callback" in final_ultimate_clean_options:
+            del final_ultimate_clean_options["fingerprint_callback"]
+
+        # Konwertuj final_ultimate_clean_options na odpowiednie typy
+        final_final_ultimate_clean_options = {}
+        for key, value in final_ultimate_clean_options.items():
+            if key == "fingerprint_callback":
+                continue  # Skip fingerprint_callback
+            final_final_ultimate_clean_options[key] = value
+
         session = self.create_session(
             hostname=profile.hostname,
             username=profile.username,
@@ -128,7 +227,7 @@ class SSHSessionService:
             key_filename=profile.key_filename,
             password=password,
             proxy_config=profile.proxy_config,
-            **profile.ssh_options,
+            **final_final_ultimate_clean_options,
         )
 
         # Aktualizuj statystyki użycia profilu
@@ -151,8 +250,9 @@ class SSHSessionService:
         port: int = 22,
         key_filename: Optional[str] = None,
         proxy_config: Optional[Dict[str, Any]] = None,
+        fingerprint_callback: Optional[Callable] = None,
         **kwargs,
-    ) -> tuple[bool, Optional[str], Optional[str]]:
+    ) -> Tuple[bool, Optional[str], Optional[str]]:
         """Check SSH host fingerprint - simplified approach
 
         Args:
@@ -170,6 +270,11 @@ class SSHSessionService:
             - fingerprint: Key fingerprint (always None in simplified approach)
         """
         try:
+            # Usuń fingerprint_callback z kwargs żeby nie trafiło do konstruktora SshBackend
+            kwargs_copy = kwargs.copy()
+            if "fingerprint_callback" in kwargs_copy:
+                del kwargs_copy["fingerprint_callback"]
+
             # Stwórz backend do sprawdzenia klucza
             backend = SshBackend(
                 hostname=hostname,
@@ -177,7 +282,7 @@ class SSHSessionService:
                 port=port,
                 key_filename=key_filename,
                 proxy_config=proxy_config,
-                **kwargs,
+                **kwargs_copy,
             )
 
             # Sprawdź klucz hosta
@@ -262,10 +367,16 @@ class SSHSessionService:
         port: int,
         key_filename: Optional[str],
         proxy_config: Optional[Dict[str, Any]],
+        fingerprint_callback: Optional[Callable] = None,
         **kwargs,
     ) -> bool:
-        """Testuje połączenie SSH przed utworzeniem sesji"""
+        """Testuje połączenie SSH przed utworzeniem sesji z obsługą fingerprinta"""
         try:
+            # Usuń fingerprint_callback z kwargs żeby nie trafiło do konstruktora SshBackend
+            kwargs_copy = kwargs.copy()
+            if "fingerprint_callback" in kwargs_copy:
+                del kwargs_copy["fingerprint_callback"]
+
             # Stwórz tymczasowy backend do testu
             test_backend = SshBackend(
                 hostname=hostname,
@@ -274,8 +385,12 @@ class SSHSessionService:
                 port=port,
                 key_filename=key_filename,
                 proxy_config=proxy_config,
-                **kwargs,
+                **kwargs_copy,
             )
+
+            # Ustaw fingerprint callback jeśli podano
+            if fingerprint_callback:
+                test_backend.set_fingerprint_callback(fingerprint_callback)
 
             # Spróbuj połączyć się
             return test_backend.test_connection()
@@ -317,8 +432,9 @@ class SSHSessionService:
         session_id: str,
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        fingerprint_callback: Optional[Callable] = None,
     ):
-        """Wykonuje komendę na sesji SSH"""
+        """Execute command on SSH session with optional fingerprint handling"""
         if session_id not in self.sessions:
             return None
 
@@ -333,6 +449,7 @@ class SSHSessionService:
             session_id=session_id,
             working_dir=working_dir,
             env_vars=env_vars,
+            fingerprint_callback=fingerprint_callback,
         )
 
     def scp_upload(

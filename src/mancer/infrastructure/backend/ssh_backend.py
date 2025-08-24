@@ -4,7 +4,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
@@ -105,9 +105,17 @@ class SshBackend(BackendInterface):
         self.transfers: Dict[str, SCPTransfer] = {}
         self.transfer_lock = threading.Lock()
 
+        # Fingerprint handling
+        self.fingerprint_callback: Optional[Callable] = None
+        self.fingerprint_callback_lock = threading.Lock()
+
     def create_session(self, session_id: str, **kwargs) -> SSHSession:
         """Tworzy nową sesję SSH"""
         with self.session_lock:
+            # Usuń fingerprint_callback z kwargs żeby nie trafiło do SSHSession
+            if "fingerprint_callback" in kwargs:
+                del kwargs["fingerprint_callback"]
+
             # Wyciągnij podstawowe parametry z kwargs
             hostname = kwargs.pop("hostname", self.hostname)
             username = kwargs.pop("username", self.username)
@@ -152,6 +160,16 @@ class SshBackend(BackendInterface):
             self.active_session = None
 
         return True
+
+    def set_fingerprint_callback(self, callback: Callable):
+        """Ustawia callback do obsługi fingerprint prompts"""
+        with self.fingerprint_callback_lock:
+            self.fingerprint_callback = callback
+
+    def get_fingerprint_callback(self) -> Optional[Callable]:
+        """Pobiera aktualny fingerprint callback"""
+        with self.fingerprint_callback_lock:
+            return self.fingerprint_callback
 
     def get_session_status(self, session_id: str) -> Optional[str]:
         """Pobiera status sesji"""
@@ -254,23 +272,32 @@ class SshBackend(BackendInterface):
         ssh_command.append(command)
 
         try:
-            # Wykonujemy komendę SSH
-            result = subprocess.run(
-                ssh_command,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout or 30,
-                cwd=working_dir,
-                env=env_vars,
-            )
+            # Sprawdź czy mamy fingerprint callback
+            fingerprint_callback = self.get_fingerprint_callback()
 
-            return CommandResult(
-                success=result.returncode == 0,
-                raw_output=result.stdout,
-                structured_output=result.stdout.split("\n") if result.stdout else [],
-                exit_code=result.returncode,
-                error_message=result.stderr if result.stderr else None,
-            )
+            if fingerprint_callback:
+                # Użyj interaktywnej obsługi fingerprinta
+                return self._execute_with_fingerprint_handling(
+                    ssh_command, working_dir, env_vars, fingerprint_callback
+                )
+            else:
+                # Standardowe wykonanie SSH
+                result = subprocess.run(
+                    ssh_command,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout or 30,
+                    cwd=working_dir,
+                    env=env_vars,
+                )
+
+                return CommandResult(
+                    success=result.returncode == 0,
+                    raw_output=result.stdout,
+                    structured_output=result.stdout.split("\n") if result.stdout else [],
+                    exit_code=result.returncode,
+                    error_message=result.stderr if result.stderr else None,
+                )
 
         except subprocess.TimeoutExpired:
             return CommandResult(
@@ -287,6 +314,255 @@ class SshBackend(BackendInterface):
                 structured_output=[],
                 exit_code=1,
                 error_message=f"SSH command execution failed: {str(e)}",
+            )
+
+    def _execute_with_fingerprint_handling(
+        self,
+        ssh_command: List[str],
+        working_dir: Optional[str],
+        env_vars: Optional[Dict[str, str]],
+        fingerprint_callback: Callable,
+    ) -> CommandResult:
+        """Execute SSH command with interactive fingerprint handling"""
+        try:
+            import queue
+            import threading
+
+            import pexpect
+
+            # Zbuduj komendę jako string
+            cmd_str = " ".join(ssh_command)
+
+            if hasattr(self, "logger") and self.logger:
+                self.logger.info(f"Executing SSH with fingerprint handling: {cmd_str}")
+
+            # Kolejka do komunikacji między wątkami
+            result_queue: queue.Queue = queue.Queue()
+
+            def ssh_worker():
+                try:
+                    # Uruchom SSH z pexpect w osobnym wątku
+                    child = pexpect.spawn(cmd_str, timeout=30)
+
+                    # Oczekuj na różne możliwe prompty
+                    index = child.expect(
+                        [
+                            pexpect.EOF,  # Połączenie udane
+                            "fingerprint is",  # Pytanie o fingerprint
+                            "continue connecting",  # Inny format pytania
+                            "password:",  # Pytanie o hasło
+                            pexpect.TIMEOUT,  # Timeout
+                        ]
+                    )
+
+                    if index == 1 or index == 2:  # Pytanie o fingerprint
+                        # Pobierz output przed pytaniem
+                        output = child.before.decode("utf-8", errors="ignore")
+
+                        if hasattr(self, "logger") and self.logger:
+                            self.logger.info(f"SSH fingerprint prompt detected: {output}")
+
+                        # Wyciągnij fingerprint i key type
+                        import re
+
+                        pattern = r"(\w+) key fingerprint is (SHA256:[A-Za-z0-9+/=]+)"
+                        match = re.search(pattern, output)
+
+                        if match:
+                            key_type = match.group(1)
+                            fingerprint = match.group(2)
+
+                            if hasattr(self, "logger") and self.logger:
+                                self.logger.info(f"Extracted: {key_type} - {fingerprint}")
+
+                            # Wywołaj callback z fingerprintem w głównym wątku
+                            try:
+                                # Użyj QTimer żeby wywołać callback w głównym wątku GUI
+                                from PyQt6.QtCore import QTimer
+
+                                def call_callback():
+                                    try:
+                                        result = fingerprint_callback(key_type, fingerprint)
+
+                                        if result == "yes":
+                                            child.sendline("yes")
+                                            if hasattr(self, "logger") and self.logger:
+                                                self.logger.info("User accepted fingerprint")
+                                        elif result == "no":
+                                            child.sendline("no")
+                                            child.close()
+                                            result_queue.put(
+                                                CommandResult(
+                                                    success=False,
+                                                    raw_output="",
+                                                    structured_output=[],
+                                                    exit_code=1,
+                                                    error_message="Fingerprint rejected by user",
+                                                )
+                                            )
+                                            return
+                                        else:
+                                            child.close()
+                                            result_queue.put(
+                                                CommandResult(
+                                                    success=False,
+                                                    raw_output="",
+                                                    structured_output=[],
+                                                    exit_code=1,
+                                                    error_message="Fingerprint handling cancelled",
+                                                )
+                                            )
+                                            return
+                                    except Exception as e:
+                                        if hasattr(self, "logger") and self.logger:
+                                            self.logger.error(f"Error in fingerprint callback: {e}")
+                                        child.close()
+                                        result_queue.put(
+                                            CommandResult(
+                                                success=False,
+                                                raw_output="",
+                                                structured_output=[],
+                                                exit_code=1,
+                                                error_message=f"Fingerprint callback error: {str(e)}",
+                                            )
+                                        )
+                                        return
+
+                                # Uruchom callback w głównym wątku
+                                QTimer.singleShot(0, call_callback)
+
+                            except ImportError:
+                                # Fallback jeśli PyQt6 nie jest dostępne
+                                result = fingerprint_callback(key_type, fingerprint)
+
+                                if result == "yes":
+                                    child.sendline("yes")
+                                    if hasattr(self, "logger") and self.logger:
+                                        self.logger.info("User accepted fingerprint")
+                                elif result == "no":
+                                    child.sendline("no")
+                                    child.close()
+                                    result_queue.put(
+                                        CommandResult(
+                                            success=False,
+                                            raw_output="",
+                                            structured_output=[],
+                                            exit_code=1,
+                                            error_message="Fingerprint rejected by user",
+                                        )
+                                    )
+                                    return
+                                else:
+                                    child.close()
+                                    result_queue.put(
+                                        CommandResult(
+                                            success=False,
+                                            raw_output="",
+                                            structured_output=[],
+                                            exit_code=1,
+                                            error_message="Fingerprint handling cancelled",
+                                        )
+                                    )
+                                    return
+
+                        # Kontynuuj połączenie
+                        try:
+                            child.expect([pexpect.EOF, "password:", pexpect.TIMEOUT], timeout=30)
+                        except pexpect.TIMEOUT:
+                            child.close()
+                            result_queue.put(
+                                CommandResult(
+                                    success=False,
+                                    raw_output="",
+                                    structured_output=[],
+                                    exit_code=1,
+                                    error_message="SSH connection timeout after fingerprint",
+                                )
+                            )
+                            return
+
+                    elif index == 3:  # Pytanie o hasło
+                        if hasattr(self, "logger") and self.logger:
+                            self.logger.info("SSH password prompt detected")
+                        # Obsługa hasła (jeśli potrzebna)
+                        pass
+
+                    # Czekaj na zakończenie
+                    try:
+                        child.expect(pexpect.EOF, timeout=30)
+                    except pexpect.TIMEOUT:
+                        child.close()
+                        result_queue.put(
+                            CommandResult(
+                                success=False,
+                                raw_output="",
+                                structured_output=[],
+                                exit_code=1,
+                                error_message="SSH command execution timeout",
+                            )
+                        )
+                        return
+
+                    # Pobierz output
+                    output = child.read().decode("utf-8", errors="ignore")
+                    exit_code = child.exitstatus if hasattr(child, "exitstatus") else 0
+
+                    child.close()
+
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.info(f"SSH command completed with exit code: {exit_code}")
+
+                    result_queue.put(
+                        CommandResult(
+                            success=exit_code == 0,
+                            raw_output=output,
+                            structured_output=output.split("\n") if output else [],
+                            exit_code=exit_code,
+                            error_message=None,
+                        )
+                    )
+
+                except Exception as e:
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.error(f"SSH worker error: {str(e)}")
+                    result_queue.put(
+                        CommandResult(
+                            success=False,
+                            raw_output="",
+                            structured_output=[],
+                            exit_code=1,
+                            error_message=f"SSH worker error: {str(e)}",
+                        )
+                    )
+
+            # Uruchom SSH w osobnym wątku
+            ssh_thread = threading.Thread(target=ssh_worker, daemon=True)
+            ssh_thread.start()
+
+            # Czekaj na wynik z timeoutem
+            try:
+                result = result_queue.get(timeout=60)  # 60 sekund timeout
+                return result
+            except queue.Empty:
+                if hasattr(self, "logger") and self.logger:
+                    self.logger.error("SSH execution timeout")
+                return CommandResult(
+                    success=False,
+                    raw_output="",
+                    structured_output=[],
+                    exit_code=1,
+                    error_message="SSH execution timeout",
+                )
+
+        except Exception as e:
+            if hasattr(self, "logger") and self.logger:
+                self.logger.error(f"Fingerprint handling failed: {str(e)}")
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message=f"Fingerprint handling failed: {str(e)}",
             )
 
     def _build_proxy_options(self) -> List[str]:
@@ -496,15 +772,24 @@ class SshBackend(BackendInterface):
             # Dodaj prostą komendę testową
             ssh_command.append("echo 'Connection test successful'")
 
-            # Wykonaj test
-            result = subprocess.run(
-                ssh_command,
-                capture_output=True,
-                text=True,
-                timeout=15,  # Krótki timeout dla testu
-            )
+            # Wykonaj test z obsługą fingerprinta
+            fingerprint_callback = self.get_fingerprint_callback()
 
-            return result.returncode == 0
+            if fingerprint_callback:
+                # Użyj interaktywnej obsługi fingerprinta
+                return self._execute_with_fingerprint_handling(
+                    ssh_command, None, None, fingerprint_callback
+                ).success
+            else:
+                # Standardowy test
+                result = subprocess.run(
+                    ssh_command,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,  # Krótki timeout dla testu
+                )
+
+                return result.returncode == 0
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
