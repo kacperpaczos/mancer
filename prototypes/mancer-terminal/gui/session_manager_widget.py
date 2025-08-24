@@ -112,9 +112,12 @@ class SessionManagerWidget(QWidget):
         self.update_sessions_list()
 
     def create_session(
-        self, connection_data: dict, request_password_callback: callable = None
+        self, 
+        connection_data: dict, 
+        request_password_callback: callable = None,
+        fingerprint_callback: callable = None
     ) -> str:
-        """Tworzy nową sesję SSH"""
+        """Tworzy nową sesję SSH z obsługą fingerprinta"""
         try:
             if self.logger:
                 self.logger.info(
@@ -130,6 +133,7 @@ class SessionManagerWidget(QWidget):
                 password=connection_data.get("password"),
                 proxy_config=connection_data.get("proxy_config"),
                 request_password_callback=request_password_callback,
+                fingerprint_callback=fingerprint_callback,
                 **connection_data.get("ssh_options", {}),
             )
 

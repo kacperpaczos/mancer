@@ -459,12 +459,18 @@ class MancerTerminalWindow(QMainWindow):
                     "ssh_options": profile.ssh_options,
                 }
             )
+            
+            # Usuń fingerprint_callback z connection_data żeby nie trafiło do SshBackend
+            if "fingerprint_callback" in connection_data:
+                del connection_data["fingerprint_callback"]
+            if "ssh_options" in connection_data and "fingerprint_callback" in connection_data["ssh_options"]:
+                del connection_data["ssh_options"]["fingerprint_callback"]
 
             # Stwórz sesję
             self.create_session_from_data(connection_data)
 
     def create_session_from_data(self, connection_data):
-        """Create SSH session from connection data - simplified approach"""
+        """Create SSH session from connection data with fingerprint handling"""
         try:
             hostname = connection_data["hostname"]
             username = connection_data["username"]
@@ -473,9 +479,11 @@ class MancerTerminalWindow(QMainWindow):
             if self.logger:
                 self.logger.info(f"Creating SSH session for {hostname}:{port}")
 
-            # Create session directly - fingerprint handling will be done during connection
+            # Create session with fingerprint callback
             session_id = self.session_manager.create_session(
-                connection_data, request_password_callback=self.request_password
+                connection_data, 
+                request_password_callback=self.request_password,
+                fingerprint_callback=self.handle_ssh_fingerprint
             )
 
             if session_id:
@@ -497,6 +505,75 @@ class MancerTerminalWindow(QMainWindow):
             if self.logger:
                 self.logger.error(f"MancerTerminalWindow - {error_msg}")
             QMessageBox.critical(self, "Błąd", error_msg)
+
+    def handle_ssh_fingerprint(self, key_type: str, fingerprint: str) -> str:
+        """Handle SSH fingerprint prompt - show dialog and return user decision"""
+        try:
+            if self.logger:
+                self.logger.info(f"SSH fingerprint prompt: {key_type} - {fingerprint}")
+
+            from .ssh_fingerprint_dialog import SSHFingerprintDialog
+
+            # Show fingerprint dialog
+            dialog = SSHFingerprintDialog(
+                hostname="127.0.0.1",  # Will be updated with actual hostname
+                port=22,  # Will be updated with actual port
+                fingerprint=fingerprint,
+                key_type=key_type,
+                parent=self
+            )
+
+            if dialog.exec() == dialog.DialogCode.Accepted:
+                accepted, save_permanently = dialog.get_result()
+                
+                if accepted:
+                    if save_permanently:
+                        # Add to known_hosts
+                        self.add_host_to_known_hosts(key_type, fingerprint)
+                    
+                    if self.logger:
+                        self.logger.info("User accepted SSH fingerprint")
+                    return "yes"
+                else:
+                    if self.logger:
+                        self.logger.info("User rejected SSH fingerprint")
+                    return "no"
+            else:
+                if self.logger:
+                    self.logger.info("User cancelled SSH fingerprint dialog")
+                return "cancel"
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error handling SSH fingerprint: {e}")
+            return "no"  # Default to reject on error
+
+    def add_host_to_known_hosts(self, key_type: str, fingerprint: str):
+        """Add host to known_hosts file"""
+        try:
+            import os
+            known_hosts_file = os.path.expanduser("~/.ssh/known_hosts")
+            
+            # Ensure .ssh directory exists
+            ssh_dir = os.path.dirname(known_hosts_file)
+            os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
+            
+            # Add entry to known_hosts
+            host_entry = "127.0.0.1"  # Will be updated with actual hostname
+            key_line = f"{host_entry} {key_type} - {fingerprint}\n"
+            
+            with open(known_hosts_file, "a") as f:
+                f.write(key_line)
+            
+            # Set proper permissions
+            os.chmod(known_hosts_file, 0o600)
+            
+            if self.logger:
+                self.logger.info(f"Added host to known_hosts: {host_entry}")
+                
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to add host to known_hosts: {e}")
 
     def set_master_key(self):
         """Ustawia klucz główny dla CredentialStore"""
