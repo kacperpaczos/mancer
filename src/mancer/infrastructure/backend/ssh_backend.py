@@ -375,64 +375,9 @@ class SshBackend(BackendInterface):
                             if hasattr(self, "logger") and self.logger:
                                 self.logger.info(f"Extracted: {key_type} - {fingerprint}")
 
-                            # Wywołaj callback z fingerprintem w głównym wątku
+                            # Wywołaj callback z fingerprintem
+                            # Framework nie może zależeć od GUI - używamy agnostycznego rozwiązania
                             try:
-                                # Użyj QTimer żeby wywołać callback w głównym wątku GUI
-                                from PyQt6.QtCore import QTimer
-
-                                def call_callback():
-                                    try:
-                                        result = fingerprint_callback(key_type, fingerprint)
-
-                                        if result == "yes":
-                                            child.sendline("yes")
-                                            if hasattr(self, "logger") and self.logger:
-                                                self.logger.info("User accepted fingerprint")
-                                        elif result == "no":
-                                            child.sendline("no")
-                                            child.close()
-                                            result_queue.put(
-                                                CommandResult(
-                                                    success=False,
-                                                    raw_output="",
-                                                    structured_output=[],
-                                                    exit_code=1,
-                                                    error_message="Fingerprint rejected by user",
-                                                )
-                                            )
-                                            return
-                                        else:
-                                            child.close()
-                                            result_queue.put(
-                                                CommandResult(
-                                                    success=False,
-                                                    raw_output="",
-                                                    structured_output=[],
-                                                    exit_code=1,
-                                                    error_message="Fingerprint handling cancelled",
-                                                )
-                                            )
-                                            return
-                                    except Exception as e:
-                                        if hasattr(self, "logger") and self.logger:
-                                            self.logger.error(f"Error in fingerprint callback: {e}")
-                                        child.close()
-                                        result_queue.put(
-                                            CommandResult(
-                                                success=False,
-                                                raw_output="",
-                                                structured_output=[],
-                                                exit_code=1,
-                                                error_message=f"Fingerprint callback error: {str(e)}",
-                                            )
-                                        )
-                                        return
-
-                                # Uruchom callback w głównym wątku
-                                QTimer.singleShot(0, call_callback)
-
-                            except ImportError:
-                                # Fallback jeśli PyQt6 nie jest dostępne
                                 result = fingerprint_callback(key_type, fingerprint)
 
                                 if result == "yes":
@@ -464,6 +409,20 @@ class SshBackend(BackendInterface):
                                         )
                                     )
                                     return
+                            except Exception as e:
+                                if hasattr(self, "logger") and self.logger:
+                                    self.logger.error(f"Error in fingerprint callback: {e}")
+                                child.close()
+                                result_queue.put(
+                                    CommandResult(
+                                        success=False,
+                                        raw_output="",
+                                        structured_output=[],
+                                        exit_code=1,
+                                        error_message=f"Fingerprint callback error: {str(e)}",
+                                    )
+                                )
+                                return
 
                         # Kontynuuj połączenie
                         try:
