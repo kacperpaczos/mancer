@@ -30,7 +30,9 @@ class SSHSessionService:
             self.credential_store = CredentialStore()
         except Exception as e:
             if self.logger:
-                self.logger.warning(f"Nie udało się zainicjalizować CredentialStore: {e}")
+                self.logger.warning(
+                    f"Nie udało się zainicjalizować CredentialStore: {e}"
+                )
             self.credential_store = None
 
     def _setup_logger(self):
@@ -134,7 +136,9 @@ class SSHSessionService:
                 # Pobierz hasło z CredentialStore
                 password = self.credential_store.get_password(profile.id)
                 if self.logger:
-                    self.logger.info(f"Pobrano zapisane hasło dla profilu: {profile.name}")
+                    self.logger.info(
+                        f"Pobrano zapisane hasło dla profilu: {profile.name}"
+                    )
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
@@ -234,7 +238,9 @@ class SSHSessionService:
         try:
             profile.update_usage()
             if self.logger:
-                self.logger.info(f"Zaktualizowano statystyki użycia profilu: {profile.name}")
+                self.logger.info(
+                    f"Zaktualizowano statystyki użycia profilu: {profile.name}"
+                )
         except Exception as e:
             if self.logger:
                 self.logger.warning(
@@ -304,7 +310,9 @@ class SSHSessionService:
 
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error checking host fingerprint for {hostname}:{port}: {e}")
+                self.logger.error(
+                    f"Error checking host fingerprint for {hostname}:{port}: {e}"
+                )
             return False, None, None
 
     def add_host_to_known_hosts(
@@ -329,7 +337,9 @@ class SSHSessionService:
 
             # Dodaj ścieżkę do prototypów
             prototype_path = (
-                Path(__file__).parent.parent.parent.parent.parent / "prototypes" / "mancer-terminal"
+                Path(__file__).parent.parent.parent.parent.parent
+                / "prototypes"
+                / "mancer-terminal"
             )
             sys.path.insert(0, str(prototype_path))
 
@@ -350,7 +360,9 @@ class SSHSessionService:
                 if success:
                     self.logger.info(f"Dodano host {hostname}:{port} do known_hosts")
                 else:
-                    self.logger.error(f"Nie udało się dodać hosta {hostname}:{port} do known_hosts")
+                    self.logger.error(
+                        f"Nie udało się dodać hosta {hostname}:{port} do known_hosts"
+                    )
 
             return success
 

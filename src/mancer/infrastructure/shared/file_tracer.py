@@ -16,7 +16,9 @@ class FileTracer:
     przy zarządzaniu plikami konfiguracyjnymi na zdalnych serwerach.
     """
 
-    def __init__(self, remote_backend: Optional[Union[SshBackend, SSHConnecticer]] = None):
+    def __init__(
+        self, remote_backend: Optional[Union[SshBackend, SSHConnecticer]] = None
+    ):
         """
         Inicjalizuje FileTracer.
 
@@ -122,7 +124,9 @@ class FileTracer:
             content = f.read()
 
         # Zapisz do docelowego pliku
-        success = self._set_file_content(destination_path, content, is_destination_remote)
+        success = self._set_file_content(
+            destination_path, content, is_destination_remote
+        )
 
         return success
 
@@ -194,7 +198,9 @@ class FileTracer:
         for filename in os.listdir(self._backup_dir):
             filepath = os.path.join(self._backup_dir, filename)
             if os.path.isfile(filepath) and filename.endswith(".bak"):
-                if original_filename is None or filename.startswith(original_filename + "."):
+                if original_filename is None or filename.startswith(
+                    original_filename + "."
+                ):
                     backups.append(filepath)
 
         # Sortuj po dacie utworzenia (najnowsze najpierw)

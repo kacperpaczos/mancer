@@ -73,7 +73,9 @@ class CredentialStore:
 
         key = self._derive_key(self.master_key, salt)
         # Proste szyfrowanie XOR (w produkcji użyj AES)
-        encrypted = "".join(chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(value))
+        encrypted = "".join(
+            chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(value)
+        )
         return base64.b64encode(encrypted.encode()).decode("utf-8")
 
     def _decrypt_value(self, encrypted_value: str, salt: str) -> str:
@@ -84,7 +86,9 @@ class CredentialStore:
         key = self._derive_key(self.master_key, salt)
         encrypted = base64.b64decode(encrypted_value.encode()).decode("utf-8")
         # Proste deszyfrowanie XOR
-        decrypted = "".join(chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(encrypted))
+        decrypted = "".join(
+            chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(encrypted)
+        )
         return decrypted
 
     def store_password(
@@ -197,7 +201,9 @@ class CredentialStore:
                     "encrypted_value": cred.encrypted_value,
                     "salt": cred.salt,
                     "created_at": cred.created_at.isoformat(),
-                    "expires_at": cred.expires_at.isoformat() if cred.expires_at else None,
+                    "expires_at": cred.expires_at.isoformat()
+                    if cred.expires_at
+                    else None,
                     "last_used": cred.last_used.isoformat() if cred.last_used else None,
                     "use_count": cred.use_count,
                 }

@@ -3,7 +3,11 @@ import os
 import re
 from typing import Dict, List, Optional
 
-from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
+from ...domain.model.command_context import (
+    CommandContext,
+    ExecutionMode,
+    RemoteHostInfo,
+)
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
@@ -95,7 +99,9 @@ class SystemdInspector:
             profile_storage_dir: Directory for connection profiles.
         """
         self.profile_producer = ProfileProducer(profile_storage_dir)
-        self.report_dir = os.path.join(os.path.expanduser("~"), ".mancer", "systemd_reports")
+        self.report_dir = os.path.join(
+            os.path.expanduser("~"), ".mancer", "systemd_reports"
+        )
         os.makedirs(self.report_dir, exist_ok=True)
 
         # Aktywne połączenie i kontekst
@@ -137,7 +143,9 @@ class SystemdInspector:
             key_file=profile.key_filename,
         )
 
-        self.context = CommandContext(execution_mode=ExecutionMode.REMOTE, remote_host=remote_host)
+        self.context = CommandContext(
+            execution_mode=ExecutionMode.REMOTE, remote_host=remote_host
+        )
 
         return True
 
@@ -429,7 +437,13 @@ class SystemdInspector:
                 if units:  # Pokazuj tylko typy, które mają jakieś jednostki
                     f.write(f"\n{unit_type.upper()}:\n")
                     for unit in units:
-                        state_mark = "✓" if unit.is_active() else "✗" if unit.is_failed() else "-"
+                        state_mark = (
+                            "✓"
+                            if unit.is_active()
+                            else "✗"
+                            if unit.is_failed()
+                            else "-"
+                        )
                         f.write(
                             f"{state_mark} {unit.name} - {unit.active_state}/{unit.sub_state} - {unit.description}\n"
                         )
@@ -442,7 +456,9 @@ class SystemdInspector:
                 if units:  # Pokazuj tylko stany, które mają jakieś jednostki
                     f.write(f"\n{state.upper()}:\n")
                     for unit in units:
-                        f.write(f"{unit.name} - {unit.unit_type} - {unit.description}\n")
+                        f.write(
+                            f"{unit.name} - {unit.unit_type} - {unit.description}\n"
+                        )
 
         return report_path
 

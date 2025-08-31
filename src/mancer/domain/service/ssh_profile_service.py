@@ -136,11 +136,17 @@ class SSHProfileService:
 
         # Filtruj po kategorii
         if category:
-            profiles = [p for p in profiles if getattr(p, "category", "default") == category]
+            profiles = [
+                p for p in profiles if getattr(p, "category", "default") == category
+            ]
 
         # Filtruj po tagach
         if tags:
-            profiles = [p for p in profiles if any(tag in getattr(p, "tags", []) for tag in tags)]
+            profiles = [
+                p
+                for p in profiles
+                if any(tag in getattr(p, "tags", []) for tag in tags)
+            ]
 
         # Sortuj po ostatnim użyciu i nazwie
         def safe_sort_key(p):
@@ -191,7 +197,9 @@ class SSHProfileService:
         self, profile_id: str, password: str, expires_in_days: Optional[int] = None
     ) -> str:
         """Zapisuje poświadczenia dla profilu"""
-        return self.credential_store.store_password(profile_id, password, expires_in_days)
+        return self.credential_store.store_password(
+            profile_id, password, expires_in_days
+        )
 
     def remove_profile_credentials(self, profile_id: str) -> bool:
         """Usuwa poświadczenia dla profilu"""
@@ -229,7 +237,9 @@ class SSHProfileService:
                 continue
         return sorted(list(tags))
 
-    def export_profile(self, profile_id: str, include_credentials: bool = False) -> Dict[str, Any]:
+    def export_profile(
+        self, profile_id: str, include_credentials: bool = False
+    ) -> Dict[str, Any]:
         """Eksportuje profil do słownika"""
         if profile_id not in self.profiles:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
@@ -245,13 +255,17 @@ class SSHProfileService:
 
         return export_data
 
-    def import_profile(self, profile_data: Dict[str, Any], overwrite: bool = False) -> SSHProfile:
+    def import_profile(
+        self, profile_data: Dict[str, Any], overwrite: bool = False
+    ) -> SSHProfile:
         """Importuje profil ze słownika"""
         # Sprawdź czy profil już istnieje
         if "name" in profile_data:
             existing_profile = self.get_profile_by_name(profile_data["name"])
             if existing_profile and not overwrite:
-                raise ValueError(f"Profil o nazwie '{profile_data['name']}' już istnieje")
+                raise ValueError(
+                    f"Profil o nazwie '{profile_data['name']}' już istnieje"
+                )
             elif existing_profile and overwrite:
                 # Usuń istniejący profil
                 self.delete_profile(existing_profile.id)
@@ -280,7 +294,10 @@ class SSHProfileService:
             profiles_file = os.path.join(self.storage_path, "ssh_profiles.json")
 
             # Konwertuj profile do słowników
-            data = {profile_id: profile.to_dict() for profile_id, profile in self.profiles.items()}
+            data = {
+                profile_id: profile.to_dict()
+                for profile_id, profile in self.profiles.items()
+            }
 
             # Zapisz do pliku
             with open(profiles_file, "w") as f:

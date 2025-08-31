@@ -110,10 +110,12 @@ class SshBackend(BackendInterface):
         self.fingerprint_callback_lock = threading.Lock()
 
         # Interactive shell handling
-        self.output_callback: Optional[Callable[[str, str], None]] = None  # (session_id, data)
-        self.shells: Dict[str, Dict[str, Any]] = (
-            {}
-        )  # session_id -> {"fd": int, "reader": Thread, "alive": bool}
+        self.output_callback: Optional[Callable[[str, str], None]] = (
+            None  # (session_id, data)
+        )
+        self.shells: Dict[
+            str, Dict[str, Any]
+        ] = {}  # session_id -> {"fd": int, "reader": Thread, "alive": bool}
 
         # Logger initialization (if available)
         try:
@@ -135,7 +137,9 @@ class SshBackend(BackendInterface):
             username = kwargs.pop("username", self.username)
             port = kwargs.pop("port", self.port)
 
-            session = SSHSession(id=session_id, hostname=hostname, username=username, port=port)
+            session = SSHSession(
+                id=session_id, hostname=hostname, username=username, port=port
+            )
             self.sessions[session_id] = session
             return session
 
@@ -149,7 +153,9 @@ class SshBackend(BackendInterface):
 
         try:
             # Test connection
-            test_result = self.execute_command("echo 'Connection test'", session_id=session_id)
+            test_result = self.execute_command(
+                "echo 'Connection test'", session_id=session_id
+            )
             if test_result.success:
                 session.status = "connected"
                 session.last_activity = datetime.now()
@@ -160,7 +166,9 @@ class SshBackend(BackendInterface):
                 except Exception as _e:
                     # Nie blokuj połączenia jeśli powłoka nie wystartowała; loguj jeśli jest logger
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.warning(f"Nie udało się uruchomić sesji interaktywnej: {_e}")
+                        self.logger.warning(
+                            f"Nie udało się uruchomić sesji interaktywnej: {_e}"
+                        )
                 return True
             else:
                 session.status = "error"
@@ -214,7 +222,10 @@ class SshBackend(BackendInterface):
 
     def switch_session(self, session_id: str) -> bool:
         """Przełącza na inną sesję"""
-        if session_id in self.sessions and self.sessions[session_id].status == "connected":
+        if (
+            session_id in self.sessions
+            and self.sessions[session_id].status == "connected"
+        ):
             self.active_session = session_id
             return True
         return False
@@ -320,7 +331,9 @@ class SshBackend(BackendInterface):
                         raw_output="",
                         structured_output=[],
                         exit_code=0 if sent else 1,
-                        error_message=None if sent else "Interactive shell not available",
+                        error_message=None
+                        if sent
+                        else "Interactive shell not available",
                     )
                 # Brak interaktywnej sesji – jednorazowe uruchomienie
                 result = subprocess.run(
@@ -335,7 +348,9 @@ class SshBackend(BackendInterface):
                 return CommandResult(
                     success=result.returncode == 0,
                     raw_output=result.stdout,
-                    structured_output=result.stdout.split("\n") if result.stdout else [],
+                    structured_output=result.stdout.split("\n")
+                    if result.stdout
+                    else [],
                     exit_code=result.returncode,
                     error_message=result.stderr if result.stderr else None,
                 )
@@ -381,12 +396,16 @@ class SshBackend(BackendInterface):
                 or (
                     tok == "StrictHostKeyChecking"
                     and i + 1 < len(modified_ssh_command)
-                    and str(modified_ssh_command[i + 1]).startswith("StrictHostKeyChecking=")
+                    and str(modified_ssh_command[i + 1]).startswith(
+                        "StrictHostKeyChecking="
+                    )
                 )
                 or (
                     tok == "-o"
                     and i + 1 < len(modified_ssh_command)
-                    and str(modified_ssh_command[i + 1]).startswith("StrictHostKeyChecking=")
+                    and str(modified_ssh_command[i + 1]).startswith(
+                        "StrictHostKeyChecking="
+                    )
                 )
                 for i, tok in enumerate(modified_ssh_command)
             )
@@ -399,7 +418,9 @@ class SshBackend(BackendInterface):
             try:
                 # Preflight: pobierz klucz hosta i policz fingerprint, pokaż dialog, zapisz do known_hosts po akceptacji
                 if hasattr(self, "logger") and self.logger:
-                    self.logger.info("Starting SSH with fingerprint handling (preflight mode).")
+                    self.logger.info(
+                        "Starting SSH with fingerprint handling (preflight mode)."
+                    )
 
                 host_target = None
                 for tok in modified_ssh_command:
@@ -408,7 +429,9 @@ class SshBackend(BackendInterface):
                         break
                 if host_target is None and modified_ssh_command:
                     host_target = (
-                        modified_ssh_command[-2] if len(modified_ssh_command) >= 2 else None
+                        modified_ssh_command[-2]
+                        if len(modified_ssh_command) >= 2
+                        else None
                     )
 
                 # Ustal port z opcji, domyślnie 22
@@ -430,9 +453,13 @@ class SshBackend(BackendInterface):
                         "5",
                         host_target,
                     ]
-                    ks = subprocess.run(keyscan_cmd, capture_output=True, text=True, timeout=10)
+                    ks = subprocess.run(
+                        keyscan_cmd, capture_output=True, text=True, timeout=10
+                    )
                     if ks.returncode != 0 or not ks.stdout:
-                        raise RuntimeError(ks.stderr or "ssh-keyscan failed or returned no data")
+                        raise RuntimeError(
+                            ks.stderr or "ssh-keyscan failed or returned no data"
+                        )
                     # Pierwsza niekomentarzowa linia
                     key_line = None
                     for ln in ks.stdout.splitlines():
@@ -458,11 +485,15 @@ class SshBackend(BackendInterface):
                         timeout=10,
                     )
                     if sk.returncode != 0 or not sk.stdout:
-                        raise RuntimeError(sk.stderr or "ssh-keygen failed to compute fingerprint")
+                        raise RuntimeError(
+                            sk.stderr or "ssh-keygen failed to compute fingerprint"
+                        )
                     # Przykład: "256 SHA256:abcdef... host (ED25519)"
                     mfp = re.search(r"SHA256:[A-Za-z0-9+/=]+", sk.stdout)
                     if not mfp:
-                        raise RuntimeError(f"Could not parse fingerprint from: {sk.stdout}")
+                        raise RuntimeError(
+                            f"Could not parse fingerprint from: {sk.stdout}"
+                        )
                     fingerprint_str = mfp.group(0)
 
                     if hasattr(self, "logger") and self.logger:
@@ -504,7 +535,9 @@ class SshBackend(BackendInterface):
                     )
                     os.makedirs(os.path.dirname(known_hosts), exist_ok=True)
                     host_entry = (
-                        f"[{host_target}]:{port_value}" if port_value != 22 else host_target
+                        f"[{host_target}]:{port_value}"
+                        if port_value != 22
+                        else host_target
                     )
                     with open(known_hosts, "a", encoding="utf-8") as fh:
                         fh.write(f"{host_entry} {key_type} {key_b64}\n")
@@ -513,7 +546,9 @@ class SshBackend(BackendInterface):
                     except Exception:
                         pass
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.info(f"Host key saved to known_hosts for {host_entry}")
+                        self.logger.info(
+                            f"Host key saved to known_hosts for {host_entry}"
+                        )
                 except Exception as e:
                     if hasattr(self, "logger") and self.logger:
                         self.logger.error(f"Preflight host key handling failed: {e}")
@@ -553,12 +588,20 @@ class SshBackend(BackendInterface):
                         import stat
                         import tempfile
 
-                        fd, script_path = tempfile.mkstemp(prefix="mancer_askpass_", text=True)
+                        fd, script_path = tempfile.mkstemp(
+                            prefix="mancer_askpass_", text=True
+                        )
                         os.close(fd)
                         with open(script_path, "w", encoding="utf-8") as sf:
                             sf.write("#!/bin/sh\n")
-                            sf.write("echo '" + str(self.password).replace("'", "'\\''") + "'\n")
-                        os.chmod(script_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                            sf.write(
+                                "echo '"
+                                + str(self.password).replace("'", "'\\''")
+                                + "'\n"
+                            )
+                        os.chmod(
+                            script_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+                        )
                         cleanup_script = script_path
                         run_env["SSH_ASKPASS"] = script_path
                         run_env["SSH_ASKPASS_REQUIRE"] = "force"
@@ -587,7 +630,9 @@ class SshBackend(BackendInterface):
                     CommandResult(
                         success=result.returncode == 0,
                         raw_output=final_output,
-                        structured_output=[ln for ln in final_output.splitlines() if ln],
+                        structured_output=[
+                            ln for ln in final_output.splitlines() if ln
+                        ],
                         exit_code=result.returncode,
                         error_message=None if result.returncode == 0 else result.stderr,
                     )
@@ -672,7 +717,9 @@ class SshBackend(BackendInterface):
             self.transfers[transfer_id] = transfer
 
         # Uruchom transfer w osobnym wątku
-        threading.Thread(target=self._execute_scp_upload, args=(transfer, session)).start()
+        threading.Thread(
+            target=self._execute_scp_upload, args=(transfer, session)
+        ).start()
 
         return transfer
 
@@ -698,7 +745,9 @@ class SshBackend(BackendInterface):
             self.transfers[transfer_id] = transfer
 
         # Uruchom transfer w osobnym wątku
-        threading.Thread(target=self._execute_scp_download, args=(transfer, session)).start()
+        threading.Thread(
+            target=self._execute_scp_download, args=(transfer, session)
+        ).start()
 
         return transfer
 
@@ -881,7 +930,9 @@ class SshBackend(BackendInterface):
             if not os.path.exists(known_hosts_file):
                 return False, None, None
 
-            host_entry = f"[{self.hostname}]:{self.port}" if self.port != 22 else self.hostname
+            host_entry = (
+                f"[{self.hostname}]:{self.port}" if self.port != 22 else self.hostname
+            )
 
             with open(known_hosts_file, "r") as f:
                 for line in f:

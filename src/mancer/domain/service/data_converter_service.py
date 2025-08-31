@@ -13,7 +13,9 @@ class DataFormatConverter:
     """
 
     @staticmethod
-    def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Optional[Any]:
+    def convert(
+        data: Any, source_format: DataFormat, target_format: DataFormat
+    ) -> Optional[Any]:
         """Convert data from source_format to target_format using LIST as intermediate if needed."""
         # Jeśli formaty są takie same, zwróć dane bez zmian
         if source_format == target_format:
@@ -33,7 +35,9 @@ class DataFormatConverter:
         return data
 
     @staticmethod
-    def _to_list(data: Any, source_format: DataFormat) -> Optional[List[Dict[str, Any]]]:
+    def _to_list(
+        data: Any, source_format: DataFormat
+    ) -> Optional[List[Dict[str, Any]]]:
         """Convert data from a specific format to a list of dict records."""
         if source_format == DataFormat.LIST:
             return data
@@ -74,7 +78,9 @@ class DataFormatConverter:
         return None
 
     @staticmethod
-    def _from_list(data: List[Dict[str, Any]], target_format: DataFormat) -> Optional[Any]:
+    def _from_list(
+        data: List[Dict[str, Any]], target_format: DataFormat
+    ) -> Optional[Any]:
         """Konwertuje listę słowników do określonego formatu"""
         if target_format == DataFormat.LIST:
             return data

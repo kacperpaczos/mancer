@@ -52,14 +52,14 @@ class SystemdService:
 
             try:
                 # Tworzymy unikalną nazwę pliku tymczasowego
-                temp_filename = (
-                    f"systemd_units_temp_{hostname}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-                )
+                temp_filename = f"systemd_units_temp_{hostname}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
                 remote_temp_file = f"/tmp/{temp_filename}"
                 local_temp_file = f"/tmp/{temp_filename}"
 
                 # Polecenie do pobrania wszystkich jednostek i zapisania do pliku
-                systemctl_cmd = f"systemctl list-units --all --no-pager > {remote_temp_file}"
+                systemctl_cmd = (
+                    f"systemctl list-units --all --no-pager > {remote_temp_file}"
+                )
 
                 # Wykonaj polecenie na zdalnym serwerze
                 cmd_result = conn.execute_command(systemctl_cmd)
@@ -238,7 +238,12 @@ class SystemdService:
 
         for line in lines:
             # Pomijamy puste linie i nagłówki
-            if not line.strip() or "UNIT" in line and "LOAD" in line and "ACTIVE" in line:
+            if (
+                not line.strip()
+                or "UNIT" in line
+                and "LOAD" in line
+                and "ACTIVE" in line
+            ):
                 continue
 
             # Sprawdzamy czy linia zawiera informacje o jednostce
@@ -255,7 +260,11 @@ class SystemdService:
 
                 # Pobierz stan (active, inactive, failed)
                 status = next(
-                    (part for part in parts if part.lower() in ["active", "inactive", "failed"]),
+                    (
+                        part
+                        for part in parts
+                        if part.lower() in ["active", "inactive", "failed"]
+                    ),
                     "other",
                 )
 
@@ -286,7 +295,9 @@ class SystemdService:
                     parts = unit_name.lower().split("dimark_")
                     if len(parts) > 1:
                         category = (
-                            parts[1].split("_")[0] if "_" in parts[1] else parts[1].split(".")[0]
+                            parts[1].split("_")[0]
+                            if "_" in parts[1]
+                            else parts[1].split(".")[0]
                         )
                         if category not in units["dimark"]:
                             units["dimark"][category] = []
