@@ -444,12 +444,18 @@ class SSHSessionService:
         if not backend:
             return None
 
+        # Jeśli przekazano fingerprint_callback, ustaw go na backendzie
+        if fingerprint_callback:
+            try:
+                backend.set_fingerprint_callback(fingerprint_callback)
+            except Exception:
+                pass
+
         return backend.execute_command(
             command=command,
             session_id=session_id,
             working_dir=working_dir,
             env_vars=env_vars,
-            fingerprint_callback=fingerprint_callback,
         )
 
     def scp_upload(

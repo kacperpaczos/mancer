@@ -109,6 +109,20 @@ class SshBackend(BackendInterface):
         self.fingerprint_callback: Optional[Callable] = None
         self.fingerprint_callback_lock = threading.Lock()
 
+        # Interactive shell handling
+        self.output_callback: Optional[Callable[[str, str], None]] = None  # (session_id, data)
+        self.shells: Dict[str, Dict[str, Any]] = (
+            {}
+        )  # session_id -> {"fd": int, "reader": Thread, "alive": bool}
+
+        # Logger initialization (if available)
+        try:
+            from ..logging.mancer_logger import MancerLogger
+
+            self.logger = MancerLogger.get_instance()
+        except Exception:
+            self.logger = None
+
     def create_session(self, session_id: str, **kwargs) -> SSHSession:
         """Tworzy nową sesję SSH"""
         with self.session_lock:
@@ -140,6 +154,13 @@ class SshBackend(BackendInterface):
                 session.status = "connected"
                 session.last_activity = datetime.now()
                 self.active_session = session_id
+                # Uruchom interaktywną powłokę domyślnie
+                try:
+                    self._start_interactive_shell(session)
+                except Exception as _e:
+                    # Nie blokuj połączenia jeśli powłoka nie wystartowała; loguj jeśli jest logger
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.warning(f"Nie udało się uruchomić sesji interaktywnej: {_e}")
                 return True
             else:
                 session.status = "error"
@@ -154,6 +175,11 @@ class SshBackend(BackendInterface):
             return False
 
         session = self.sessions[session_id]
+        # Zamknij interaktywną powłokę, jeśli działa
+        try:
+            self.close_interactive(session_id)
+        except Exception:
+            pass
         session.status = "disconnected"
 
         if self.active_session == session_id:
@@ -165,6 +191,10 @@ class SshBackend(BackendInterface):
         """Ustawia callback do obsługi fingerprint prompts"""
         with self.fingerprint_callback_lock:
             self.fingerprint_callback = callback
+
+    def set_output_callback(self, callback: Callable[[str, str], None]):
+        """Ustawia callback dla wyjścia interaktywnej sesji SSH (session_id, chunk)."""
+        self.output_callback = callback
 
     def get_fingerprint_callback(self) -> Optional[Callable]:
         """Pobiera aktualny fingerprint callback"""
@@ -281,7 +311,18 @@ class SshBackend(BackendInterface):
                     ssh_command, working_dir, env_vars, fingerprint_callback
                 )
             else:
-                # Standardowe wykonanie SSH
+                # Standardowe wykonanie SSH (dla jednorazowych komend). Jeśli interaktywna powłoka działa,
+                # wyślij komendę do niej i zwróć sukces natychmiast (output trafi przez callback terminala).
+                if session_id in self.shells and self.shells[session_id].get("alive"):
+                    sent = self.send_input(session_id, command + "\n")
+                    return CommandResult(
+                        success=sent,
+                        raw_output="",
+                        structured_output=[],
+                        exit_code=0 if sent else 1,
+                        error_message=None if sent else "Interactive shell not available",
+                    )
+                # Brak interaktywnej sesji – jednorazowe uruchomienie
                 result = subprocess.run(
                     ssh_command,
                     capture_output=True,
@@ -323,205 +364,272 @@ class SshBackend(BackendInterface):
         env_vars: Optional[Dict[str, str]],
         fingerprint_callback: Callable,
     ) -> CommandResult:
-        """Execute SSH command with interactive fingerprint handling"""
-        try:
-            import queue
-            import threading
+        """Execute SSH command with interactive fingerprint handling using subprocess."""
+        import os
+        import queue
+        import re
 
-            import pexpect
+        # Aby uniknąć problemu z TTY, dodajemy flagę -T do komendy ssh.
+        # To zmusza ssh do używania stdin/stdout zamiast /dev/tty.
+        modified_ssh_command = ssh_command.copy()
+        if modified_ssh_command and modified_ssh_command[0] == "ssh":
+            # Wstaw -T zaraz po komendzie 'ssh'
+            modified_ssh_command.insert(1, "-T")
+            # Wymuś brak promptów po zaakceptowaniu klucza (po preflight) jeśli nie określono inaczej w ssh_options
+            has_shkc = any(
+                (isinstance(tok, str) and tok.startswith("StrictHostKeyChecking="))
+                or (
+                    tok == "StrictHostKeyChecking"
+                    and i + 1 < len(modified_ssh_command)
+                    and str(modified_ssh_command[i + 1]).startswith("StrictHostKeyChecking=")
+                )
+                or (
+                    tok == "-o"
+                    and i + 1 < len(modified_ssh_command)
+                    and str(modified_ssh_command[i + 1]).startswith("StrictHostKeyChecking=")
+                )
+                for i, tok in enumerate(modified_ssh_command)
+            )
+            if not has_shkc:
+                modified_ssh_command.extend(["-o", "StrictHostKeyChecking=yes"])
 
-            # Zbuduj komendę jako string
-            cmd_str = " ".join(ssh_command)
+        result_queue: queue.Queue[CommandResult] = queue.Queue()
 
-            if hasattr(self, "logger") and self.logger:
-                self.logger.info(f"Executing SSH with fingerprint handling: {cmd_str}")
+        def run_command():
+            try:
+                # Preflight: pobierz klucz hosta i policz fingerprint, pokaż dialog, zapisz do known_hosts po akceptacji
+                if hasattr(self, "logger") and self.logger:
+                    self.logger.info("Starting SSH with fingerprint handling (preflight mode).")
 
-            # Kolejka do komunikacji między wątkami
-            result_queue: queue.Queue = queue.Queue()
-
-            def ssh_worker():
-                try:
-                    # Uruchom SSH z pexpect w osobnym wątku
-                    child = pexpect.spawn(cmd_str, timeout=30)
-
-                    # Oczekuj na różne możliwe prompty
-                    index = child.expect(
-                        [
-                            pexpect.EOF,  # Połączenie udane
-                            "fingerprint is",  # Pytanie o fingerprint
-                            "continue connecting",  # Inny format pytania
-                            "password:",  # Pytanie o hasło
-                            pexpect.TIMEOUT,  # Timeout
-                        ]
+                host_target = None
+                for tok in modified_ssh_command:
+                    if "@" in tok and not tok.startswith("-") and " " not in tok:
+                        host_target = tok.split("@", 1)[1]
+                        break
+                if host_target is None and modified_ssh_command:
+                    host_target = (
+                        modified_ssh_command[-2] if len(modified_ssh_command) >= 2 else None
                     )
 
-                    if index == 1 or index == 2:  # Pytanie o fingerprint
-                        # Pobierz output przed pytaniem
-                        output = child.before.decode("utf-8", errors="ignore")
-
-                        if hasattr(self, "logger") and self.logger:
-                            self.logger.info(f"SSH fingerprint prompt detected: {output}")
-
-                        # Wyciągnij fingerprint i key type
-                        import re
-
-                        pattern = r"(\w+) key fingerprint is (SHA256:[A-Za-z0-9+/=]+)"
-                        match = re.search(pattern, output)
-
-                        if match:
-                            key_type = match.group(1)
-                            fingerprint = match.group(2)
-
-                            if hasattr(self, "logger") and self.logger:
-                                self.logger.info(f"Extracted: {key_type} - {fingerprint}")
-
-                            # Wywołaj callback z fingerprintem
-                            # Framework nie może zależeć od GUI - używamy agnostycznego rozwiązania
-                            try:
-                                result = fingerprint_callback(key_type, fingerprint)
-
-                                if result == "yes":
-                                    child.sendline("yes")
-                                    if hasattr(self, "logger") and self.logger:
-                                        self.logger.info("User accepted fingerprint")
-                                elif result == "no":
-                                    child.sendline("no")
-                                    child.close()
-                                    result_queue.put(
-                                        CommandResult(
-                                            success=False,
-                                            raw_output="",
-                                            structured_output=[],
-                                            exit_code=1,
-                                            error_message="Fingerprint rejected by user",
-                                        )
-                                    )
-                                    return
-                                else:
-                                    child.close()
-                                    result_queue.put(
-                                        CommandResult(
-                                            success=False,
-                                            raw_output="",
-                                            structured_output=[],
-                                            exit_code=1,
-                                            error_message="Fingerprint handling cancelled",
-                                        )
-                                    )
-                                    return
-                            except Exception as e:
-                                if hasattr(self, "logger") and self.logger:
-                                    self.logger.error(f"Error in fingerprint callback: {e}")
-                                child.close()
-                                result_queue.put(
-                                    CommandResult(
-                                        success=False,
-                                        raw_output="",
-                                        structured_output=[],
-                                        exit_code=1,
-                                        error_message=f"Fingerprint callback error: {str(e)}",
-                                    )
-                                )
-                                return
-
-                        # Kontynuuj połączenie
-                        try:
-                            child.expect([pexpect.EOF, "password:", pexpect.TIMEOUT], timeout=30)
-                        except pexpect.TIMEOUT:
-                            child.close()
-                            result_queue.put(
-                                CommandResult(
-                                    success=False,
-                                    raw_output="",
-                                    structured_output=[],
-                                    exit_code=1,
-                                    error_message="SSH connection timeout after fingerprint",
-                                )
-                            )
-                            return
-
-                    elif index == 3:  # Pytanie o hasło
-                        if hasattr(self, "logger") and self.logger:
-                            self.logger.info("SSH password prompt detected")
-                        # Obsługa hasła (jeśli potrzebna)
-                        pass
-
-                    # Czekaj na zakończenie
+                # Ustal port z opcji, domyślnie 22
+                port_value = 22
+                if "-p" in modified_ssh_command:
                     try:
-                        child.expect(pexpect.EOF, timeout=30)
-                    except pexpect.TIMEOUT:
-                        child.close()
+                        pidx = modified_ssh_command.index("-p")
+                        port_value = int(modified_ssh_command[pidx + 1])
+                    except Exception:
+                        port_value = 22
+
+                # Uruchom ssh-keyscan
+                try:
+                    keyscan_cmd = [
+                        "ssh-keyscan",
+                        "-p",
+                        str(port_value),
+                        "-T",
+                        "5",
+                        host_target,
+                    ]
+                    ks = subprocess.run(keyscan_cmd, capture_output=True, text=True, timeout=10)
+                    if ks.returncode != 0 or not ks.stdout:
+                        raise RuntimeError(ks.stderr or "ssh-keyscan failed or returned no data")
+                    # Pierwsza niekomentarzowa linia
+                    key_line = None
+                    for ln in ks.stdout.splitlines():
+                        if ln and not ln.startswith("#"):
+                            key_line = ln.strip()
+                            break
+                    if not key_line:
+                        raise RuntimeError("No host key found by ssh-keyscan")
+                    # Format: host keytype base64
+                    parts = key_line.split()
+                    if len(parts) < 3:
+                        raise RuntimeError(f"Unexpected keyscan line: {key_line}")
+                    key_type = parts[1]
+                    key_b64 = parts[2]
+
+                    # Policz fingerprint: ssh-keygen -lf - (stdin: "host keytype base64")
+                    to_hash = f"{host_target} {key_type} {key_b64}\n"
+                    sk = subprocess.run(
+                        ["ssh-keygen", "-lf", "-"],
+                        input=to_hash,
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                    if sk.returncode != 0 or not sk.stdout:
+                        raise RuntimeError(sk.stderr or "ssh-keygen failed to compute fingerprint")
+                    # Przykład: "256 SHA256:abcdef... host (ED25519)"
+                    mfp = re.search(r"SHA256:[A-Za-z0-9+/=]+", sk.stdout)
+                    if not mfp:
+                        raise RuntimeError(f"Could not parse fingerprint from: {sk.stdout}")
+                    fingerprint_str = mfp.group(0)
+
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.info(
+                            f"Preflight fingerprint detected: {fingerprint_str} ({key_type})"
+                        )
+
+                    # Callback do GUI
+                    decision = fingerprint_callback(fingerprint_str)
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.info(f"Preflight callback decision: {decision}")
+                    if decision != "yes":
                         result_queue.put(
                             CommandResult(
                                 success=False,
                                 raw_output="",
                                 structured_output=[],
                                 exit_code=1,
-                                error_message="SSH command execution timeout",
+                                error_message="Fingerprint rejected by user (preflight).",
                             )
                         )
                         return
 
-                    # Pobierz output
-                    output = child.read().decode("utf-8", errors="ignore")
-                    exit_code = child.exitstatus if hasattr(child, "exitstatus") else 0
-
-                    child.close()
-
-                    if hasattr(self, "logger") and self.logger:
-                        self.logger.info(f"SSH command completed with exit code: {exit_code}")
-
-                    result_queue.put(
-                        CommandResult(
-                            success=exit_code == 0,
-                            raw_output=output,
-                            structured_output=output.split("\n") if output else [],
-                            exit_code=exit_code,
-                            error_message=None,
+                    # Zapisz do known_hosts
+                    # Szanuj UserKnownHostsFile jeśli przekazano w ssh_options
+                    kh_override = None
+                    try:
+                        kh_override = (
+                            self.ssh_options.get("UserKnownHostsFile")
+                            if isinstance(self.ssh_options, dict)
+                            else None
                         )
+                    except Exception:
+                        kh_override = None
+                    known_hosts = (
+                        os.path.expanduser(kh_override)
+                        if kh_override
+                        else os.path.expanduser("~/.ssh/known_hosts")
                     )
-
+                    os.makedirs(os.path.dirname(known_hosts), exist_ok=True)
+                    host_entry = (
+                        f"[{host_target}]:{port_value}" if port_value != 22 else host_target
+                    )
+                    with open(known_hosts, "a", encoding="utf-8") as fh:
+                        fh.write(f"{host_entry} {key_type} {key_b64}\n")
+                    try:
+                        os.chmod(known_hosts, 0o600)
+                    except Exception:
+                        pass
+                    if hasattr(self, "logger") and self.logger:
+                        self.logger.info(f"Host key saved to known_hosts for {host_entry}")
                 except Exception as e:
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.error(f"SSH worker error: {str(e)}")
+                        self.logger.error(f"Preflight host key handling failed: {e}")
                     result_queue.put(
                         CommandResult(
                             success=False,
                             raw_output="",
                             structured_output=[],
                             exit_code=1,
-                            error_message=f"SSH worker error: {str(e)}",
+                            error_message=f"Preflight failed: {e}",
                         )
                     )
+                    return
 
-            # Uruchom SSH w osobnym wątku
-            ssh_thread = threading.Thread(target=ssh_worker, daemon=True)
-            ssh_thread.start()
-
-            # Czekaj na wynik z timeoutem
-            try:
-                result = result_queue.get(timeout=60)  # 60 sekund timeout
-                return result
-            except queue.Empty:
+                # Wykonaj właściwe SSH (bez interakcji)
                 if hasattr(self, "logger") and self.logger:
-                    self.logger.error("SSH execution timeout")
-                return CommandResult(
-                    success=False,
-                    raw_output="",
-                    structured_output=[],
-                    exit_code=1,
-                    error_message="SSH execution timeout",
+                    self.logger.info(
+                        f"Starting SSH with fingerprint handling. Command: {' '.join(modified_ssh_command)}"
+                    )
+                run_env = dict(os.environ)
+                if env_vars:
+                    run_env.update(env_vars)
+
+                # Jeśli mamy hasło, użyj SSH_ASKPASS (bez TTY)
+                cleanup_script = None
+                try:
+                    if getattr(self, "password", None):
+                        # Preferuj uwierzytelnianie hasłem
+                        modified_ssh_command.extend(
+                            [
+                                "-o",
+                                "PreferredAuthentications=password,keyboard-interactive",
+                                "-o",
+                                "PubkeyAuthentication=no",
+                            ]
+                        )
+                        import stat
+                        import tempfile
+
+                        fd, script_path = tempfile.mkstemp(prefix="mancer_askpass_", text=True)
+                        os.close(fd)
+                        with open(script_path, "w", encoding="utf-8") as sf:
+                            sf.write("#!/bin/sh\n")
+                            sf.write("echo '" + str(self.password).replace("'", "'\\''") + "'\n")
+                        os.chmod(script_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                        cleanup_script = script_path
+                        run_env["SSH_ASKPASS"] = script_path
+                        run_env["SSH_ASKPASS_REQUIRE"] = "force"
+                        # SSH wymaga DISPLAY ustawionego (nie musi być prawdziwy)
+                        run_env.setdefault("DISPLAY", ":9999")
+
+                    result = subprocess.run(
+                        modified_ssh_command,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.timeout or 30,
+                        cwd=working_dir,
+                        env=run_env,
+                        preexec_fn=os.setsid,
+                    )
+                finally:
+                    if cleanup_script:
+                        try:
+                            os.remove(cleanup_script)
+                        except Exception:
+                            pass
+                final_output = (result.stdout or "") + (
+                    "\n" + result.stderr if result.stderr else ""
+                )
+                result_queue.put(
+                    CommandResult(
+                        success=result.returncode == 0,
+                        raw_output=final_output,
+                        structured_output=[ln for ln in final_output.splitlines() if ln],
+                        exit_code=result.returncode,
+                        error_message=None if result.returncode == 0 else result.stderr,
+                    )
+                )
+            except subprocess.TimeoutExpired:
+                result_queue.put(
+                    CommandResult(
+                        success=False,
+                        raw_output="",
+                        structured_output=[],
+                        exit_code=-1,
+                        error_message="SSH command execution timed out.",
+                    )
+                )
+            except Exception as e:
+                if hasattr(self, "logger") and self.logger:
+                    self.logger.error(f"SSH worker thread error: {e}")
+                result_queue.put(
+                    CommandResult(
+                        success=False,
+                        raw_output="",
+                        structured_output=[],
+                        exit_code=-1,
+                        error_message=f"SSH execution failed: {e}",
+                    )
                 )
 
-        except Exception as e:
+        thread = threading.Thread(target=run_command, daemon=True)
+        thread.start()
+
+        try:
+            # Czekaj na wynik z kolejki z timeoutem
+            return result_queue.get(timeout=self.timeout or 60)
+        except queue.Empty:
             if hasattr(self, "logger") and self.logger:
-                self.logger.error(f"Fingerprint handling failed: {str(e)}")
+                self.logger.error("Timed out waiting for SSH command result.")
             return CommandResult(
                 success=False,
                 raw_output="",
                 structured_output=[],
-                exit_code=1,
-                error_message=f"Fingerprint handling failed: {str(e)}",
+                exit_code=-1,
+                error_message="Timeout waiting for SSH command to complete.",
             )
 
     def _build_proxy_options(self) -> List[str]:
@@ -808,3 +916,114 @@ class SshBackend(BackendInterface):
             else:
                 parts.append(f"--{name}={shlex.quote(str(value))}")
         return " ".join(parts)
+
+    def _build_ssh_base_command(self, session: SSHSession) -> List[str]:
+        cmd = ["ssh"]
+        if session.port != 22:
+            cmd.extend(["-p", str(session.port)])
+        if self.key_filename:
+            cmd.extend(["-i", self.key_filename])
+        if not self.look_for_keys:
+            cmd.extend(["-o", "IdentitiesOnly=yes"])
+        if self.allow_agent:
+            cmd.extend(["-o", "ForwardAgent=yes"])
+        if self.compress:
+            cmd.append("-C")
+        if self.timeout:
+            cmd.extend(["-o", f"ConnectTimeout={self.timeout}"])
+        if self.gssapi_auth:
+            cmd.extend(["-o", "GSSAPIAuthentication=yes"])
+        if self.proxy_config:
+            cmd.extend(self._build_proxy_options())
+        for key, value in self.ssh_options.items():
+            cmd.extend(["-o", f"{key}={value}"])
+        if session.username:
+            cmd.append(f"{session.username}@{session.hostname}")
+        else:
+            cmd.append(session.hostname)
+        return cmd
+
+    def _start_interactive_shell(self, session: SSHSession) -> None:
+        """Startuje interaktywną sesję SSH z użyciem lokalnego PTY; domyślne zachowanie."""
+        if session.id in self.shells and self.shells[session.id].get("alive"):
+            return
+        import os as _os
+        import pty
+        import select
+
+        ssh_cmd = self._build_ssh_base_command(session)
+        # Wymuś przydzielenie PTY po stronie zdalnej
+        ssh_cmd.insert(1, "-tt")
+
+        if hasattr(self, "logger") and self.logger:
+            self.logger.info(f"Starting interactive SSH shell: {' '.join(ssh_cmd)}")
+
+        pid, fd = pty.fork()
+        if pid == 0:
+            # Child: exec ssh
+            try:
+                _os.execvp(ssh_cmd[0], ssh_cmd)
+            except Exception:
+                _os._exit(1)
+        else:
+            alive_flag = {"alive": True}
+
+            def reader_loop():
+                try:
+                    while alive_flag["alive"]:
+                        rlist, _, _ = select.select([fd], [], [], 0.2)
+                        if fd in rlist:
+                            try:
+                                data = _os.read(fd, 4096)
+                            except OSError:
+                                break
+                            if not data:
+                                break
+                            text = data.decode("utf-8", errors="ignore")
+                            if self.output_callback:
+                                try:
+                                    self.output_callback(session.id, text)
+                                except Exception:
+                                    pass
+                finally:
+                    alive_flag["alive"] = False
+                    try:
+                        _os.close(fd)
+                    except Exception:
+                        pass
+
+            t = threading.Thread(target=reader_loop, daemon=True)
+            t.start()
+            self.shells[session.id] = {
+                "fd": fd,
+                "pid": pid,
+                "reader": t,
+                "alive": True,
+                "alive_flag": alive_flag,
+            }
+
+    def send_input(self, session_id: str, data: str) -> bool:
+        """Wysyła dane do interaktywnej sesji SSH."""
+        import os as _os
+
+        shell = self.shells.get(session_id)
+        if not shell or not shell.get("alive"):
+            return False
+        try:
+            _os.write(shell["fd"], data.encode("utf-8"))
+            return True
+        except Exception:
+            return False
+
+    def close_interactive(self, session_id: str) -> None:
+        import os as _os
+
+        shell = self.shells.get(session_id)
+        if not shell:
+            return
+        shell.get("alive_flag", {}).update({"alive": False})
+        try:
+            _os.close(shell.get("fd"))
+        except Exception:
+            pass
+        self.shells.pop(session_id, None)
