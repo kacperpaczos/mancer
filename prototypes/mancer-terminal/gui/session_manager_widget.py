@@ -272,15 +272,15 @@ class SessionManagerWidget(QWidget):
             session_info = self.ssh_service.get_session_info(session_id)
             if session_info:
                 details_text = f"""
-ID Sesji: {session_info['id']}
-Host: {session_info['hostname']}
-Użytkownik: {session_info['username']}
-Port: {session_info['port']}
-Status: {session_info['status']}
-Utworzona: {session_info['created_at']}
-Ostatnia aktywność: {session_info['last_activity']}
+ID Sesji: {session_info["id"]}
+Host: {session_info["hostname"]}
+Użytkownik: {session_info["username"]}
+Port: {session_info["port"]}
+Status: {session_info["status"]}
+Utworzona: {session_info["created_at"]}
+Ostatnia aktywność: {session_info["last_activity"]}
 
-Aktywne transfery: {len(session_info['active_transfers'])}
+Aktywne transfery: {len(session_info["active_transfers"])}
 """
 
                 # Dodaj informacje o transferach

@@ -105,7 +105,9 @@ class SSHFingerprintDialog(QDialog):
         layout.addWidget(self.timer_label)
 
         # Checkbox do zapisania na stałe
-        self.save_checkbox = QCheckBox("Zapisz ten klucz na stałe (dodaj do known_hosts)")
+        self.save_checkbox = QCheckBox(
+            "Zapisz ten klucz na stałe (dodaj do known_hosts)"
+        )
         self.save_checkbox.setChecked(True)
         layout.addWidget(self.save_checkbox)
 
@@ -126,7 +128,9 @@ class SSHFingerprintDialog(QDialog):
         # Przycisk odrzuć
         self.reject_btn = QPushButton("Odrzuć połączenie")
         self.reject_btn.clicked.connect(self.reject_connection)
-        self.reject_btn.setStyleSheet("QPushButton { background-color: #f44336; color: white; }")
+        self.reject_btn.setStyleSheet(
+            "QPushButton { background-color: #f44336; color: white; }"
+        )
         button_layout.addWidget(self.reject_btn)
 
         button_layout.addStretch()
@@ -176,7 +180,9 @@ class SSHFingerprintDialog(QDialog):
         self._update_timer_label()
 
     def _update_timer_label(self):
-        self.timer_label.setText(f"Pozostały czas na podjęcie decyzji: {self._remaining}s")
+        self.timer_label.setText(
+            f"Pozostały czas na podjęcie decyzji: {self._remaining}s"
+        )
 
     def reject_connection(self):
         """Odrzuca połączenie"""
@@ -240,7 +246,9 @@ class SSHHostKeyManager:
         except Exception:
             return False
 
-    def add_host_key(self, hostname: str, port: int, key_type: str, key_data: str) -> bool:
+    def add_host_key(
+        self, hostname: str, port: int, key_type: str, key_data: str
+    ) -> bool:
         """Dodaje klucz hosta do known_hosts"""
         try:
             host_entry = f"[{hostname}]:{port}" if port != 22 else hostname
@@ -259,7 +267,9 @@ class SSHHostKeyManager:
             print(f"Błąd dodawania klucza hosta: {e}")
             return False
 
-    def extract_fingerprint_from_error(self, error_message: str) -> Optional[tuple[str, str]]:
+    def extract_fingerprint_from_error(
+        self, error_message: str
+    ) -> Optional[tuple[str, str]]:
         """Wyciąga fingerprint z komunikatu błędu SSH"""
         import re
 

@@ -2,12 +2,15 @@
 Główne okno aplikacji Mancer Terminal
 """
 
-from functools import partial
+import os
 import queue
 import threading
-import os
-import yaml
+import uuid
+from datetime import datetime
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+import yaml
 from PyQt6.QtCore import QSize, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QFont, QIcon, QKeySequence
 from PyQt6.QtWidgets import (
@@ -36,16 +39,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from .connection_dialog import ConnectionDialog
-from .file_transfer_widget import FileTransferWidget
-from .profile_manager_widget import ProfileManagerWidget
-from .session_manager_widget import SessionManagerWidget
-from .terminal_widget import TerminalWidget
-
-import uuid
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from .connection_dialog import ConnectionDialog
 from .file_transfer_widget import FileTransferWidget
@@ -161,7 +154,9 @@ class MancerTerminalWindow(QMainWindow):
 
         # Połącz sygnały
         self.session_manager.session_selected.connect(self.on_session_selected)
-        self.session_manager.new_session_requested.connect(self.on_new_session_requested)
+        self.session_manager.new_session_requested.connect(
+            self.on_new_session_requested
+        )
 
         return left_widget
 
@@ -454,7 +449,9 @@ class MancerTerminalWindow(QMainWindow):
             return
 
         # Pobierz ścieżkę zdalną
-        remote_path, ok = QInputDialog.getText(self, "Ścieżka zdalna", "Podaj ścieżkę zdalną:")
+        remote_path, ok = QInputDialog.getText(
+            self, "Ścieżka zdalna", "Podaj ścieżkę zdalną:"
+        )
         if not ok or not remote_path:
             return
 
@@ -469,7 +466,9 @@ class MancerTerminalWindow(QMainWindow):
             return
 
         # Pobierz ścieżkę zdalną
-        remote_path, ok = QInputDialog.getText(self, "Ścieżka zdalna", "Podaj ścieżkę zdalną:")
+        remote_path, ok = QInputDialog.getText(
+            self, "Ścieżka zdalna", "Podaj ścieżkę zdalną:"
+        )
         if not ok or not remote_path:
             return
 
@@ -484,7 +483,9 @@ class MancerTerminalWindow(QMainWindow):
     def on_profile_selected(self, profile):
         """Obsługuje wybór profilu SSH"""
         if self.logger:
-            self.logger.info(f"Wybrano profil: {profile.name} ({profile.hostname}:{profile.port})")
+            self.logger.info(
+                f"Wybrano profil: {profile.name} ({profile.hostname}:{profile.port})"
+            )
 
         # Otwórz dialog połączenia z wypełnionymi danymi z profilu
         dialog = ConnectionDialog(self)
@@ -510,11 +511,14 @@ class MancerTerminalWindow(QMainWindow):
                     "ssh_options": profile.ssh_options,
                 }
             )
-            
+
             # Usuń fingerprint_callback z connection_data żeby nie trafiło do SshBackend
             if "fingerprint_callback" in connection_data:
                 del connection_data["fingerprint_callback"]
-            if "ssh_options" in connection_data and "fingerprint_callback" in connection_data["ssh_options"]:
+            if (
+                "ssh_options" in connection_data
+                and "fingerprint_callback" in connection_data["ssh_options"]
+            ):
                 del connection_data["ssh_options"]["fingerprint_callback"]
 
             # Stwórz sesję
@@ -531,9 +535,9 @@ class MancerTerminalWindow(QMainWindow):
                 self.logger.info(f"Creating SSH session for {hostname}:{port}")
 
             # Pobierz ustawienia z pliku konfiguracyjnego
-            sessions_cfg = (self.gui_config.get("sessions") or {})
-            security_cfg = (self.gui_config.get("security") or {})
-            proxy_cfg = (self.gui_config.get("proxy") or {})
+            sessions_cfg = self.gui_config.get("sessions") or {}
+            security_cfg = self.gui_config.get("security") or {}
+            proxy_cfg = self.gui_config.get("proxy") or {}
 
             # Timeout backendu
             connect_timeout = sessions_cfg.get("default_timeout", 30)
@@ -557,9 +561,7 @@ class MancerTerminalWindow(QMainWindow):
 
             # Przygotuj callback z częściowymi argumentami
             fingerprint_handler = partial(
-                self.handle_ssh_fingerprint,
-                hostname=hostname,
-                port=port
+                self.handle_ssh_fingerprint, hostname=hostname, port=port
             )
 
             # Uruchom tworzenie sesji w wątku roboczym, aby nie blokować GUI
@@ -576,7 +578,9 @@ class MancerTerminalWindow(QMainWindow):
                     if session_id:
                         self.session_created.emit(session_id)
                     else:
-                        self.session_creation_failed.emit("Nie udało się utworzyć sesji SSH")
+                        self.session_creation_failed.emit(
+                            "Nie udało się utworzyć sesji SSH"
+                        )
                 except Exception as e:
                     self.session_creation_failed.emit(str(e))
 
@@ -598,7 +602,9 @@ class MancerTerminalWindow(QMainWindow):
             if self.logger:
                 self.logger.info(f"Sesja SSH utworzona pomyślnie: {session_id}")
         except Exception as e:
-            QMessageBox.critical(self, "Błąd", f"Nie udało się dokończyć konfiguracji sesji: {e}")
+            QMessageBox.critical(
+                self, "Błąd", f"Nie udało się dokończyć konfiguracji sesji: {e}"
+            )
 
     def _on_session_creation_failed(self, message: str):
         """Slot: błąd tworzenia sesji"""
@@ -620,7 +626,9 @@ class MancerTerminalWindow(QMainWindow):
         """Handle SSH fingerprint prompt - show dialog and return user decision"""
         try:
             if self.logger:
-                self.logger.info(f"SSH fingerprint prompt for {hostname}:{port} - {fingerprint}")
+                self.logger.info(
+                    f"SSH fingerprint prompt for {hostname}:{port} - {fingerprint}"
+                )
 
             # Użyj kolejki do uzyskania wyniku z głównego wątku
             response_queue: "queue.Queue[str]" = queue.Queue()
@@ -633,7 +641,9 @@ class MancerTerminalWindow(QMainWindow):
             )
 
             # Wyemituj sygnał do głównego wątku z danymi i kolejką na wynik
-            self.fingerprint_request.emit(hostname, port, fingerprint, int(fingerprint_timeout), response_queue)
+            self.fingerprint_request.emit(
+                hostname, port, fingerprint, int(fingerprint_timeout), response_queue
+            )
 
             # Zaczekaj synchronicznie na decyzję użytkownika (wątek roboczy)
             decision = response_queue.get()
@@ -644,7 +654,14 @@ class MancerTerminalWindow(QMainWindow):
                 self.logger.error(f"Error handling SSH fingerprint: {e}")
             return "no"  # Default to reject on error
 
-    def _on_fingerprint_request(self, hostname: str, port: int, fingerprint: str, timeout_seconds: int, response_queue: object):
+    def _on_fingerprint_request(
+        self,
+        hostname: str,
+        port: int,
+        fingerprint: str,
+        timeout_seconds: int,
+        response_queue: object,
+    ):
         """Slot wykonywany w głównym wątku - pokazuje dialog i odkłada decyzję do kolejki"""
         try:
             from .ssh_fingerprint_dialog import SSHFingerprintDialog
@@ -655,7 +672,7 @@ class MancerTerminalWindow(QMainWindow):
                 fingerprint=fingerprint,
                 key_type="unknown",
                 timeout_seconds=timeout_seconds,
-                parent=self
+                parent=self,
             )
 
             if dialog.exec() == dialog.DialogCode.Accepted:
@@ -682,10 +699,13 @@ class MancerTerminalWindow(QMainWindow):
             except Exception:
                 pass
 
-    def _on_password_request(self, hostname: str, username: str, response_queue: object):
+    def _on_password_request(
+        self, hostname: str, username: str, response_queue: object
+    ):
         """Slot w głównym wątku: pokazuje okno hasła i odkłada wynik do kolejki"""
         try:
             from .password_dialog import PasswordDialog
+
             dialog = PasswordDialog(hostname, username, self)
             if dialog.exec() == dialog.DialogCode.Accepted:
                 password = dialog.get_password()
@@ -737,7 +757,9 @@ class MancerTerminalWindow(QMainWindow):
             if dialog.exec() == dialog.DialogCode.Accepted:
                 if self.logger:
                     self.logger.info("Klucz główny został zweryfikowany")
-                QMessageBox.information(self, "Sukces", "Klucz główny został zweryfikowany")
+                QMessageBox.information(
+                    self, "Sukces", "Klucz główny został zweryfikowany"
+                )
 
         except Exception as e:
             error_msg = f"Błąd weryfikacji klucza głównego: {e}"

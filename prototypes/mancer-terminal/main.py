@@ -4,8 +4,8 @@ Mancer Terminal - Główny plik uruchamiający
 Terminal-based interface dla frameworka Mancer
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Dodaj ścieżkę do src/mancer
@@ -14,7 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 try:
     from cli.main import MancerCLI, main
 except ImportError:
-    print("Błąd importu modułów CLI. Upewnij się, że wszystkie zależności są zainstalowane.")
+    print(
+        "Błąd importu modułów CLI. Upewnij się, że wszystkie zależności są zainstalowane."
+    )
     sys.exit(1)
 
 
@@ -29,7 +31,7 @@ def run_terminal():
             # Tryb interaktywny
             cli = MancerCLI()
             cli.run()
-            
+
     except KeyboardInterrupt:
         print("\n[yellow]Zamykanie Mancer Terminal...[/yellow]")
     except Exception as e:
