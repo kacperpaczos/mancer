@@ -142,7 +142,9 @@ class IcecreamBackend(LogBackendInterface):
         except Exception:
             return str(context)
 
-    def log(self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None) -> None:
+    def log(
+        self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Loguje wiadomość z określonym poziomem.
 
@@ -224,7 +226,7 @@ class IcecreamBackend(LogBackendInterface):
         # Przygotuj graficzną reprezentację łańcucha
         chain_steps = []
         for i, step in enumerate(chain_description):
-            step_name = step.get("name", f"Step {i+1}")
+            step_name = step.get("name", f"Step {i + 1}")
             step_type = step.get("type", "Unknown")
             connection = step.get("connection", "then")
 

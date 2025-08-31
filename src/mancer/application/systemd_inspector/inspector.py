@@ -22,7 +22,9 @@ class SystemdInspector:
         Args:
             config_dir: Ścieżka katalogu do przechowywania profili połączeń i konfiguracji
         """
-        self.config_dir = Path(config_dir) if config_dir else Path.home() / ".systemd_inspector"
+        self.config_dir = (
+            Path(config_dir) if config_dir else Path.home() / ".systemd_inspector"
+        )
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.profile_path = self.config_dir / "connection_profiles.json"
 
@@ -87,12 +89,16 @@ class SystemdInspector:
         """
         try:
             # Tworzymy unikalną nazwę pliku tymczasowego
-            temp_filename = f"systemd_units_temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            temp_filename = (
+                f"systemd_units_temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            )
             remote_temp_file = f"/tmp/{temp_filename}"
             local_temp_file = self.config_dir / temp_filename
 
             # Polecenie do pobrania wszystkich jednostek i zapisania do pliku
-            systemctl_cmd = f"systemctl list-units --all --no-pager > {remote_temp_file}"
+            systemctl_cmd = (
+                f"systemctl list-units --all --no-pager > {remote_temp_file}"
+            )
 
             # Wykonaj polecenie na zdalnym serwerze
             if password:
@@ -107,15 +113,15 @@ class SystemdInspector:
             if password:
                 scp_cmd = f"sshpass -p '{password}' scp {username}@{hostname}:{remote_temp_file} {local_temp_file}"
             else:
-                scp_cmd = f"scp {username}@{hostname}:{remote_temp_file} {local_temp_file}"
+                scp_cmd = (
+                    f"scp {username}@{hostname}:{remote_temp_file} {local_temp_file}"
+                )
 
             subprocess.run(scp_cmd, shell=True, check=True)
 
             # Usuń plik tymczasowy na zdalnym serwerze
             if password:
-                cleanup_cmd = (
-                    f"sshpass -p '{password}' ssh {username}@{hostname} 'rm {remote_temp_file}'"
-                )
+                cleanup_cmd = f"sshpass -p '{password}' ssh {username}@{hostname} 'rm {remote_temp_file}'"
             else:
                 cleanup_cmd = f"ssh {username}@{hostname} 'rm {remote_temp_file}'"
 
@@ -173,7 +179,12 @@ class SystemdInspector:
 
         for line in lines:
             # Pomijamy puste linie i nagłówki
-            if not line.strip() or "UNIT" in line and "LOAD" in line and "ACTIVE" in line:
+            if (
+                not line.strip()
+                or "UNIT" in line
+                and "LOAD" in line
+                and "ACTIVE" in line
+            ):
                 continue
 
             # Sprawdzamy czy linia zawiera informacje o jednostce
@@ -190,7 +201,11 @@ class SystemdInspector:
 
                 # Pobierz stan (active, inactive, failed)
                 status = next(
-                    (part for part in parts if part.lower() in ["active", "inactive", "failed"]),
+                    (
+                        part
+                        for part in parts
+                        if part.lower() in ["active", "inactive", "failed"]
+                    ),
                     "other",
                 )
 
@@ -327,7 +342,9 @@ class SystemdInspector:
             if profile_name and profile_name in profiles:
                 profile = profiles[profile_name]
                 password = (
-                    self.decrypt_password(profile["password"]) if profile["password"] else None
+                    self.decrypt_password(profile["password"])
+                    if profile["password"]
+                    else None
                 )
                 return profile["hostname"], profile["username"], password
 
@@ -336,7 +353,9 @@ class SystemdInspector:
                 first_profile_name = next(iter(profiles))
                 profile = profiles[first_profile_name]
                 password = (
-                    self.decrypt_password(profile["password"]) if profile["password"] else None
+                    self.decrypt_password(profile["password"])
+                    if profile["password"]
+                    else None
                 )
                 return profile["hostname"], profile["username"], password
 
