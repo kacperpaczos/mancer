@@ -13,7 +13,9 @@ class CommandCache:
     Umożliwia wizualizację stanu i informacji zebranych podczas wykonywania komend.
     """
 
-    def __init__(self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5):
+    def __init__(
+        self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5
+    ):
         """
         Inicjalizuje cache komend.
 
@@ -23,7 +25,9 @@ class CommandCache:
             refresh_interval: Interwał odświeżania w sekundach (jeśli auto_refresh=True)
         """
         self._cache: Dict[str, Tuple[CommandResult, datetime, Dict[str, Any]]] = {}
-        self._history: List[Tuple[str, datetime, bool]] = []  # (command_id, timestamp, success)
+        self._history: List[
+            Tuple[str, datetime, bool]
+        ] = []  # (command_id, timestamp, success)
         self._max_size = max_size
         self._auto_refresh = auto_refresh
         self._refresh_interval = refresh_interval
@@ -200,7 +204,8 @@ class CommandCache:
         with self._lock:
             export = {
                 "history": [
-                    (cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history
+                    (cmd_id, ts.isoformat(), success)
+                    for cmd_id, ts, success in self._history
                 ],
                 "statistics": self.get_statistics(),
             }

@@ -58,7 +58,9 @@ class CustomCommand(BaseCommand):
 
         # Check if output is JSON
         try:
-            if (raw_output.strip().startswith("[") and raw_output.strip().endswith("]")) or (
+            if (
+                raw_output.strip().startswith("[") and raw_output.strip().endswith("]")
+            ) or (
                 raw_output.strip().startswith("{") and raw_output.strip().endswith("}")
             ):
                 json_data = json.loads(raw_output)

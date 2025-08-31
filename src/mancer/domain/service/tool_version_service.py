@@ -76,7 +76,9 @@ class ToolVersionService:
 
             # Jeśli nadal błąd, zwróć None
             if result.returncode != 0:
-                logger.warning(f"Nie udało się uzyskać informacji o wersji dla {tool_name}")
+                logger.warning(
+                    f"Nie udało się uzyskać informacji o wersji dla {tool_name}"
+                )
                 return None
 
             # Parsuj wyjście komendy
@@ -89,7 +91,9 @@ class ToolVersionService:
             return tool_version
 
         except subprocess.TimeoutExpired:
-            logger.error(f"Przekroczono limit czasu podczas wykrywania wersji {tool_name}")
+            logger.error(
+                f"Przekroczono limit czasu podczas wykrywania wersji {tool_name}"
+            )
             return None
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania wersji {tool_name}: {str(e)}")

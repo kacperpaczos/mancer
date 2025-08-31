@@ -17,7 +17,9 @@ class LoggableCommandMixin:
         """Pobiera instancję MancerLogger."""
         return MancerLogger.get_instance()
 
-    def _log_command_start(self, command_string: str, context: CommandContext) -> Dict[str, Any]:
+    def _log_command_start(
+        self, command_string: str, context: CommandContext
+    ) -> Dict[str, Any]:
         """
         Loguje rozpoczęcie wykonania komendy.
 
@@ -61,7 +63,9 @@ class LoggableCommandMixin:
             context_params=context_params,
         )
 
-    def _log_command_end(self, command_info: Dict[str, Any], result: CommandResult) -> None:
+    def _log_command_end(
+        self, command_info: Dict[str, Any], result: CommandResult
+    ) -> None:
         """
         Loguje zakończenie wykonania komendy.
 
@@ -101,7 +105,9 @@ class LoggableCommandMixin:
             Wynik wykonania komendy
         """
         # Budujemy komendę, aby zalogować
-        command_string = self.build_command() if hasattr(self, "build_command") else str(self)
+        command_string = (
+            self.build_command() if hasattr(self, "build_command") else str(self)
+        )
 
         # Logujemy rozpoczęcie
         command_info = self._log_command_start(command_string, context)

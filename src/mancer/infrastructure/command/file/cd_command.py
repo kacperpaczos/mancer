@@ -20,7 +20,11 @@ class CdCommand(BaseCommand):
         target_path = None
 
         # Jeśli otrzymaliśmy wynik z poprzedniej komendy
-        if input_result and input_result.is_success() and "directory" not in self.parameters:
+        if (
+            input_result
+            and input_result.is_success()
+            and "directory" not in self.parameters
+        ):
             # Próbujemy znaleźć katalog w structured_output
             if input_result.structured_output:
                 if (
@@ -39,7 +43,9 @@ class CdCommand(BaseCommand):
 
         # Budujemy pełną ścieżkę względem bieżącego katalogu
         if not os.path.isabs(target_path):
-            full_path = os.path.normpath(os.path.join(context.current_directory, target_path))
+            full_path = os.path.normpath(
+                os.path.join(context.current_directory, target_path)
+            )
         else:
             full_path = target_path
 

@@ -1,0 +1,27 @@
+# Core dependencies
+PyQt6>=6.4.0
+PyQt6-Qt6>=6.4.0
+PyQt6-sip>=13.4.0
+
+# SSH and networking
+paramiko>=3.0.0
+asyncssh>=2.12.0
+cryptography>=3.4.8
+
+# Terminal emulation
+pyte>=0.8.0
+blessed>=1.20.0
+
+# Configuration and utilities
+pyyaml>=6.0
+configparser>=5.3.0
+loguru>=0.6.0
+python-dotenv>=0.19.0
+pathlib2>=2.3.7
+
+# Development dependencies (optional)
+pytest>=7.4.0
+pytest-qt>=4.2.0
+black>=23.11.0
+isort>=5.12.0
+mypy>=1.5.0

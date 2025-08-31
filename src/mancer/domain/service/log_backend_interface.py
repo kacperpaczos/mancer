@@ -30,7 +30,9 @@ class LogBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def log(self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None) -> None:
+    def log(
+        self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Loguje wiadomość z określonym poziomem.
 

@@ -98,7 +98,10 @@ class ToolVersionRegistry:
             True, jeśli wersja jest dozwolona, False w przeciwnym razie
         """
         # Jeśli narzędzie nie ma zarejestrowanych wersji, uznajemy każdą wersję za dozwoloną
-        if tool_name not in self.allowed_versions or not self.allowed_versions[tool_name]:
+        if (
+            tool_name not in self.allowed_versions
+            or not self.allowed_versions[tool_name]
+        ):
             return True
 
         return version in self.allowed_versions[tool_name]

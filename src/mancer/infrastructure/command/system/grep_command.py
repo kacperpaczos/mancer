@@ -67,6 +67,8 @@ class GrepCommand(BaseCommand):
                 continue
 
             # Basic parsing - each line is a match
-            results.append({"line": line, "text": line})  # For compatibility with other commands
+            results.append(
+                {"line": line, "text": line}
+            )  # For compatibility with other commands
 
         return results

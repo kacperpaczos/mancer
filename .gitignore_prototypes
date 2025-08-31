@@ -1,0 +1,79 @@
+# .gitignore dla gałęzi prototypes
+# Pliki tymczasowe i generowane przez prototypy
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
+
+# MyPy cache
+.mypy_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Prototype-specific
+prototypes/*/__pycache__/
+prototypes/*/.pytest_cache/
+prototypes/*/coverage/
+prototypes/*/.coverage
+prototypes/*/htmlcov/
+prototypes/*/coverage.xml
+
+# Keep important prototype files
+!prototypes/*/README.md
+!prototypes/*/main.py
+!prototypes/*/requirements.txt
+!prototypes/*/pyproject.toml
+!prototypes/*/config/
+!prototypes/*/tests/
+!prototypes/*/docs/
