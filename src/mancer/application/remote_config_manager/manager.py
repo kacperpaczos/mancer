@@ -44,9 +44,7 @@ class SSHManager:
         try:
             # Najpierw sprawdź ping
             ping_cmd = ["ping", "-c", "1", "-W", "2", self.config.host]
-            ping_result = subprocess.run(
-                ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+            ping_result = subprocess.run(ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             if ping_result.returncode != 0:
                 return False, f"Adres IP {self.config.host} jest nieosiągalny"
@@ -66,9 +64,7 @@ class SSHManager:
             if "authentication failed" in error_msg:
                 detail = "Błędna nazwa użytkownika lub hasło"
             elif "connection refused" in error_msg:
-                detail = (
-                    "Port SSH (22) jest zablokowany lub usługa SSH nie jest uruchomiona"
-                )
+                detail = "Port SSH (22) jest zablokowany lub usługa SSH nie jest uruchomiona"
             elif "timed out" in error_msg:
                 detail = "Przekroczono limit czasu połączenia"
             else:
@@ -103,11 +99,7 @@ class SSHManager:
             files = stdout.read().decode().splitlines()
 
             # Filtruj pliki według rozszerzeń
-            return [
-                f
-                for f in files
-                if f.endswith((".json", ".config")) or f.endswith("config.js")
-            ]
+            return [f for f in files if f.endswith((".json", ".config")) or f.endswith("config.js")]
 
         except Exception:
             return []
@@ -160,7 +152,9 @@ class SSHManager:
             sftp.close()
 
             # Użyj sudo do przeniesienia pliku
-            sudo_command = f"echo '{self.config.sudo_password}' | sudo -S mv {temp_path} {remote_path}"
+            sudo_command = (
+                f"echo '{self.config.sudo_password}' | sudo -S mv {temp_path} {remote_path}"
+            )
 
             # Wykonaj komendę sudo
             stdin, stdout, stderr = self.ssh.exec_command(sudo_command)
@@ -171,9 +165,7 @@ class SSHManager:
                 return False
 
             # Ustaw odpowiednie uprawnienia
-            chmod_command = (
-                f"echo '{self.config.sudo_password}' | sudo -S chmod 644 {remote_path}"
-            )
+            chmod_command = f"echo '{self.config.sudo_password}' | sudo -S chmod 644 {remote_path}"
             self.ssh.exec_command(chmod_command)
 
             return True
@@ -195,7 +187,9 @@ class SSHManager:
             return False, "Brak połączenia SSH"
 
         try:
-            restart_cmd = f"echo '{self.config.sudo_password}' | sudo -S systemctl restart {service_name}"
+            restart_cmd = (
+                f"echo '{self.config.sudo_password}' | sudo -S systemctl restart {service_name}"
+            )
             stdin, stdout, stderr = self.ssh.exec_command(restart_cmd)
 
             # Sprawdź czy wystąpiły błędy
@@ -204,7 +198,9 @@ class SSHManager:
                 return False, error
 
             # Sprawdź status usługi
-            status_cmd = f"echo '{self.config.sudo_password}' | sudo -S systemctl is-active {service_name}"
+            status_cmd = (
+                f"echo '{self.config.sudo_password}' | sudo -S systemctl is-active {service_name}"
+            )
             stdin, stdout, stderr = self.ssh.exec_command(status_cmd)
             status = stdout.read().decode().strip()
 
@@ -230,9 +226,7 @@ class RemoteConfigManager:
             config_dir: Opcjonalna ścieżka do katalogu konfiguracyjnego
         """
         # Ustaw ścieżki katalogów
-        self.base_dir = (
-            Path(config_dir) if config_dir else Path.home() / ".remote_config_manager"
-        )
+        self.base_dir = Path(config_dir) if config_dir else Path.home() / ".remote_config_manager"
         self.profiles_dir = self.base_dir / "profiles"
         self.servers_dir = self.base_dir / "servers"
         self.cache_dir = self.base_dir / "cache"

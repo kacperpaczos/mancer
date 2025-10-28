@@ -84,27 +84,21 @@ class AptCommand(BaseCommand):
         """Instaluje pakiet"""
         return cast(
             AptCommand,
-            self.with_param("command", "install")
-            .with_param("package", package)
-            .with_option("y"),
+            self.with_param("command", "install").with_param("package", package).with_option("y"),
         )
 
     def remove(self, package: str) -> "AptCommand":
         """Usuwa pakiet"""
         return cast(
             AptCommand,
-            self.with_param("command", "remove")
-            .with_param("package", package)
-            .with_option("y"),
+            self.with_param("command", "remove").with_param("package", package).with_option("y"),
         )
 
     def purge(self, package: str) -> "AptCommand":
         """Usuwa pakiet wraz z plikami konfiguracyjnymi"""
         return cast(
             AptCommand,
-            self.with_param("command", "purge")
-            .with_param("package", package)
-            .with_option("y"),
+            self.with_param("command", "purge").with_param("package", package).with_option("y"),
         )
 
     def update(self) -> "AptCommand":
@@ -121,9 +115,7 @@ class AptCommand(BaseCommand):
 
     def search(self, query: str) -> "AptCommand":
         """Wyszukuje pakiety"""
-        return cast(
-            AptCommand, self.with_param("command", "search").with_param("query", query)
-        )
+        return cast(AptCommand, self.with_param("command", "search").with_param("query", query))
 
     def show(self, package: str) -> "AptCommand":
         """Pokazuje szczegółowe informacje o pakiecie"""
@@ -138,9 +130,7 @@ class AptCommand(BaseCommand):
 
     def autoremove(self) -> "AptCommand":
         """Usuwa nieużywane pakiety"""
-        return cast(
-            AptCommand, self.with_param("command", "autoremove").with_option("y")
-        )
+        return cast(AptCommand, self.with_param("command", "autoremove").with_option("y"))
 
     def is_installed(self, package: str) -> "AptCommand":
         """Sprawdza czy pakiet jest zainstalowany"""
@@ -298,9 +288,7 @@ class AptCommand(BaseCommand):
             AptCommand: Komenda aktualizująca apt jeśli potrzeba
         """
         # Pobierz komendę sprawdzającą potrzebę aktualizacji
-        needs_update_cmd = self.needsUpdate(max_age_seconds)._params.get(
-            "custom_cmd", ""
-        )
+        needs_update_cmd = self.needsUpdate(max_age_seconds)._params.get("custom_cmd", "")
 
         # Utwórz komendę aktualizującą
         cmd_template = """
@@ -347,16 +335,12 @@ class AptCommand(BaseCommand):
         )
         return cast(
             AptCommand,
-            self.with_param("command", "update-if-needed").with_param(
-                "custom_cmd", cmd
-            ),
+            self.with_param("command", "update-if-needed").with_param("custom_cmd", cmd),
         )
 
     def dist_upgrade(self) -> "AptCommand":
         """Aktualizuje dystrybucję"""
-        return cast(
-            AptCommand, self.with_param("command", "dist-upgrade").with_option("y")
-        )
+        return cast(AptCommand, self.with_param("command", "dist-upgrade").with_option("y"))
 
     def no_install_recommends(self) -> "AptCommand":
         """Nie instaluje pakietów rekomendowanych"""
@@ -383,9 +367,7 @@ class AptCommand(BaseCommand):
             self.with_param("command", "check-lock").with_param("custom_cmd", cmd),
         )
 
-    def wait_if_locked(
-        self, max_attempts: int = 60, sleep_time: int = 5
-    ) -> "AptCommand":
+    def wait_if_locked(self, max_attempts: int = 60, sleep_time: int = 5) -> "AptCommand":
         """
         Czeka, jeśli apt jest zablokowany przez inny proces.
 
@@ -488,15 +470,11 @@ class AptCommand(BaseCommand):
         fi
         """
 
-        cmd = cmd_template.format(
-            max_attempts=max_attempts, sleep_time=sleep_time, timeout=timeout
-        )
+        cmd = cmd_template.format(max_attempts=max_attempts, sleep_time=sleep_time, timeout=timeout)
 
         return cast(
             AptCommand,
-            self.with_param("command", "refresh-if-locked").with_param(
-                "custom_cmd", cmd
-            ),
+            self.with_param("command", "refresh-if-locked").with_param("custom_cmd", cmd),
         )
 
     def get_updates_count(self) -> "AptCommand":
@@ -577,26 +555,20 @@ class AptCommand(BaseCommand):
         """
         Pobiera listę zainstalowanych pakietów.
         """
-        return cast(
-            AptCommand, self.with_param("command", "list").with_option("installed")
-        )
+        return cast(AptCommand, self.with_param("command", "list").with_option("installed"))
 
     def list_upgradable_packages(self) -> "AptCommand":
         """
         Pobiera listę pakietów, które można zaktualizować.
         """
-        return cast(
-            AptCommand, self.with_param("command", "list").with_option("upgradable")
-        )
+        return cast(AptCommand, self.with_param("command", "list").with_option("upgradable"))
 
     def full_upgrade(self) -> "AptCommand":
         """
         Wykonuje pełną aktualizację systemu (update + upgrade + autoremove).
         To bardziej bezpieczna wersja dist-upgrade.
         """
-        return cast(
-            AptCommand, self.with_param("command", "full-upgrade").with_option("y")
-        )
+        return cast(AptCommand, self.with_param("command", "full-upgrade").with_option("y"))
 
     def download_only(self) -> "AptCommand":
         """
@@ -686,67 +658,40 @@ class AptCommand(BaseCommand):
                 return f"bash -c '{cmd}'"
 
             # Odświeżanie informacji o blokadzie
-            elif (
-                self._params["command"] == "refresh-if-locked"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "refresh-if-locked" and "custom_cmd" in self._params:
                 # Uruchamiamy skrypt w bashu
                 return f"bash -c '{self._params['custom_cmd']}'"
 
             # Pobieranie liczby aktualizacji
-            elif (
-                self._params["command"] == "updates-count"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "updates-count" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Pobieranie wersji pakietu
-            elif (
-                self._params["command"] == "package-version"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "package-version" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Sprawdzanie czy pakiet jest zainstalowany (boolean)
-            elif (
-                self._params["command"] == "is-installed-bool"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "is-installed-bool" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Pobieranie statusu repozytoriów
-            elif (
-                self._params["command"] == "repo-status"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "repo-status" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Pobieranie czasu ostatniej aktualizacji
-            elif (
-                self._params["command"] == "get-last-update"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "get-last-update" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Sprawdzanie czy potrzebna jest aktualizacja
-            elif (
-                self._params["command"] == "needs-update"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "needs-update" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Aktualizacja jeśli potrzebna
-            elif (
-                self._params["command"] == "update-if-needed"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "update-if-needed" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Pobieranie poleceń z pakietu
-            elif (
-                self._params["command"] == "get-commands"
-                and "custom_cmd" in self._params
-            ):
+            elif self._params["command"] == "get-commands" and "custom_cmd" in self._params:
                 return self._params["custom_cmd"]
 
             # Pełna aktualizacja
@@ -801,9 +746,7 @@ class AptCommand(BaseCommand):
                         fi
                     fi
                     """
-                    command += update_template.format(
-                        apt_state_file=self.APT_STATE_FILE
-                    )
+                    command += update_template.format(apt_state_file=self.APT_STATE_FILE)
 
             # Instalacja pakietu
             elif self._params["command"] == "install" and "package" in self._params:

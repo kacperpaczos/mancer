@@ -107,9 +107,7 @@ class StandardBackend(LogBackendInterface):
         }
         return mapping.get(level, logging.INFO)
 
-    def log(
-        self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def log(self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None) -> None:
         """
         Loguje wiadomość z określonym poziomem.
 

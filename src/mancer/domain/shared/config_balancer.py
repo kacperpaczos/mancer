@@ -57,12 +57,8 @@ class ConfigDiff:
         if not self.has_differences():
             return "Brak różnic"
 
-        source_display = (
-            f"{'remote:' if self.is_source_remote else 'local:'}{self.source_path}"
-        )
-        target_display = (
-            f"{'remote:' if self.is_target_remote else 'local:'}{self.target_path}"
-        )
+        source_display = f"{'remote:' if self.is_source_remote else 'local:'}{self.source_path}"
+        target_display = f"{'remote:' if self.is_target_remote else 'local:'}{self.target_path}"
 
         summary = f"Różnice pomiędzy {source_display} i {target_display}\n"
         summary += f"Timestamp: {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -75,9 +71,7 @@ class ConfigDiff:
             summary += f"{self.differences[i]}\n"
 
         if len(self.differences) > max_diff_to_show:
-            summary += (
-                f"... i {len(self.differences) - max_diff_to_show} więcej różnic\n"
-            )
+            summary += f"... i {len(self.differences) - max_diff_to_show} więcej różnic\n"
 
         return summary
 
@@ -218,9 +212,7 @@ class ConfigBalancer:
             storage_dir: Katalog do przechowywania szablonów i historii
         """
         if storage_dir is None:
-            self.storage_dir = os.path.join(
-                os.path.expanduser("~"), ".mancer", "configs"
-            )
+            self.storage_dir = os.path.join(os.path.expanduser("~"), ".mancer", "configs")
         else:
             self.storage_dir = storage_dir
 
@@ -266,9 +258,7 @@ class ConfigBalancer:
 
         # Pobierz zawartość plików
         try:
-            source_content = source_tracer._get_file_content(
-                source_path, is_source_remote
-            )
+            source_content = source_tracer._get_file_content(source_path, is_source_remote)
         except Exception as e:
             return ConfigDiff(
                 source_path=source_path,
@@ -279,9 +269,7 @@ class ConfigBalancer:
             )
 
         try:
-            target_content = target_tracer._get_file_content(
-                target_path, is_target_remote
-            )
+            target_content = target_tracer._get_file_content(target_path, is_target_remote)
         except Exception as e:
             return ConfigDiff(
                 source_path=source_path,
@@ -305,9 +293,7 @@ class ConfigBalancer:
         import difflib
 
         differ = difflib.Differ()
-        diff = list(
-            differ.compare(source_content.splitlines(), target_content.splitlines())
-        )
+        diff = list(differ.compare(source_content.splitlines(), target_content.splitlines()))
 
         return ConfigDiff(
             source_path=source_path,
@@ -359,17 +345,13 @@ class ConfigBalancer:
 
         # Pobierz zawartość pliku źródłowego
         try:
-            source_content = source_tracer._get_file_content(
-                source_path, is_source_remote
-            )
+            source_content = source_tracer._get_file_content(source_path, is_source_remote)
         except Exception as e:
             return False, f"Błąd odczytu źródła: {str(e)}"
 
         # Zapisz zawartość do pliku docelowego
         try:
-            success = target_tracer._set_file_content(
-                target_path, source_content, is_target_remote
-            )
+            success = target_tracer._set_file_content(target_path, source_content, is_target_remote)
             if not success:
                 return False, "Błąd zapisu do pliku docelowego"
         except Exception as e:
@@ -519,9 +501,7 @@ class ConfigBalancer:
         except Exception:
             return False
 
-    def _save_sync_history(
-        self, diff: ConfigDiff, backup_path: Optional[str] = None
-    ) -> bool:
+    def _save_sync_history(self, diff: ConfigDiff, backup_path: Optional[str] = None) -> bool:
         """
         Zapisuje historię synchronizacji.
 

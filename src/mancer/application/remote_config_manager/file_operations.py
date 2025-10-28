@@ -75,9 +75,7 @@ class FileManager:
         except Exception:
             return False
 
-    def get_file_info(
-        self, path: Path, base_dir: Optional[Path] = None
-    ) -> Optional[FileInfo]:
+    def get_file_info(self, path: Path, base_dir: Optional[Path] = None) -> Optional[FileInfo]:
         """
         Pobiera informacje o pliku.
 
@@ -116,9 +114,7 @@ class FileManager:
         except Exception:
             return None
 
-    def compare_files(
-        self, file1_path: Path, file2_path: Path
-    ) -> Tuple[bool, List[str]]:
+    def compare_files(self, file1_path: Path, file2_path: Path) -> Tuple[bool, List[str]]:
         """
         Porównuje zawartość dwóch plików.
 

@@ -34,9 +34,7 @@ class MancerFlaskError(Exception):
 class FlaskNotInstalledError(MancerFlaskError):
     """Exception raised when Flask is required but not installed"""
 
-    def __init__(
-        self, message="Flask is not installed. Install it using: pip install flask"
-    ):
+    def __init__(self, message="Flask is not installed. Install it using: pip install flask"):
         self.message = message
         super().__init__(self.message)
 
@@ -90,9 +88,7 @@ class MancerFlask:
             rules = []
             for rule in self.app.url_map.iter_rules():
                 if rule.endpoint != "static":
-                    methods = [
-                        m for m in rule.methods if m != "HEAD" and m != "OPTIONS"
-                    ]
+                    methods = [m for m in rule.methods if m != "HEAD" and m != "OPTIONS"]
                     rules.append(
                         {
                             "endpoint": rule.endpoint,
@@ -101,9 +97,7 @@ class MancerFlask:
                         }
                     )
 
-            return jsonify(
-                {"status": "success", "message": "Mancer Flask API", "endpoints": rules}
-            )
+            return jsonify({"status": "success", "message": "Mancer Flask API", "endpoints": rules})
 
     def add_route(
         self,
@@ -134,9 +128,7 @@ class MancerFlask:
                     # For example, checking the Authorization header
                     auth_header = request.headers.get("Authorization")
                     if not auth_header:
-                        return jsonify(
-                            {"status": "error", "error": "Authorization required"}
-                        ), 401
+                        return jsonify({"status": "error", "error": "Authorization required"}), 401
 
                 # Call the actual function
                 try:
@@ -163,9 +155,7 @@ class MancerFlask:
         """
         if background:
             if self.running:
-                logger.info(
-                    f"Server is already running on http://{self.host}:{self.port}"
-                )
+                logger.info(f"Server is already running on http://{self.host}:{self.port}")
                 return
 
             self.running = True
@@ -175,9 +165,7 @@ class MancerFlask:
 
             # Wait a moment to ensure the server has started
             time.sleep(1)
-            logger.info(
-                f"Flask server started in the background on http://{self.host}:{self.port}"
-            )
+            logger.info(f"Flask server started in the background on http://{self.host}:{self.port}")
         else:
             self._run_server()
 
@@ -200,9 +188,7 @@ class MancerFlask:
     def _run_server(self) -> None:
         """Internal method to run the server"""
         try:
-            self.app.run(
-                host=self.host, port=self.port, debug=self.debug, use_reloader=False
-            )
+            self.app.run(host=self.host, port=self.port, debug=self.debug, use_reloader=False)
         except Exception as e:
             logger.error(f"Error running Flask server: {str(e)}")
         finally:
@@ -236,9 +222,7 @@ def install_flask(prompt: bool = True) -> bool:
 
     try:
         if prompt:
-            user_input = input(
-                "Flask is not installed. Install it now? (y/n): "
-            ).lower()
+            user_input = input("Flask is not installed. Install it now? (y/n): ").lower()
             if user_input != "y":
                 return False
 

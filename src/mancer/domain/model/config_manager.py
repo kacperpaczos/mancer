@@ -105,9 +105,7 @@ class ConfigManager:
                     elif config_path.endswith(".json"):
                         versions_config = json.load(file)
                     else:
-                        logger.warning(
-                            f"Unsupported configuration file format: {config_path}"
-                        )
+                        logger.warning(f"Unsupported configuration file format: {config_path}")
                         return
 
                 self._config["tool_versions"] = versions_config
@@ -133,17 +131,13 @@ class ConfigManager:
                     elif config_path.endswith(".json"):
                         settings = json.load(file)
                     else:
-                        logger.warning(
-                            f"Unsupported configuration file format: {config_path}"
-                        )
+                        logger.warning(f"Unsupported configuration file format: {config_path}")
                         return
 
                 self._config["settings"] = settings
                 logger.info(f"Loaded settings from {config_path}")
             else:
-                logger.info(
-                    f"Settings file {config_path} does not exist, using default settings"
-                )
+                logger.info(f"Settings file {config_path} does not exist, using default settings")
 
         except Exception as e:
             logger.error(f"Error loading settings: {str(e)}")
@@ -194,9 +188,7 @@ class ConfigManager:
             logger.info(f"Created default tool versions configuration in {config_path}")
 
         except Exception as e:
-            logger.error(
-                f"Error creating default tool versions configuration: {str(e)}"
-            )
+            logger.error(f"Error creating default tool versions configuration: {str(e)}")
 
     def get_allowed_tool_versions(self, tool_name: str) -> List[str]:
         """
@@ -256,9 +248,7 @@ class ConfigManager:
 
             with open(config_path, "w") as file:
                 if config_path.endswith(".yaml") or config_path.endswith(".yml"):
-                    yaml.dump(
-                        self._config["tool_versions"], file, default_flow_style=False
-                    )
+                    yaml.dump(self._config["tool_versions"], file, default_flow_style=False)
                 elif config_path.endswith(".json"):
                     json.dump(self._config["tool_versions"], file, indent=2)
                 else:

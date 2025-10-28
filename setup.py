@@ -5,7 +5,7 @@ setup(
     version="0.1.5",
     package_dir={"": "src"},
     packages=find_namespace_packages(where="src"),
-    description="Multisystem Programmable Engine - A framework for programmable system automation with bash and PowerShell support",
+    description="Programmable automation engine - execute commands on any platform (Linux/Windows/macOS) locally or remotely through one Python interface",
     author="Kacper Paczos",
     author_email="kacperpaczos2024@proton.me",
     python_requires=">=3.8",

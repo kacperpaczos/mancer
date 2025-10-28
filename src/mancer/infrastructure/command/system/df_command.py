@@ -88,9 +88,7 @@ class DfCommand(BaseCommand):
             for i, header in enumerate(headers):
                 if i < len(parts):
                     # Clean up header names
-                    clean_header = (
-                        header.lower().replace("-", "_").replace("%", "percent")
-                    )
+                    clean_header = header.lower().replace("-", "_").replace("%", "percent")
 
                     # Try to convert numeric values
                     value = parts[i]
@@ -197,9 +195,7 @@ class DfCommand(BaseCommand):
             for i, header in enumerate(headers):
                 if i < len(parts):
                     # Clean up header names
-                    clean_header = (
-                        header.lower().replace("-", "_").replace("%", "percent")
-                    )
+                    clean_header = header.lower().replace("-", "_").replace("%", "percent")
 
                     # Try to convert numeric values
                     value = parts[i]
@@ -258,9 +254,7 @@ class DfCommand(BaseCommand):
                 and isinstance(entry["used"], (int, float))
             ):
                 # Calculate usage ratio (different format than use_percent)
-                entry["usage_ratio"] = (
-                    entry["used"] / entry["size"] if entry["size"] > 0 else 0
-                )
+                entry["usage_ratio"] = entry["used"] / entry["size"] if entry["size"] > 0 else 0
 
         return results
 

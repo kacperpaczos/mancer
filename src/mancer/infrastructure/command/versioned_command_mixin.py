@@ -49,9 +49,7 @@ class VersionedCommandMixin:
             ToolVersion object or None if version detection failed
         """
         if not self.tool_name:
-            logger.warning(
-                f"Command {self.__class__.__name__} does not have a defined tool name"
-            )
+            logger.warning(f"Command {self.__class__.__name__} does not have a defined tool name")
             return None
 
         version_service = self.get_version_service()
@@ -118,9 +116,7 @@ class VersionedCommandMixin:
         # Check for version-specific method
         version_method = self.get_version_specific_method(method_base_name, version)
         if version_method:
-            logger.debug(
-                f"Using version-specific method for {self.tool_name} v{version.version}"
-            )
+            logger.debug(f"Using version-specific method for {self.tool_name} v{version.version}")
             return version_method(*args, **kwargs)
 
         # Fallback to default method

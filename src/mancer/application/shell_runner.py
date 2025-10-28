@@ -123,9 +123,7 @@ class ShellRunner:
         # Initialize command logging subsystem
         if enable_command_logging:
             logger = MancerLogger.get_instance()
-            logger.initialize(
-                log_level=log_level, file_enabled=log_to_file, console_enabled=True
-            )
+            logger.initialize(log_level=log_level, file_enabled=log_to_file, console_enabled=True)
 
     def create_command(self, command_name: str) -> CommandInterface:
         """Creates a new command instance"""
@@ -175,20 +173,14 @@ class ShellRunner:
         # Set the live_output parameter in the context
         if use_live_output:
             context.set_parameter("live_output", True)
-            context.set_parameter(
-                "live_output_interval", 0.1
-            )  # Refresh every 0.1 seconds
+            context.set_parameter("live_output_interval", 0.1)  # Refresh every 0.1 seconds
 
         # Execute the command - use __call__ method which provides logging
         if isinstance(command, CommandChain):
             result = command.execute(context)
         else:
             # Use __call__ instead of direct execute to ensure logging
-            result = (
-                command(context)
-                if hasattr(command, "__call__")
-                else command.execute(context)
-            )
+            result = command(context) if hasattr(command, "__call__") else command.execute(context)
 
         # Store the result in the cache if caching is enabled (but not for live output)
         if self._cache_enabled and result and not use_live_output:
@@ -201,18 +193,14 @@ class ShellRunner:
 
             # Get the full command string
             command_string = (
-                command.build_command()
-                if hasattr(command, "build_command")
-                else str(command)
+                command.build_command() if hasattr(command, "build_command") else str(command)
             )
 
             metadata = {
                 "context": {
                     "current_directory": context.current_directory,
                     "execution_mode": str(context.execution_mode),
-                    "remote_host": str(context.remote_host)
-                    if context.remote_host
-                    else None,
+                    "remote_host": str(context.remote_host) if context.remote_host else None,
                 },
                 "params": context_params,
                 "command_type": command_type,
@@ -230,9 +218,7 @@ class ShellRunner:
         """Gets a preconfigured command by alias"""
         return self.factory.get_command(alias)
 
-    def _prepare_context(
-        self, context_params: Optional[Dict[str, Any]] = None
-    ) -> CommandContext:
+    def _prepare_context(self, context_params: Optional[Dict[str, Any]] = None) -> CommandContext:
         """Prepares the command execution context"""
         # Copy the base context
         context = self._context.clone()
@@ -250,16 +236,10 @@ class ShellRunner:
 
         return CommandContext(current_directory=os.getcwd())
 
-    def _generate_command_id(
-        self, command: CommandInterface, context: CommandContext
-    ) -> str:
+    def _generate_command_id(self, command: CommandInterface, context: CommandContext) -> str:
         """Generates a unique identifier for a command in a specific context"""
         # Get command string
-        cmd_str = (
-            command.build_command()
-            if hasattr(command, "build_command")
-            else str(command)
-        )
+        cmd_str = command.build_command() if hasattr(command, "build_command") else str(command)
 
         # Create a string containing all the contextual information
         context_str = f"{context.current_directory}|{context.execution_mode}|"
@@ -382,9 +362,7 @@ class ShellRunner:
 
         # Log the change
         logger = MancerLogger.get_instance()
-        logger.info(
-            f"Command cache enabled (size: {max_size}, auto refresh: {auto_refresh})"
-        )
+        logger.info(f"Command cache enabled (size: {max_size}, auto refresh: {auto_refresh})")
 
     def disable_cache(self) -> None:
         """Disables command result caching"""
@@ -502,9 +480,7 @@ class ShellRunner:
 
         return echo
 
-    def get_command_type_name(
-        self, command_type: str, language: Optional[str] = None
-    ) -> str:
+    def get_command_type_name(self, command_type: str, language: Optional[str] = None) -> str:
         """
         Gets a human-readable name for a command type in the specified language.
 

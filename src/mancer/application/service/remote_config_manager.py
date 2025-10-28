@@ -151,15 +151,11 @@ class RemoteConfigManager:
         self.config_balancer = ConfigBalancer(config_storage_dir)
 
         # Katalog na zadania synchronizacji
-        self.tasks_dir = os.path.join(
-            os.path.expanduser("~"), ".mancer", "config_tasks"
-        )
+        self.tasks_dir = os.path.join(os.path.expanduser("~"), ".mancer", "config_tasks")
         os.makedirs(self.tasks_dir, exist_ok=True)
 
         # Katalog na wyniki synchronizacji
-        self.results_dir = os.path.join(
-            os.path.expanduser("~"), ".mancer", "config_results"
-        )
+        self.results_dir = os.path.join(os.path.expanduser("~"), ".mancer", "config_results")
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Aktywne połączenia
@@ -213,9 +209,7 @@ class RemoteConfigManager:
             # Rozłącz wszystkie połączenia
             self.connections.clear()
 
-    def get_remote_file_content(
-        self, profile_name: str, file_path: str
-    ) -> Optional[str]:
+    def get_remote_file_content(self, profile_name: str, file_path: str) -> Optional[str]:
         """Fetch a remote file content via SSH.
 
         Args:
@@ -425,9 +419,7 @@ class RemoteConfigManager:
             return results
 
         # Pobierz zawartość pliku źródłowego
-        source_content = self.get_remote_file_content(
-            task.source_profile, task.source_path
-        )
+        source_content = self.get_remote_file_content(task.source_profile, task.source_path)
         if not source_content:
             # Nie udało się odczytać źródła
             for target_profile in task.target_profiles:
@@ -444,9 +436,7 @@ class RemoteConfigManager:
         # Waliduj zawartość jeśli wymagane
         if task.validate_before_sync:
             format_type = ConfigFormat.detect_format(task.source_path)
-            is_valid, error = self.config_balancer.validate_config(
-                source_content, format_type
-            )
+            is_valid, error = self.config_balancer.validate_config(source_content, format_type)
             if not is_valid:
                 # Walidacja nie powiodła się
                 for target_profile in task.target_profiles:

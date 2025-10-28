@@ -78,11 +78,7 @@ class NetstatCommand(BaseCommand):
             connection = {}
             for j in range(len(column_names)):
                 start = column_positions[j]
-                end = (
-                    column_positions[j + 1]
-                    if j + 1 < len(column_positions)
-                    else len(line)
-                )
+                end = column_positions[j + 1] if j + 1 < len(column_positions) else len(line)
 
                 value = line[start:end].strip()
                 connection[column_names[j]] = value
