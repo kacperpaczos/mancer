@@ -125,9 +125,7 @@ class ProfileProducer:
     Umożliwia zapisywanie, ładowanie i zarządzanie profilami.
     """
 
-    def __init__(
-        self, storage_dir: Optional[str] = None, encrypt_sensitive_data: bool = True
-    ):
+    def __init__(self, storage_dir: Optional[str] = None, encrypt_sensitive_data: bool = True):
         """
         Inicjalizuje ProfileProducer.
 
@@ -136,9 +134,7 @@ class ProfileProducer:
             encrypt_sensitive_data: Czy szyfrować wrażliwe dane
         """
         if storage_dir is None:
-            self.storage_dir = os.path.join(
-                os.path.expanduser("~"), ".mancer", "profiles"
-            )
+            self.storage_dir = os.path.join(os.path.expanduser("~"), ".mancer", "profiles")
         else:
             self.storage_dir = storage_dir
 

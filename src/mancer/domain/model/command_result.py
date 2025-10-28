@@ -73,15 +73,9 @@ class CommandResult:
     # Metoda do łatwej ekstrakcji konkretnych pól z strukturalnych wyników
     def extract_field(self, field_name: str) -> List[Any]:
         """Extract a column by key from structured_output when it is a list of dicts."""
-        if not self.structured_output or not isinstance(
-            self.structured_output[0], dict
-        ):
+        if not self.structured_output or not isinstance(self.structured_output[0], dict):
             return []
-        return [
-            item.get(field_name)
-            for item in self.structured_output
-            if field_name in item
-        ]
+        return [item.get(field_name) for item in self.structured_output if field_name in item]
 
     def to_format(self, target_format: DataFormat) -> "CommandResult":
         """Konwertuje dane do innego formatu"""

@@ -142,9 +142,7 @@ class IcecreamBackend(LogBackendInterface):
         except Exception:
             return str(context)
 
-    def log(
-        self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def log(self, level: LogLevel, message: str, context: Optional[Dict[str, Any]] = None) -> None:
         """
         Loguje wiadomość z określonym poziomem.
 

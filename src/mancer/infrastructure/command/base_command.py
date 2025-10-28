@@ -30,9 +30,7 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         self.pipeline = None  # Optional pipeline (e.g., | grep)
         self.requires_sudo = False  # Whether the command requires sudo
         self._args: List[str] = []  # Additional arguments
-        self.preferred_data_format: DataFormat = (
-            DataFormat.LIST
-        )  # Preferred data format
+        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
 
     def with_option(self, option: str) -> T:
         """Return a new instance with an added short/long option (e.g., -l)."""
@@ -122,10 +120,7 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
 
     def _get_backend(self, context: CommandContext):
         """Select an execution backend based on context (SSH for remote, otherwise default)."""
-        if (
-            context.execution_mode == ExecutionMode.REMOTE
-            and context.remote_host is not None
-        ):
+        if context.execution_mode == ExecutionMode.REMOTE and context.remote_host is not None:
             remote_host = context.remote_host
             return SshBackend(
                 hostname=remote_host.host,

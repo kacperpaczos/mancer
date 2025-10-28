@@ -48,9 +48,7 @@ class DataFormat(Enum):
         return format_map.get(format_type, "list")
 
     @staticmethod
-    def is_convertible(
-        source_format: "DataFormat", target_format: "DataFormat"
-    ) -> bool:
+    def is_convertible(source_format: "DataFormat", target_format: "DataFormat") -> bool:
         """Return True if conversion between formats is possible."""
         # Wszystkie formaty są konwertowalne między sobą
         return True

@@ -19,11 +19,7 @@ class CpCommand(BaseCommand):
         cmd_str = self.build_command()
 
         # Jeśli nie mamy źródła ani celu, a otrzymaliśmy wynik z poprzedniej komendy
-        if (
-            "source" not in self.parameters
-            and input_result
-            and input_result.is_success()
-        ):
+        if "source" not in self.parameters and input_result and input_result.is_success():
             # Próbujemy znaleźć pliki w structured_output
             if input_result.structured_output:
                 if isinstance(input_result.structured_output, list):
@@ -32,9 +28,7 @@ class CpCommand(BaseCommand):
                         isinstance(input_result.structured_output[0], dict)
                         and "name" in input_result.structured_output[0]
                     ):
-                        sources = [
-                            item["name"] for item in input_result.structured_output
-                        ]
+                        sources = [item["name"] for item in input_result.structured_output]
                         cmd_str = f"{cmd_str} {' '.join(sources)}"
                     elif isinstance(input_result.structured_output[0], str):
                         # Jeśli mamy listę stringów, używamy ich bezpośrednio

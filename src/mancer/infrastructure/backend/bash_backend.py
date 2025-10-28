@@ -175,9 +175,7 @@ class BashBackend(BackendInterface):
             import time
 
             start_time = time.time()
-            print(
-                f"Executing command: {command[:100]}{' ...' if len(command) > 100 else ''}"
-            )
+            print(f"Executing command: {command[:100]}{' ...' if len(command) > 100 else ''}")
 
             # Prepare stdin if provided
             stdin = None
@@ -203,9 +201,7 @@ class BashBackend(BackendInterface):
 
                 # Log completion
                 duration = time.time() - start_time
-                print(
-                    f"Command completed in {duration:.2f}s with exit code {exit_code}"
-                )
+                print(f"Command completed in {duration:.2f}s with exit code {exit_code}")
 
             except subprocess.TimeoutExpired:
                 # Kill the process if it times out

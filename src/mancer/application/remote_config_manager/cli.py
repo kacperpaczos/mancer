@@ -89,26 +89,20 @@ class CLI:
         )
 
         # Utwórz podpolecenia
-        subparsers = parser.add_subparsers(
-            dest="command", help="Polecenie do wykonania"
-        )
+        subparsers = parser.add_subparsers(dest="command", help="Polecenie do wykonania")
 
         # Polecenie connect - połącz z serwerem
         connect_parser = subparsers.add_parser("connect", help="Połącz z serwerem")
         connect_parser.add_argument("-p", "--profile", help="Nazwa profilu do użycia")
 
         # Polecenie backup - utwórz kopię zapasową plików
-        backup_parser = subparsers.add_parser(
-            "backup", help="Utwórz kopię zapasową plików"
-        )
+        backup_parser = subparsers.add_parser("backup", help="Utwórz kopię zapasową plików")
 
         # Polecenie diff - pokaż różnice między plikami
         diff_parser = subparsers.add_parser("diff", help="Pokaż różnice między plikami")
 
         # Polecenie update - aktualizuj pliki na serwerze
-        update_parser = subparsers.add_parser(
-            "update", help="Aktualizuj pliki na serwerze"
-        )
+        update_parser = subparsers.add_parser("update", help="Aktualizuj pliki na serwerze")
 
         # Polecenie profile - zarządzaj profilami
         profile_parser = subparsers.add_parser("profile", help="Zarządzaj profilami")
@@ -117,19 +111,11 @@ class CLI:
         )
 
         # Polecenie profile add - dodaj profil
-        profile_add_parser = profile_subparsers.add_parser(
-            "add", help="Dodaj nowy profil"
-        )
+        profile_add_parser = profile_subparsers.add_parser("add", help="Dodaj nowy profil")
         profile_add_parser.add_argument("name", help="Nazwa profilu")
-        profile_add_parser.add_argument(
-            "-H", "--host", help="Adres hosta", required=True
-        )
-        profile_add_parser.add_argument(
-            "-u", "--user", help="Nazwa użytkownika", required=True
-        )
-        profile_add_parser.add_argument(
-            "-d", "--dir", help="Katalog aplikacji", required=True
-        )
+        profile_add_parser.add_argument("-H", "--host", help="Adres hosta", required=True)
+        profile_add_parser.add_argument("-u", "--user", help="Nazwa użytkownika", required=True)
+        profile_add_parser.add_argument("-d", "--dir", help="Katalog aplikacji", required=True)
         profile_add_parser.add_argument(
             "-s",
             "--services",
@@ -138,20 +124,14 @@ class CLI:
         )
 
         # Polecenie profile list - wyświetl listę profili
-        profile_list_parser = profile_subparsers.add_parser(
-            "list", help="Wyświetl listę profili"
-        )
+        profile_list_parser = profile_subparsers.add_parser("list", help="Wyświetl listę profili")
 
         # Polecenie profile remove - usuń profil
-        profile_remove_parser = profile_subparsers.add_parser(
-            "remove", help="Usuń profil"
-        )
+        profile_remove_parser = profile_subparsers.add_parser("remove", help="Usuń profil")
         profile_remove_parser.add_argument("name", help="Nazwa profilu")
 
         # Polecenie profile activate - aktywuj profil
-        profile_activate_parser = profile_subparsers.add_parser(
-            "activate", help="Aktywuj profil"
-        )
+        profile_activate_parser = profile_subparsers.add_parser("activate", help="Aktywuj profil")
         profile_activate_parser.add_argument("name", help="Nazwa profilu")
 
         return parser
@@ -179,9 +159,7 @@ class CLI:
         if not self.manager.active_profile:
             profiles = self.manager.list_profiles()
             if not profiles:
-                self.print_error(
-                    "Brak zapisanych profili. Użyj 'profile add', aby dodać profil"
-                )
+                self.print_error("Brak zapisanych profili. Użyj 'profile add', aby dodać profil")
                 return 1
 
             self.console.print("Dostępne profile:")
@@ -252,13 +230,9 @@ class CLI:
             }
 
             if self.manager.save_profile(self.manager.config.name, profile_data):
-                self.print_success(
-                    f"Zaktualizowano profil '{self.manager.config.name}'"
-                )
+                self.print_success(f"Zaktualizowano profil '{self.manager.config.name}'")
             else:
-                self.print_error(
-                    f"Nie można zaktualizować profilu '{self.manager.config.name}'"
-                )
+                self.print_error(f"Nie można zaktualizować profilu '{self.manager.config.name}'")
 
         return 0
 
@@ -276,9 +250,7 @@ class CLI:
 
         # Sprawdź czy jest aktywny profil
         if not self.manager.active_profile:
-            self.print_error(
-                "Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem"
-            )
+            self.print_error("Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem")
             return 1
 
         # Sprawdź czy jest połączenie z serwerem
@@ -340,9 +312,7 @@ class CLI:
 
         # Sprawdź czy jest aktywny profil
         if not self.manager.active_profile:
-            self.print_error(
-                "Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem"
-            )
+            self.print_error("Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem")
             return 1
 
         # Znajdź różnice
@@ -399,9 +369,7 @@ class CLI:
 
         # Sprawdź czy jest aktywny profil
         if not self.manager.active_profile:
-            self.print_error(
-                "Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem"
-            )
+            self.print_error("Brak aktywnego profilu. Użyj 'connect', aby połączyć się z serwerem")
             return 1
 
         # Sprawdź czy jest połączenie z serwerem
@@ -487,9 +455,7 @@ class CLI:
 
         # Sprawdź czy profil już istnieje
         if args.name in self.manager.list_profiles():
-            overwrite = Confirm.ask(
-                f"Profil '{args.name}' już istnieje. Czy chcesz go nadpisać?"
-            )
+            overwrite = Confirm.ask(f"Profil '{args.name}' już istnieje. Czy chcesz go nadpisać?")
             if not overwrite:
                 self.print_info("Anulowano dodawanie profilu")
                 return 0

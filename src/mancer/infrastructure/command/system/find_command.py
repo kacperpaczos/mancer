@@ -61,9 +61,7 @@ class FindCommand(BaseCommand):
                 is_dir = os.path.isdir(path)
                 is_file = os.path.isfile(path)
                 is_link = os.path.islink(path)
-                extension = (
-                    os.path.splitext(path)[1][1:] if os.path.splitext(path)[1] else ""
-                )
+                extension = os.path.splitext(path)[1][1:] if os.path.splitext(path)[1] else ""
 
                 results.append(
                     {

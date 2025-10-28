@@ -20,9 +20,7 @@ class CommandChain:
     def __init__(self, first_command: CommandInterface):
         self.commands = [first_command]
         self.is_pipeline = [False]  # Pierwszy element jest zawsze False
-        self.preferred_formats = [
-            getattr(first_command, "preferred_data_format", DataFormat.LIST)
-        ]
+        self.preferred_formats = [getattr(first_command, "preferred_data_format", DataFormat.LIST)]
         self.history = ExecutionHistory()
 
     def then(self, next_command: CommandInterface) -> "CommandChain":
@@ -107,11 +105,7 @@ class CommandChain:
                     prev_format = self.preferred_formats[i - 1]
                     curr_format = self.preferred_formats[i]
 
-                    if (
-                        result
-                        and prev_format != curr_format
-                        and hasattr(result, "to_format")
-                    ):
+                    if result and prev_format != curr_format and hasattr(result, "to_format"):
                         # Konwertuj wynik do preferowanego formatu bieżącej komendy
                         converted_result = result.to_format(curr_format)
                         if converted_result:

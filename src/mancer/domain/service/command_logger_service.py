@@ -287,9 +287,7 @@ class CommandLoggerService:
         # Zaktualizuj historię
         with self._lock:
             for entry in self._command_history:
-                if entry.get("command", {}).get("execution_id") == command_info.get(
-                    "execution_id"
-                ):
+                if entry.get("command", {}).get("execution_id") == command_info.get("execution_id"):
                     entry["completed"] = True
                     entry["result"] = {
                         "success": success,

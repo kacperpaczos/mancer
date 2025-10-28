@@ -28,29 +28,21 @@ def create_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("-H", "--host", help="Adres serwera", type=str)
     inspect_parser.add_argument("-u", "--user", help="Nazwa użytkownika", type=str)
-    inspect_parser.add_argument(
-        "-p", "--profile", help="Nazwa profilu do użycia", type=str
-    )
+    inspect_parser.add_argument("-p", "--profile", help="Nazwa profilu do użycia", type=str)
     inspect_parser.add_argument(
         "-o", "--output-dir", help="Katalog wyjściowy dla raportu", type=str
     )
 
     # Polecenie profile - zarządzanie profilami połączeń
-    profile_parser = subparsers.add_parser(
-        "profile", help="Zarządzaj profilami połączeń"
-    )
+    profile_parser = subparsers.add_parser("profile", help="Zarządzaj profilami połączeń")
     profile_subparsers = profile_parser.add_subparsers(
         dest="profile_command", help="Dostępne operacje na profilach"
     )
 
     # Polecenie profile add - dodanie nowego profilu
-    profile_add_parser = profile_subparsers.add_parser(
-        "add", help="Dodaj nowy profil połączenia"
-    )
+    profile_add_parser = profile_subparsers.add_parser("add", help="Dodaj nowy profil połączenia")
     profile_add_parser.add_argument("name", help="Nazwa profilu", type=str)
-    profile_add_parser.add_argument(
-        "-H", "--host", help="Adres serwera", type=str, required=True
-    )
+    profile_add_parser.add_argument("-H", "--host", help="Adres serwera", type=str, required=True)
     profile_add_parser.add_argument(
         "-u", "--user", help="Nazwa użytkownika", type=str, required=True
     )
@@ -66,12 +58,8 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # Polecenie profile remove - usunięcie profilu
-    profile_remove_parser = profile_subparsers.add_parser(
-        "remove", help="Usuń profil połączenia"
-    )
-    profile_remove_parser.add_argument(
-        "name", help="Nazwa profilu do usunięcia", type=str
-    )
+    profile_remove_parser = profile_subparsers.add_parser("remove", help="Usuń profil połączenia")
+    profile_remove_parser.add_argument("name", help="Nazwa profilu do usunięcia", type=str)
 
     return parser
 
@@ -116,15 +104,11 @@ def command_inspect(inspector: SystemdInspector, args: argparse.Namespace) -> in
             print("Błąd: Nie podano adresu hosta lub nazwy użytkownika")
             return 1
 
-        password = getpass.getpass(
-            "Podaj hasło (pozostaw puste dla uwierzytelniania kluczem): "
-        )
+        password = getpass.getpass("Podaj hasło (pozostaw puste dla uwierzytelniania kluczem): ")
         password = password if password else None
 
         # Zapytaj o zapisanie profilu
-        save_profile_input = input(
-            "Czy chcesz zapisać ten profil na przyszłość? (t/n): "
-        ).lower()
+        save_profile_input = input("Czy chcesz zapisać ten profil na przyszłość? (t/n): ").lower()
         if save_profile_input == "t":
             profile_name = input("Podaj nazwę profilu: ")
             if profile_name:
@@ -178,9 +162,7 @@ def command_profile_add(inspector: SystemdInspector, args: argparse.Namespace) -
     password = None
 
     if args.password:
-        password = getpass.getpass(
-            "Podaj hasło (pozostaw puste dla uwierzytelniania kluczem): "
-        )
+        password = getpass.getpass("Podaj hasło (pozostaw puste dla uwierzytelniania kluczem): ")
 
     if inspector.save_profile(args.name, hostname, username, password):
         print(f"Profil '{args.name}' został zapisany")
@@ -215,9 +197,7 @@ def command_profile_list(inspector: SystemdInspector, args: argparse.Namespace) 
     return 0
 
 
-def command_profile_remove(
-    inspector: SystemdInspector, args: argparse.Namespace
-) -> int:
+def command_profile_remove(inspector: SystemdInspector, args: argparse.Namespace) -> int:
     """
     Obsługuje polecenie profile remove - usuwa profil połączenia.
 
