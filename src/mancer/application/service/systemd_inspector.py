@@ -3,11 +3,7 @@ import os
 import re
 from typing import Any, Dict, List, Optional
 
-from ...domain.model.command_context import (
-    CommandContext,
-    ExecutionMode,
-    RemoteHostInfo,
-)
+from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
@@ -204,7 +200,7 @@ class SystemdInspector:
 
         # Wykonaj komendę
         if self.context is None:
-            return []
+            return None
         result = enforced_command(self.context)
 
         # W przypadku sukcesu zwróć jednostkę
@@ -235,6 +231,8 @@ class SystemdInspector:
 
         # Wykonaj komendę z retry
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
+        if self.context is None:
+            return False
         result = enforced_command(self.context)
 
         return result.success
@@ -257,6 +255,8 @@ class SystemdInspector:
 
         # Wykonaj komendę z retry
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
+        if self.context is None:
+            return False
         result = enforced_command(self.context)
 
         return result.success
@@ -279,6 +279,8 @@ class SystemdInspector:
 
         # Wykonaj komendę z retry
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
+        if self.context is None:
+            return False
         result = enforced_command(self.context)
 
         return result.success
@@ -301,6 +303,8 @@ class SystemdInspector:
 
         # Wykonaj komendę z retry
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
+        if self.context is None:
+            return False
         result = enforced_command(self.context)
 
         return result.success
@@ -323,6 +327,8 @@ class SystemdInspector:
 
         # Wykonaj komendę z retry
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
+        if self.context is None:
+            return False
         result = enforced_command(self.context)
 
         return result.success

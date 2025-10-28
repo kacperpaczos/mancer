@@ -46,7 +46,7 @@ class ConfigSyncTask:
         self.description = description
         self.validate_before_sync = validate_before_sync
         self.created_at = datetime.datetime.now()
-        self.last_run = None
+        self.last_run: Optional[datetime.datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the task to a dictionary."""
@@ -59,7 +59,7 @@ class ConfigSyncTask:
             "description": self.description,
             "validate_before_sync": self.validate_before_sync,
             "created_at": self.created_at.isoformat(),
-            "last_run": self.last_run.isoformat() if self.last_run else None,
+            "last_run": self.last_run.isoformat() if self.last_run is not None else None,
         }
 
     @classmethod
@@ -86,7 +86,7 @@ class ConfigSyncTask:
             task.created_at = datetime.datetime.fromisoformat(data["created_at"])
 
         if data.get("last_run"):
-            task.last_run = datetime.datetime.fromisoformat(data["last_run"])  # type: ignore
+            task.last_run = datetime.datetime.fromisoformat(data["last_run"])
 
         return task
 
@@ -493,7 +493,7 @@ class RemoteConfigManager:
                 )
 
         # Zaktualizuj czas ostatniego uruchomienia
-        task.last_run = datetime.datetime.now()  # type: ignore
+        task.last_run = datetime.datetime.now()
         self.update_sync_task(task)
 
         # Zapisz wyniki
