@@ -3,7 +3,11 @@ import os
 import re
 from typing import Dict, List, Optional
 
-from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
+from ...domain.model.command_context import (
+    CommandContext,
+    ExecutionMode,
+    RemoteHostInfo,
+)
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
