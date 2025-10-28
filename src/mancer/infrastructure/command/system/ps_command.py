@@ -20,7 +20,7 @@ class PsCommand(BaseCommand):
         self, context: CommandContext, input_result: Optional[CommandResult] = None
     ) -> CommandResult:
         """Execute the ps command and return a structured result."""
-        super().execute(context, input_result)
+        super().execute(context, input_result)  # type: ignore
 
         command_str = self.build_command()
         backend = self._get_backend(context)
@@ -44,7 +44,7 @@ class PsCommand(BaseCommand):
 
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Parse ps output to a list of dictionaries with process information."""
-        result = []
+        result: List[Dict[str, Any]] = []
         lines = raw_output.strip().split("\n")
 
         if len(lines) < 2:
@@ -114,7 +114,7 @@ class PsCommand(BaseCommand):
 
     def search(self, pattern: str) -> "PsCommand":
         """Pipe ps output through grep with the given pattern."""
-        new_instance = self.clone()
+        new_instance: PsCommand = self.clone()
         new_instance.pipeline = f"grep {pattern}"
         return new_instance
 

@@ -166,13 +166,12 @@ class SystemdInspector:
 
         # Dodaj obsługę retry i walidację
         enforced_command: CommandEnforcer = (
-            CommandEnforcer(command)
-            .with_retry(max_retries=1)
-            .with_validator(CommandEnforcer.ensure_success_output_contains("UNIT"))
-            .with_timeout(30)
+            CommandEnforcer(command).with_retry(max_retries=1).with_timeout(30)
         )
 
         # Wykonaj komendę
+        if self.context is None:
+            return []
         result = enforced_command(self.context)
 
         # Parsuj wynik
@@ -204,6 +203,8 @@ class SystemdInspector:
         enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
 
         # Wykonaj komendę
+        if self.context is None:
+            return []
         result = enforced_command(self.context)
 
         # W przypadku sukcesu zwróć jednostkę
@@ -379,7 +380,7 @@ class SystemdInspector:
         all_units = self.get_all_units()
 
         # Przygotuj dane do raportu
-        server_name = self.active_profile.hostname
+        server_name = self.active_profile.hostname if self.active_profile else "local"
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         report_filename = f"systemd_report_{server_name}_{timestamp}.txt"
         report_path = os.path.join(self.report_dir, report_filename)

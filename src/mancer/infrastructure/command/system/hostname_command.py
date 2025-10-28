@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -34,15 +34,15 @@ class HostnameCommand(BaseCommand):
 
         return result
 
-    def _parse_output(self, raw_output: str) -> str:
+    def _parse_output(self, raw_output: str) -> List[Any]:
         """Parsuje wyjście hostname - po prostu zwraca nazwę hosta"""
-        return raw_output.strip()
+        return [raw_output.strip()]
 
     # Metody specyficzne dla hostname
 
     def set_hostname(self, name: str) -> "HostnameCommand":
         """Ustawia nazwę hosta (wymaga uprawnień roota)"""
-        new_instance = self.clone()
+        new_instance: HostnameCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance.with_param("name", name)
 

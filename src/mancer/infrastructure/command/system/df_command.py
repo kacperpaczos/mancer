@@ -29,7 +29,7 @@ class DfCommand(BaseCommand):
     ) -> CommandResult:
         """Executes the df command"""
         # Call base method to check tool version
-        super().execute(context, input_result)
+        super().execute(context, input_result)  # type: ignore
 
         # Build the command string
         command_str = self.build_command()

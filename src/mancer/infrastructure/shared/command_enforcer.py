@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Callable, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
@@ -25,12 +25,12 @@ class CommandEnforcer:
         self.command = command
         self.max_retries = 0
         self.retry_delay = 1  # sekundy
-        self.validators = []
-        self.timeout = None
-        self.error_handlers = {}
-        self.success_handlers = []
+        self.validators: List[Callable[[CommandContext], bool]] = []
+        self.timeout: Optional[int] = None
+        self.error_handlers: Dict[str, Callable[[CommandContext, Exception], None]] = {}
+        self.success_handlers: List[Callable[[CommandContext], None]] = []
 
-    def with_retry(self, max_retries: int, delay: int = 1) -> T:
+    def with_retry(self, max_retries: int, delay: int = 1) -> "CommandEnforcer":
         """
         Konfiguruje mechanizm ponawiania komendy.
 
@@ -41,12 +41,12 @@ class CommandEnforcer:
         Returns:
             CommandEnforcer: Zaktualizowana instancja
         """
-        new_instance = self._clone()
+        new_instance: CommandEnforcer = self._clone()
         new_instance.max_retries = max_retries
         new_instance.retry_delay = delay
         return new_instance
 
-    def with_validator(self, validator_func: Callable[[CommandResult], bool]) -> T:
+    def with_validator(self, validator_func: Callable[[CommandResult], bool]) -> "CommandEnforcer":
         """
         Dodaje funkcję walidacyjną, która sprawdza poprawność wyniku komendy.
 
@@ -56,11 +56,11 @@ class CommandEnforcer:
         Returns:
             CommandEnforcer: Zaktualizowana instancja
         """
-        new_instance = self._clone()
+        new_instance: CommandEnforcer = self._clone()
         new_instance.validators.append(validator_func)
         return new_instance
 
-    def with_timeout(self, timeout: int) -> T:
+    def with_timeout(self, timeout: int) -> "CommandEnforcer":
         """
         Ustawia timeout dla wykonania komendy.
 
@@ -70,7 +70,7 @@ class CommandEnforcer:
         Returns:
             CommandEnforcer: Zaktualizowana instancja
         """
-        new_instance = self._clone()
+        new_instance: CommandEnforcer = self._clone()
         new_instance.timeout = timeout
         return new_instance
 
@@ -78,7 +78,7 @@ class CommandEnforcer:
         self,
         error_pattern: str,
         handler_func: Callable[[CommandResult, Exception], CommandResult],
-    ) -> T:
+    ) -> "CommandEnforcer":
         """
         Dodaje handler błędów, który zostanie wywołany, gdy błąd pasuje do wzorca.
 
@@ -89,11 +89,13 @@ class CommandEnforcer:
         Returns:
             CommandEnforcer: Zaktualizowana instancja
         """
-        new_instance = self._clone()
+        new_instance: CommandEnforcer = self._clone()
         new_instance.error_handlers[error_pattern] = handler_func
         return new_instance
 
-    def on_success(self, handler_func: Callable[[CommandResult], CommandResult]) -> T:
+    def on_success(
+        self, handler_func: Callable[[CommandResult], CommandResult]
+    ) -> "CommandEnforcer":
         """
         Dodaje handler sukcesu, który zostanie wywołany po pomyślnym wykonaniu komendy.
 
@@ -103,7 +105,7 @@ class CommandEnforcer:
         Returns:
             CommandEnforcer: Zaktualizowana instancja
         """
-        new_instance = self._clone()
+        new_instance: CommandEnforcer = self._clone()
         new_instance.success_handlers.append(handler_func)
         return new_instance
 
@@ -196,14 +198,14 @@ class CommandEnforcer:
             error_message=f"Command failed after {retries} retries: {str(last_exception)}",
         )
 
-    def _clone(self) -> T:
+    def _clone(self) -> "CommandEnforcer":
         """
         Tworzy kopię instancji.
 
         Returns:
             CommandEnforcer: Nowa instancja z takimi samymi parametrami
         """
-        new_instance = CommandEnforcer(self.command)
+        new_instance: CommandEnforcer = CommandEnforcer(self.command)
         new_instance.max_retries = self.max_retries
         new_instance.retry_delay = self.retry_delay
         new_instance.validators = list(self.validators)

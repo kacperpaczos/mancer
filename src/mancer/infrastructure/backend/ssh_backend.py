@@ -119,7 +119,7 @@ class SshBackend(BackendInterface):
         try:
             from ..logging.mancer_logger import MancerLogger
 
-            self.logger = MancerLogger.get_instance()
+            self.logger: Optional[MancerLogger] = MancerLogger.get_instance()
         except Exception:
             self.logger = None
 
@@ -863,7 +863,7 @@ class SshBackend(BackendInterface):
                 self.logger.error(f"Błąd testu połączenia SSH: {e}")
             return False
 
-    def check_host_key(self) -> tuple[bool, Optional[str], Optional[str]]:
+    def check_host_key(self) -> Tuple[bool, Optional[str], Optional[str]]:
         """Check SSH host key - simplified approach
 
         Returns:
@@ -1023,7 +1023,9 @@ class SshBackend(BackendInterface):
             return
         shell.get("alive_flag", {}).update({"alive": False})
         try:
-            _os.close(shell.get("fd"))
+            fd = shell.get("fd")
+            if fd is not None:
+                _os.close(fd)
         except Exception:
             pass
         self.shells.pop(session_id, None)

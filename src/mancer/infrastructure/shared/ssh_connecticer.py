@@ -54,7 +54,7 @@ class SSHConnecticer(SshBackend):
         )
         self.session_name = session_name or f"{username}@{hostname}:{port}"
         self._connection_alive = False
-        self._last_error = None
+        self._last_error: Optional[str] = None
 
     def check_connection(self) -> bool:
         """
@@ -129,7 +129,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)
+            result = super().execute(cmd)  # type: ignore
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku
@@ -196,7 +196,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)
+            result = super().execute(cmd)  # type: ignore
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku

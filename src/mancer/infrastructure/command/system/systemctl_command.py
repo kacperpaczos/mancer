@@ -99,9 +99,9 @@ class SystemctlCommand(BaseCommand):
         """Restartuje usługę"""
         return self.with_param("operation", "restart").with_param("service", service)
 
-    def status(self, service: str = None) -> "SystemctlCommand":
+    def status(self, service: Optional[str] = None) -> "SystemctlCommand":
         """Sprawdza status usługi lub wszystkich usług"""
-        cmd = self.with_param("operation", "status")
+        cmd: SystemctlCommand = self.with_param("operation", "status")
         if service:
             cmd = cmd.with_param("service", service)
         return cmd

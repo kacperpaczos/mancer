@@ -27,7 +27,7 @@ class CommandCache:
         self._max_size = max_size
         self._auto_refresh = auto_refresh
         self._refresh_interval = refresh_interval
-        self._refresh_thread = None
+        self._refresh_thread: Optional[threading.Thread] = None
         self._stop_refresh = threading.Event()
         self._lock = threading.RLock()
 
@@ -39,7 +39,8 @@ class CommandCache:
         """Uruchamia wątek odświeżający cache"""
         self._stop_refresh.clear()
         self._refresh_thread = threading.Thread(target=self._refresh_loop, daemon=True)
-        self._refresh_thread.start()
+        if self._refresh_thread:
+            self._refresh_thread.start()
 
     def _refresh_loop(self):
         """Pętla odświeżająca cache"""

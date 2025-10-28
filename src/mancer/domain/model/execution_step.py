@@ -38,7 +38,11 @@ class ExecutionStep:
             command_string=data["command_string"],
             command_type=data["command_type"],
             timestamp=datetime.fromisoformat(data["timestamp"]),
-            data_format=DataFormat.from_string(data["data_format"]),
+            data_format=(
+                DataFormat.from_string(data["data_format"])
+                if data["data_format"]
+                else DataFormat.LIST
+            ),
             success=data["success"],
             exit_code=data["exit_code"],
             structured_sample=data["structured_sample"],

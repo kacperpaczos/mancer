@@ -125,5 +125,5 @@ class TailCommand(BaseCommand):
 
     def clone(self) -> "TailCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: TailCommand = super().clone()  # type: ignore
+        new_instance: TailCommand = super().clone()
         return new_instance

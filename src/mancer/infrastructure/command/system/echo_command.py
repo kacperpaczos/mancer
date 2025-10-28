@@ -62,7 +62,7 @@ class EchoCommand(BaseCommand):
             file_path: Path to the target file.
             append: Append if True, overwrite if False.
         """
-        new_instance = self.clone()
+        new_instance: EchoCommand = self.clone()
         # Dodajemy przekierowanie do pliku
         if append:
             new_instance.pipeline = f">> {file_path}"
@@ -72,5 +72,5 @@ class EchoCommand(BaseCommand):
 
     def clone(self) -> "EchoCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance = super().clone()
+        new_instance: EchoCommand = super().clone()
         return new_instance

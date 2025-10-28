@@ -79,7 +79,7 @@ class StandardBackend(LogBackendInterface):
         # Opcjonalnie wymuś UTC na formaterach
         formatter = logging.Formatter(self._log_format)
         if self._use_utc:
-            formatter.converter = time.gmtime  # type: ignore[attr-defined]
+            formatter.converter = time.gmtime
 
         # Dodaj handler konsoli, jeśli włączony
         if self._console_enabled:

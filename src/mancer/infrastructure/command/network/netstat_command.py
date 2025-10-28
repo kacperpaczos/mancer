@@ -115,7 +115,7 @@ class NetstatCommand(BaseCommand):
 
     def continuous(self, interval: int = 1) -> "NetstatCommand":
         """Opcja -c - ciągłe odświeżanie (co określony interwał)"""
-        return self.with_option("-c").with_param("interval", str(interval))
+        return self.with_option("-c").with_param("interval", str(interval))  # type: ignore
 
     def routes(self) -> "NetstatCommand":
         """Opcja -r - pokazuje tablice routingu"""

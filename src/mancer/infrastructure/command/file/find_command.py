@@ -96,4 +96,4 @@ class FindCommand(BaseCommand):
 
     def with_param(self, name: str, value: Any) -> "FindCommand":
         """Nadpisana metoda with_param dla lepszej obsługi łańcuchów"""
-        return super().with_param(name, value)  # type: ignore
+        return super().with_param(name, value)

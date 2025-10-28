@@ -89,7 +89,7 @@ class CommandResult:
         if converted_data is None:
             return CommandResult(
                 raw_output=self.raw_output,
-                structured_output=None,
+                structured_output=[],
                 data_format=target_format,
                 exit_code=1,
                 history=self.history,

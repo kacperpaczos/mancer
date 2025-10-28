@@ -105,5 +105,5 @@ class CatCommand(BaseCommand):
 
     def clone(self) -> "CatCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: CatCommand = super().clone()  # type: ignore
+        new_instance: CatCommand = super().clone()
         return new_instance

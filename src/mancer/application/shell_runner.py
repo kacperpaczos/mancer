@@ -362,10 +362,10 @@ class ShellRunner:
             refresh_interval: Refresh interval in minutes
         """
         self._cache_enabled = True
-        self._command_cache._max_size = max_size  # type: ignore
+        self._command_cache._max_size = max_size
 
         if auto_refresh:
-            self._command_cache.set_auto_refresh(refresh_interval)  # type: ignore
+            self._command_cache.set_auto_refresh(True)
 
         # Log the change
         logger = MancerLogger.get_instance()

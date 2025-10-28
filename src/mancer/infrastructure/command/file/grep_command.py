@@ -123,6 +123,6 @@ class GrepCommand(BaseCommand):
 
     def clone(self) -> "GrepCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: GrepCommand = super().clone()  # type: ignore
+        new_instance: GrepCommand = super().clone()
         new_instance._args = self._args.copy()
         return new_instance
