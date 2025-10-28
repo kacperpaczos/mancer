@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
@@ -27,7 +27,7 @@ class CommandEnforcer:
         self.retry_delay = 1  # sekundy
         self.validators: List[Callable[[CommandResult], bool]] = []
         self.timeout: Optional[int] = None
-        self.error_handlers: Dict[str, Callable[[CommandContext, Exception], None]] = {}
+        self.error_handlers: Dict[str, Callable[[CommandResult, Exception], CommandResult]] = {}
         self.success_handlers: List[Callable[[CommandResult], CommandResult]] = []
 
     def with_retry(self, max_retries: int, delay: int = 1) -> "CommandEnforcer":
@@ -106,7 +106,7 @@ class CommandEnforcer:
             CommandEnforcer: Zaktualizowana instancja
         """
         new_instance: CommandEnforcer = self._clone()
-        new_instance.success_handlers.append(handler_func)  # type: ignore
+        new_instance.success_handlers.append(handler_func)
         return new_instance
 
     def execute(
@@ -128,7 +128,7 @@ class CommandEnforcer:
         while retries <= self.max_retries:
             try:
                 # Wykonanie komendy
-                result = self.command(context, input_result)
+                result = self.command.execute(context, input_result)
 
                 # Sprawdzenie wyników walidatorów
                 valid = True
@@ -157,18 +157,20 @@ class CommandEnforcer:
 
                 # Sprawdź, czy któryś handler pasuje do błędu
                 handled = False
-                for pattern, handler in self.error_handlers.items():
+                error_result = CommandResult(
+                    raw_output="",
+                    success=False,
+                    structured_output=[],
+                    exit_code=-1,
+                    error_message=str(e),
+                )
+                for pattern, handler in self.error_handlers.items():  # type: ignore
                     if re.search(pattern, str(e)):
-                        error_result = CommandResult(
-                            raw_output="",
-                            success=False,
-                            structured_output=[],
-                            exit_code=-1,
-                            error_message=str(e),
-                        )
                         try:
                             # Wywołaj handler błędu
-                            handler(context, e)
+                            error_result = cast(
+                                Callable[[CommandResult, Exception], CommandResult], handler
+                            )(error_result, e)
                         except Exception:
                             # Jeśli handler też rzucił wyjątek, kontynuuj normalną obsługę
                             pass

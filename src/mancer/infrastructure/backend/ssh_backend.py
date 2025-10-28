@@ -411,6 +411,9 @@ class SshBackend(BackendInterface):
                         modified_ssh_command[-2] if len(modified_ssh_command) >= 2 else None
                     )
 
+                if host_target is None:
+                    raise RuntimeError("Could not determine host target from SSH command")
+
                 # Ustal port z opcji, domyślnie 22
                 port_value = 22
                 if "-p" in modified_ssh_command:

@@ -53,7 +53,9 @@ class DataFormatConverter:
                 import pandas as pd
 
                 if isinstance(data, pd.DataFrame):
-                    return data.to_dict(orient="records")
+                    records = data.to_dict(orient="records")
+                    # Convert Hashable keys to str keys
+                    return [{str(k): v for k, v in record.items()} for record in records]
                 return data  # Jeśli to nie DataFrame, zwróć dane bez zmian
             except ImportError:
                 return None

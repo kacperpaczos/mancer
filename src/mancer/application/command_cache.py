@@ -199,7 +199,7 @@ class CommandCache:
             Słownik z danymi cache
         """
         with self._lock:
-            export = {
+            export: Dict[str, Any] = {
                 "history": [
                     (cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history
                 ],
@@ -207,7 +207,7 @@ class CommandCache:
             }
 
             if include_results:
-                export["results"] = {}  # type: ignore
+                export["results"] = {}
                 for cmd_id, (result, ts, meta) in self._cache.items():
                     export["results"][cmd_id] = {
                         "timestamp": ts.isoformat(),

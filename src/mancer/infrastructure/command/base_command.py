@@ -27,7 +27,7 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         self.parameters: Dict[str, Any] = {}
         self.flags: List[str] = []
         self.backend = BashBackend()  # Default backend
-        self.pipeline = None  # Optional pipeline (e.g., | grep)
+        self.pipeline: Optional[str] = None  # Optional pipeline (e.g., | grep)
         self.requires_sudo = False  # Whether the command requires sudo
         self._args: List[str] = []  # Additional arguments
         self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format

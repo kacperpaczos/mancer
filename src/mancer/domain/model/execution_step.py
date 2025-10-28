@@ -34,11 +34,15 @@ class ExecutionStep:
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "ExecutionStep":
         """Create an execution step from a dictionary."""
+        data_format = DataFormat.from_string(data.get("data_format", "LIST"))
+        if data_format is None:
+            data_format = DataFormat.LIST
+
         return ExecutionStep(
             command_string=data["command_string"],
             command_type=data["command_type"],
             timestamp=datetime.fromisoformat(data["timestamp"]),
-            data_format=DataFormat.from_string(data.get("data_format", "LIST")),
+            data_format=data_format,
             success=data["success"],
             exit_code=data["exit_code"],
             structured_sample=data["structured_sample"],
