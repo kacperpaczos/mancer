@@ -105,7 +105,7 @@ src_paths = ["src", "tests"]
 
 # mypy – statyczne typowanie (lekko restrykcyjne, bez łamania istniejącego kodu)
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
