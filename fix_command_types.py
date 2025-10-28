@@ -43,8 +43,8 @@ def add_builder_methods(file_path, class_name):
     # Znajdź miejsce gdzie dodać metody buildera (po execute)
     execute_match = re.search(r'(def execute\([^}]+return result\s*)\s*(\n\s*def)', content, re.DOTALL)
     if not execute_match:
-        # Spróbuj znaleźć po execute bez komentarza
-        execute_match = re.search(r'(def execute\([^}]+return result\s*)\s*(\n\s*def)', content, re.DOTALL)
+        # Spróbuj znaleźć po execute bez komentarza - szukaj po return result
+        execute_match = re.search(r'(return result\s*)\s*(\n\s*def)', content, re.DOTALL)
     if execute_match:
         insert_point = execute_match.end(1)
         before_methods = content[:insert_point]

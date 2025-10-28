@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
+from ....domain.model.data_format import DataFormat
 from ..base_command import BaseCommand
 
 
@@ -57,6 +58,44 @@ class CatCommand(BaseCommand):
 
         return result
 
+    # Przepisane metody buildera dla poprawnego typu zwracanego
+
+    def with_option(self, option: str) -> "CatCommand":
+        """Return a new instance with an added short/long option (e.g., -l)."""
+        new_instance: CatCommand = self.clone()
+        new_instance.options.append(option)
+        return new_instance
+
+    def with_param(self, name: str, value) -> "CatCommand":
+        """Return a new instance with a named parameter (e.g., --name=value)."""
+        new_instance: CatCommand = self.clone()
+        new_instance.parameters[name] = value
+        return new_instance
+
+    def with_flag(self, flag: str) -> "CatCommand":
+        """Return a new instance with a boolean flag (e.g., --recursive)."""
+        new_instance: CatCommand = self.clone()
+        new_instance.flags.append(flag)
+        return new_instance
+
+    def with_sudo(self) -> "CatCommand":
+        """Return a new instance marked to require sudo."""
+        new_instance: CatCommand = self.clone()
+        new_instance.requires_sudo = True
+        return new_instance
+
+    def add_arg(self, arg: str) -> "CatCommand":
+        """Return a new instance with an added positional argument."""
+        new_instance: CatCommand = self.clone()
+        new_instance._args.append(arg)
+        return new_instance
+
+    def with_data_format(self, format_type: DataFormat) -> "CatCommand":
+        """Return a new instance with a preferred output data format."""
+        new_instance: CatCommand = self.clone()
+        new_instance.preferred_data_format = format_type
+        return new_instance
+
     # Metody specyficzne dla cat
 
     def file(self, file_path: str) -> "CatCommand":
@@ -65,7 +104,7 @@ class CatCommand(BaseCommand):
 
     def files(self, file_paths: List[str]) -> "CatCommand":
         """Ustawia wiele plików do wyświetlenia"""
-        return self.add_args(file_paths)
+        return self.add_args(file_paths)  # type: ignore
 
     def show_line_numbers(self) -> "CatCommand":
         """Opcja -n - pokazuje numery linii"""
@@ -98,12 +137,12 @@ class CatCommand(BaseCommand):
         new_instance = self.clone()
         # Dodajemy przekierowanie do pliku
         if append:
-            new_instance.pipeline = f">> {file_path}"  # type: ignore
+            new_instance.pipeline = f">> {file_path}"
         else:
-            new_instance.pipeline = f"> {file_path}"  # type: ignore
+            new_instance.pipeline = f"> {file_path}"
         return new_instance
 
     def clone(self) -> "CatCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: CatCommand = super().clone()
+        new_instance: CatCommand = super().clone()  # type: ignore
         return new_instance

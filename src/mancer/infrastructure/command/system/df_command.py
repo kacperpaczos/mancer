@@ -59,6 +59,44 @@ class DfCommand(BaseCommand):
             metadata=metadata,
         )
 
+    # Przepisane metody buildera dla poprawnego typu zwracanego
+
+    def with_option(self, option: str) -> "DfCommand":
+        """Return a new instance with an added short/long option (e.g., -l)."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance.options.append(option)
+        return new_instance
+
+    def with_param(self, name: str, value) -> "DfCommand":
+        """Return a new instance with a named parameter (e.g., --name=value)."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance.parameters[name] = value
+        return new_instance
+
+    def with_flag(self, flag: str) -> "DfCommand":
+        """Return a new instance with a boolean flag (e.g., --recursive)."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance.flags.append(flag)
+        return new_instance
+
+    def with_sudo(self) -> "DfCommand":
+        """Return a new instance marked to require sudo."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance.requires_sudo = True
+        return new_instance
+
+    def add_arg(self, arg: str) -> "DfCommand":
+        """Return a new instance with an added positional argument."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance._args.append(arg)
+        return new_instance
+
+    def with_data_format(self, format_type: DataFormat) -> "DfCommand":
+        """Return a new instance with a preferred output data format."""
+        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance.preferred_data_format = format_type
+        return new_instance
+
     def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
         """Default parser for df command output"""
         lines = raw_output.strip().split("\n")
