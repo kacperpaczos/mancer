@@ -98,12 +98,12 @@ class CatCommand(BaseCommand):
         new_instance = self.clone()
         # Dodajemy przekierowanie do pliku
         if append:
-            new_instance.pipeline = f">> {file_path}"
+            new_instance.pipeline = f">> {file_path}"  # type: ignore
         else:
-            new_instance.pipeline = f"> {file_path}"
+            new_instance.pipeline = f"> {file_path}"  # type: ignore
         return new_instance
 
     def clone(self) -> "CatCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance = super().clone()
+        new_instance: CatCommand = super().clone()  # type: ignore
         return new_instance

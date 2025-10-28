@@ -119,5 +119,5 @@ class HeadCommand(BaseCommand):
 
     def clone(self) -> "HeadCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance = super().clone()
+        new_instance: HeadCommand = super().clone()  # type: ignore
         return new_instance

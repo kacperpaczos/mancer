@@ -22,7 +22,7 @@ class CatCommand(BaseCommand):
     ) -> CommandResult:
         """Wykonuje komendę cat"""
         # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)
+        super().execute(context, input_result)  # type: ignore
 
         # Zbuduj string komendy
         command_str = self.build_command()

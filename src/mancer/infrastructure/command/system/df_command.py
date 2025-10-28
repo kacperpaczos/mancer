@@ -105,9 +105,9 @@ class DfCommand(BaseCommand):
 
                             # Convert to number if possible
                             if "." in value:
-                                value = float(value)
+                                value = str(float(value))
                             else:
-                                value = int(value)
+                                value = str(int(value))
                         except ValueError:
                             pass  # Keep as string if conversion fails
 
@@ -212,9 +212,9 @@ class DfCommand(BaseCommand):
 
                             # Convert to number if possible
                             if "." in value:
-                                value = float(value)
+                                value = str(float(value))
                             else:
-                                value = int(value)
+                                value = str(int(value))
                         except ValueError:
                             pass  # Keep as string if conversion fails
 
@@ -274,7 +274,7 @@ class DfCommand(BaseCommand):
 
         # Build command with specific mount point
         original_command_builder = self.build_command
-        self.build_command = lambda: f"df -h {mount_point}"
+        self.build_command = lambda: f"df -h {mount_point}"  # type: ignore
 
         try:
             # Execute command
@@ -292,7 +292,7 @@ class DfCommand(BaseCommand):
                 return {}
         finally:
             # Restore original command builder
-            self.build_command = original_command_builder
+            self.build_command = original_command_builder  # type: ignore
 
     def show_filesystem(self, filesystem: str) -> "DfCommand":
         """

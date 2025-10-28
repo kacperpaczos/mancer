@@ -32,7 +32,7 @@ class NetstatCommand(BaseCommand):
 
     def _parse_output(self, raw_output: str) -> List[Dict[str, str]]:
         """Parsuje wynik netstat do listy słowników z informacjami o połączeniach"""
-        result = []
+        result: List[Dict[str, str]] = []
         lines = raw_output.strip().split("\n")
 
         # Znajdź linię nagłówkową

@@ -86,7 +86,7 @@ class ConfigSyncTask:
             task.created_at = datetime.datetime.fromisoformat(data["created_at"])
 
         if data.get("last_run"):
-            task.last_run = datetime.datetime.fromisoformat(data["last_run"])
+            task.last_run = datetime.datetime.fromisoformat(data["last_run"])  # type: ignore
 
         return task
 
@@ -493,7 +493,7 @@ class RemoteConfigManager:
                 )
 
         # Zaktualizuj czas ostatniego uruchomienia
-        task.last_run = datetime.datetime.now()
+        task.last_run = datetime.datetime.now()  # type: ignore
         self.update_sync_task(task)
 
         # Zapisz wyniki

@@ -1,13 +1,9 @@
 import datetime
 import os
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ...domain.model.command_context import (
-    CommandContext,
-    ExecutionMode,
-    RemoteHostInfo,
-)
+from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
@@ -165,7 +161,7 @@ class SystemdInspector:
         command = SystemctlCommand().list_units()
 
         # Dodaj obsługę retry i walidację
-        enforced_command = (
+        enforced_command: CommandEnforcer = (
             CommandEnforcer(command)
             .with_retry(max_retries=1)
             .with_validator(CommandEnforcer.ensure_success_output_contains("UNIT"))
@@ -198,10 +194,10 @@ class SystemdInspector:
             return None
 
         # Wykonaj komendę systemctl status
-        command = SystemctlCommand().status(unit_name)
+        command: SystemctlCommand = SystemctlCommand().status(unit_name)
 
         # Dodaj obsługę błędów i walidację
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
 
         # Wykonaj komendę
         result = enforced_command(self.context)
@@ -230,10 +226,10 @@ class SystemdInspector:
             return False
 
         # Wykonaj komendę systemctl start z sudo
-        command = SystemctlCommand().start(unit_name).with_sudo()
+        command: SystemctlCommand = SystemctlCommand().start(unit_name).with_sudo()
 
         # Wykonaj komendę z retry
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
         result = enforced_command(self.context)
 
         return result.success
@@ -252,10 +248,10 @@ class SystemdInspector:
             return False
 
         # Wykonaj komendę systemctl stop z sudo
-        command = SystemctlCommand().stop(unit_name).with_sudo()
+        command: SystemctlCommand = SystemctlCommand().stop(unit_name).with_sudo()
 
         # Wykonaj komendę z retry
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
         result = enforced_command(self.context)
 
         return result.success
@@ -274,10 +270,10 @@ class SystemdInspector:
             return False
 
         # Wykonaj komendę systemctl restart z sudo
-        command = SystemctlCommand().restart(unit_name).with_sudo()
+        command: SystemctlCommand = SystemctlCommand().restart(unit_name).with_sudo()
 
         # Wykonaj komendę z retry
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
         result = enforced_command(self.context)
 
         return result.success
@@ -296,10 +292,10 @@ class SystemdInspector:
             return False
 
         # Wykonaj komendę systemctl enable z sudo
-        command = SystemctlCommand().enable(unit_name).with_sudo()
+        command: SystemctlCommand = SystemctlCommand().enable(unit_name).with_sudo()
 
         # Wykonaj komendę z retry
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
         result = enforced_command(self.context)
 
         return result.success
@@ -318,10 +314,10 @@ class SystemdInspector:
             return False
 
         # Wykonaj komendę systemctl disable z sudo
-        command = SystemctlCommand().disable(unit_name).with_sudo()
+        command: SystemctlCommand = SystemctlCommand().disable(unit_name).with_sudo()
 
         # Wykonaj komendę z retry
-        enforced_command = CommandEnforcer(command).with_retry(max_retries=1)
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1)
         result = enforced_command(self.context)
 
         return result.success
@@ -390,14 +386,14 @@ class SystemdInspector:
         failed_units = len([u for u in all_units if u.is_failed()])
 
         # Kategoryzuj według typu
-        units_by_type = {}
+        units_by_type: Dict[str, List[Any]] = {}
         for unit in all_units:
             if unit.unit_type not in units_by_type:
                 units_by_type[unit.unit_type] = []
             units_by_type[unit.unit_type].append(unit)
 
         # Kategoryzuj według stanu
-        units_by_state = {}
+        units_by_state: Dict[str, List[Any]] = {}
         for unit in all_units:
             if unit.active_state not in units_by_state:
                 units_by_state[unit.active_state] = []
@@ -474,6 +470,9 @@ class SystemdInspector:
             str: Treść logów
         """
         if not self._check_connection():
+            return ""
+
+        if self.active_connection is None:
             return ""
 
         # Wykonaj komendę journalctl dla jednostki

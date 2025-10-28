@@ -160,7 +160,8 @@ def demo_command_chain():
 
     # Wyświetl historię wykonania
     print("Historia komend:")
-    for entry in logger.get_command_history():
+    logger_instance = MancerLogger.get_instance()
+    for entry in logger_instance.get_command_history():
         cmd = entry.get("command", {})
         cmd_name = cmd.get("command_name", "unknown")
         cmd_str = cmd.get("command_string", "")

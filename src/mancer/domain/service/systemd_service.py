@@ -214,7 +214,7 @@ class SystemdService:
         Returns:
             Dict[str, Any]: Przeanalizowane jednostki systemd
         """
-        units = {
+        units: Dict[str, Any] = {
             "summary": {"total": 0, "active": 0, "inactive": 0, "failed": 0},
             "by_type": {
                 "service": [],

@@ -459,11 +459,14 @@ class MancerTerminalWindow(QMainWindow):
                     "ssh_options": profile.ssh_options,
                 }
             )
-            
+
             # Usuń fingerprint_callback z connection_data żeby nie trafiło do SshBackend
             if "fingerprint_callback" in connection_data:
                 del connection_data["fingerprint_callback"]
-            if "ssh_options" in connection_data and "fingerprint_callback" in connection_data["ssh_options"]:
+            if (
+                "ssh_options" in connection_data
+                and "fingerprint_callback" in connection_data["ssh_options"]
+            ):
                 del connection_data["ssh_options"]["fingerprint_callback"]
 
             # Stwórz sesję
@@ -481,9 +484,9 @@ class MancerTerminalWindow(QMainWindow):
 
             # Create session with fingerprint callback
             session_id = self.session_manager.create_session(
-                connection_data, 
+                connection_data,
                 request_password_callback=self.request_password,
-                fingerprint_callback=self.handle_ssh_fingerprint
+                fingerprint_callback=self.handle_ssh_fingerprint,
             )
 
             if session_id:
@@ -520,17 +523,17 @@ class MancerTerminalWindow(QMainWindow):
                 port=22,  # Will be updated with actual port
                 fingerprint=fingerprint,
                 key_type=key_type,
-                parent=self
+                parent=self,
             )
 
             if dialog.exec() == dialog.DialogCode.Accepted:
                 accepted, save_permanently = dialog.get_result()
-                
+
                 if accepted:
                     if save_permanently:
                         # Add to known_hosts
                         self.add_host_to_known_hosts(key_type, fingerprint)
-                    
+
                     if self.logger:
                         self.logger.info("User accepted SSH fingerprint")
                     return "yes"
@@ -552,25 +555,26 @@ class MancerTerminalWindow(QMainWindow):
         """Add host to known_hosts file"""
         try:
             import os
+
             known_hosts_file = os.path.expanduser("~/.ssh/known_hosts")
-            
+
             # Ensure .ssh directory exists
             ssh_dir = os.path.dirname(known_hosts_file)
             os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
-            
+
             # Add entry to known_hosts
             host_entry = "127.0.0.1"  # Will be updated with actual hostname
             key_line = f"{host_entry} {key_type} - {fingerprint}\n"
-            
+
             with open(known_hosts_file, "a") as f:
                 f.write(key_line)
-            
+
             # Set proper permissions
             os.chmod(known_hosts_file, 0o600)
-            
+
             if self.logger:
                 self.logger.info(f"Added host to known_hosts: {host_entry}")
-                
+
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Failed to add host to known_hosts: {e}")

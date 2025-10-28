@@ -58,6 +58,8 @@ dev = [
   "isort>=5.13.0",
   "mypy>=1.6.0",
   "pre-commit>=3.6.0",
+  "types-PyYAML>=6.0.0",
+  "types-requests>=2.31.0",
 ]
 
 [tool.setuptools]
@@ -113,3 +115,8 @@ exclude = [
   "^prototypes/",
   "^development/",
 ]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "yaml.*"
+ignore_missing_imports = true

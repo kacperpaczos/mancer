@@ -127,7 +127,10 @@ class ShellRunner:
 
     def create_command(self, command_name: str) -> CommandInterface:
         """Creates a new command instance"""
-        return self.factory.create_command(command_name)
+        result = self.factory.create_command(command_name)
+        if result is None:
+            raise ValueError(f"Command '{command_name}' not found")
+        return result
 
     def execute(
         self,
@@ -206,7 +209,7 @@ class ShellRunner:
                 "command_type": command_type,
                 "command_string": command_string,
             }
-            self._command_cache.store(cache_id, command_str, result, metadata)
+            self._command_cache.store(cache_id, command_str or "", result, metadata)
 
         return result
 
@@ -246,7 +249,9 @@ class ShellRunner:
 
         # Add remote host info if applicable
         if context.remote_host:
-            context_str += f"{context.remote_host.hostname}|{context.remote_host.username}|{context.remote_host.port}"
+            context_str += (
+                f"{context.remote_host.host}|{context.remote_host.user}|{context.remote_host.port}"
+            )
 
         # Combine and hash
         combined = f"{cmd_str}|{context_str}"
@@ -326,6 +331,8 @@ class ShellRunner:
         if self._context.execution_mode == ExecutionMode.REMOTE:
             # Create an SSH backend
             rh = self._context.remote_host
+            if rh is None:
+                raise ValueError("Remote host not configured")
             return SshBackend(
                 hostname=rh.host,
                 username=rh.user,
@@ -355,10 +362,10 @@ class ShellRunner:
             refresh_interval: Refresh interval in minutes
         """
         self._cache_enabled = True
-        self._command_cache.set_max_size(max_size)
+        self._command_cache._max_size = max_size  # type: ignore
 
         if auto_refresh:
-            self._command_cache.enable_auto_refresh(refresh_interval)
+            self._command_cache.set_auto_refresh(refresh_interval)  # type: ignore
 
         # Log the change
         logger = MancerLogger.get_instance()
@@ -367,7 +374,7 @@ class ShellRunner:
     def disable_cache(self) -> None:
         """Disables command result caching"""
         self._cache_enabled = False
-        self._command_cache.disable_auto_refresh()
+        self._command_cache.set_auto_refresh(False)  # type: ignore
 
         # Log the change
         logger = MancerLogger.get_instance()
@@ -471,12 +478,12 @@ class ShellRunner:
         from ..infrastructure.command.system.echo_command import EchoCommand
 
         echo = EchoCommand()
-        echo.command_str = command_str
+        echo.command_str = command_str  # type: ignore
 
         def _build_command():
             return command_str
 
-        echo.build_command = _build_command
+        echo.build_command = _build_command  # type: ignore
 
         return echo
 
