@@ -25,10 +25,10 @@ class CommandEnforcer:
         self.command = command
         self.max_retries = 0
         self.retry_delay = 1  # sekundy
-        self.validators: List[Callable[[CommandContext], bool]] = []
+        self.validators: List[Callable[[CommandResult], bool]] = []
         self.timeout: Optional[int] = None
         self.error_handlers: Dict[str, Callable[[CommandContext, Exception], None]] = {}
-        self.success_handlers: List[Callable[[CommandContext], None]] = []
+        self.success_handlers: List[Callable[[CommandResult], CommandResult]] = []
 
     def with_retry(self, max_retries: int, delay: int = 1) -> "CommandEnforcer":
         """
@@ -106,7 +106,7 @@ class CommandEnforcer:
             CommandEnforcer: Zaktualizowana instancja
         """
         new_instance: CommandEnforcer = self._clone()
-        new_instance.success_handlers.append(handler_func)
+        new_instance.success_handlers.append(handler_func)  # type: ignore
         return new_instance
 
     def execute(
@@ -168,7 +168,7 @@ class CommandEnforcer:
                         )
                         try:
                             # Wywołaj handler błędu
-                            return handler(error_result, e)
+                            handler(context, e)
                         except Exception:
                             # Jeśli handler też rzucił wyjątek, kontynuuj normalną obsługę
                             pass

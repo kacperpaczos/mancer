@@ -52,7 +52,7 @@ class VersionInfo:
                 return cls(
                     name="mancer",
                     version=dist.version,
-                    summary=str(dist.project_name),
+                    summary=getattr(dist, "project_name", "mancer"),
                     author=None,
                     author_email=None,
                 )

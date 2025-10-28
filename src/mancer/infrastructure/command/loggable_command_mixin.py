@@ -52,7 +52,7 @@ class LoggableCommandMixin:
                 "token",
                 "key",
             ):
-                context_params[key] = value
+                context_params[key] = str(value)
 
         # Loguj rozpoczęcie komendy
         return self._get_logger().log_command_start(

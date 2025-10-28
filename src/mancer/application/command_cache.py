@@ -207,7 +207,7 @@ class CommandCache:
             }
 
             if include_results:
-                export["results"] = {}
+                export["results"] = {}  # type: ignore
                 for cmd_id, (result, ts, meta) in self._cache.items():
                     export["results"][cmd_id] = {
                         "timestamp": ts.isoformat(),
