@@ -8,6 +8,7 @@ repos:
         files: ^(src/|tests/|tools/).*\.py$
         exclude: ^(prototypes/|examples/)
         stages: [pre-commit]
+
       - id: ruff-format
         files: ^(src/|tests/|tools/).*\.py$
         exclude: ^(prototypes/|examples/)
@@ -16,7 +17,7 @@ repos:
       # Pre-push (on push) - check only, no fixes
       - id: ruff
         name: ruff (pre-push, check-only)
-        args: ["--no-fix"]
+        args: ["--no-fix", "--select=E,F"]  # Wyłącz I (import sorting) dla ruff, robi to isort
         files: ^(src/|tests/|tools/).*\.py$
         exclude: ^(prototypes/|examples/)
         stages: [pre-push]

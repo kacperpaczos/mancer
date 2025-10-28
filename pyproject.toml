@@ -69,9 +69,10 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["mancer*"]
 
-# Konfiguracja ruff (PEP8 + wybrane rozszerzenia)
+
 [tool.ruff]
 target-version = "py38"
+line-length = 100
 
 [tool.ruff.lint]
 select = [
