@@ -725,8 +725,7 @@ class AptCommand(BaseCommand):
                         '"installed_packages": {{}}, ' \
                         '"auto_update_interval": 86400, ' \
                         '"is_updated": true}}' > "{apt_state_file}"
-                fi
-                """
+                fi"""
                 cmd += cmd_template.format(apt_state_file=self.APT_STATE_FILE)
                 return cmd
 
@@ -753,7 +752,10 @@ class AptCommand(BaseCommand):
                             mv $TMP_FILE "{apt_state_file}"
                         else
                             # Utwórz nowy plik
-                            echo '{{"last_update": "'"$(date -Iseconds)"'", "installed_packages": {{}}, "auto_update_interval": 86400, "is_updated": true}}' > "{apt_state_file}"
+                            echo '{{"last_update": "'"$(date -Iseconds)"'", ' \
+                                '"installed_packages": {{}}, ' \
+                                '"auto_update_interval": 86400, ' \
+                                '"is_updated": true}}' > "{apt_state_file}"
                         fi
                     fi
                     """

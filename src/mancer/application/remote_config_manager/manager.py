@@ -92,7 +92,10 @@ class SSHManager:
 
         try:
             # Wykonaj komendę find na serwerze dla wszystkich typów plików konfiguracyjnych
-            find_cmd = f'find {self.config.app_dir} -type f \\( -name "*.json" -o -name "*.config" -o -name "config.js" \\)'
+            find_cmd = (
+                f'find {self.config.app_dir} -type f '
+                f'\\( -name "*.json" -o -name "*.config" -o -name "config.js" \\)'
+            )
             stdin, stdout, stderr = self.ssh.exec_command(find_cmd)
 
             # Pobierz wyniki
