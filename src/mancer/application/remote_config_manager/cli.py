@@ -96,19 +96,17 @@ class CLI:
         connect_parser.add_argument("-p", "--profile", help="Nazwa profilu do użycia")
 
         # Polecenie backup - utwórz kopię zapasową plików
-        backup_parser = subparsers.add_parser("backup", help="Utwórz kopię zapasową plików")
+        subparsers.add_parser("backup", help="Utwórz kopię zapasową plików")
 
         # Polecenie diff - pokaż różnice między plikami
-        diff_parser = subparsers.add_parser("diff", help="Pokaż różnice między plikami")
+        subparsers.add_parser("diff", help="Pokaż różnice między plikami")
 
         # Polecenie update - aktualizuj pliki na serwerze
-        update_parser = subparsers.add_parser("update", help="Aktualizuj pliki na serwerze")
+        subparsers.add_parser("update", help="Aktualizuj pliki na serwerze")
 
         # Polecenie profile - zarządzaj profilami
         profile_parser = subparsers.add_parser("profile", help="Zarządzaj profilami")
-        profile_subparsers = profile_parser.add_subparsers(
-            dest="profile_command", help="Operacja na profilach"
-        )
+        profile_subparsers = profile_parser.add_subparsers(dest="profile_command", help="Operacja na profilach")
 
         # Polecenie profile add - dodaj profil
         profile_add_parser = profile_subparsers.add_parser("add", help="Dodaj nowy profil")
@@ -124,7 +122,7 @@ class CLI:
         )
 
         # Polecenie profile list - wyświetl listę profili
-        profile_list_parser = profile_subparsers.add_parser("list", help="Wyświetl listę profili")
+        profile_subparsers.add_parser("list", help="Wyświetl listę profili")
 
         # Polecenie profile remove - usuń profil
         profile_remove_parser = profile_subparsers.add_parser("remove", help="Usuń profil")
@@ -255,9 +253,7 @@ class CLI:
 
         # Sprawdź czy jest połączenie z serwerem
         if not self.manager.ssh_manager:
-            self.print_error(
-                "Brak połączenia z serwerem. Użyj 'connect', aby połączyć się z serwerem"
-            )
+            self.print_error("Brak połączenia z serwerem. Użyj 'connect', aby połączyć się z serwerem")
             return 1
 
         # Utwórz kopię zapasową
@@ -273,9 +269,7 @@ class CLI:
             self.print_error("Nie można utworzyć kopii zapasowej")
             return 1
 
-        self.print_success(
-            f"Utworzono kopię zapasową plików konfiguracyjnych ({len(successful)} plików)"
-        )
+        self.print_success(f"Utworzono kopię zapasową plików konfiguracyjnych ({len(successful)} plików)")
 
         if failed:
             self.print_warning(f"Nie udało się skopiować {len(failed)} plików:")
@@ -337,9 +331,7 @@ class CLI:
                 f"Stan lokalny: [bold green]{diff.cache_path}[/bold green]\n\n"
                 + "\n".join(
                     [
-                        line.replace("- ", "[bold red]- [/bold red]").replace(
-                            "+ ", "[bold green]+ [/bold green]"
-                        )
+                        line.replace("- ", "[bold red]- [/bold red]").replace("+ ", "[bold green]+ [/bold green]")
                         for line in diff.differences[:10]
                     ]
                 )
@@ -374,9 +366,7 @@ class CLI:
 
         # Sprawdź czy jest połączenie z serwerem
         if not self.manager.ssh_manager:
-            self.print_error(
-                "Brak połączenia z serwerem. Użyj 'connect', aby połączyć się z serwerem"
-            )
+            self.print_error("Brak połączenia z serwerem. Użyj 'connect', aby połączyć się z serwerem")
             return 1
 
         # Znajdź różnice

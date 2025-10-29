@@ -41,7 +41,9 @@ class SCPTransfer:
 
 
 class SshBackend(BackendInterface):
-    """Backend executing commands over SSH on a remote host with session management and SCP support."""
+    """
+    Backend executing commands over SSH on a remote host with session management and SCP support.
+    """
 
     def __init__(
         self,
@@ -111,9 +113,7 @@ class SshBackend(BackendInterface):
 
         # Interactive shell handling
         self.output_callback: Optional[Callable[[str, str], None]] = None  # (session_id, data)
-        self.shells: Dict[str, Dict[str, Any]] = (
-            {}
-        )  # session_id -> {"fd": int, "reader": Thread, "alive": bool}
+        self.shells: Dict[str, Dict[str, Any]] = {}  # session_id -> {"fd": int, "reader": Thread, "alive": bool}
 
         # Logger initialization (if available)
         try:
@@ -307,12 +307,11 @@ class SshBackend(BackendInterface):
 
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
-                return self._execute_with_fingerprint_handling(
-                    ssh_command, working_dir, env_vars, fingerprint_callback
-                )
+                return self._execute_with_fingerprint_handling(ssh_command, working_dir, env_vars, fingerprint_callback)
             else:
-                # Standardowe wykonanie SSH (dla jednorazowych komend). Jeśli interaktywna powłoka działa,
-                # wyślij komendę do niej i zwróć sukces natychmiast (output trafi przez callback terminala).
+                # Standardowe wykonanie SSH (dla jednorazowych komend).
+                # Jeśli interaktywna powłoka działa, wyślij komendę do niej i zwróć sukces
+                # natychmiast (output trafi przez callback terminala).
                 if session_id in self.shells and self.shells[session_id].get("alive"):
                     sent = self.send_input(session_id, command + "\n")
                     return CommandResult(
@@ -375,7 +374,8 @@ class SshBackend(BackendInterface):
         if modified_ssh_command and modified_ssh_command[0] == "ssh":
             # Wstaw -T zaraz po komendzie 'ssh'
             modified_ssh_command.insert(1, "-T")
-            # Wymuś brak promptów po zaakceptowaniu klucza (po preflight) jeśli nie określono inaczej w ssh_options
+            # Wymuś brak promptów po zaakceptowaniu klucza (po preflight)
+            # jeśli nie określono inaczej w ssh_options
             has_shkc = any(
                 (isinstance(tok, str) and tok.startswith("StrictHostKeyChecking="))
                 or (
@@ -397,7 +397,8 @@ class SshBackend(BackendInterface):
 
         def run_command():
             try:
-                # Preflight: pobierz klucz hosta i policz fingerprint, pokaż dialog, zapisz do known_hosts po akceptacji
+                # Preflight: pobierz klucz hosta i policz fingerprint, pokaż dialog,
+                # zapisz do known_hosts po akceptacji
                 if hasattr(self, "logger") and self.logger:
                     self.logger.info("Starting SSH with fingerprint handling (preflight mode).")
 
@@ -407,9 +408,7 @@ class SshBackend(BackendInterface):
                         host_target = tok.split("@", 1)[1]
                         break
                 if host_target is None and modified_ssh_command:
-                    host_target = (
-                        modified_ssh_command[-2] if len(modified_ssh_command) >= 2 else None
-                    )
+                    host_target = modified_ssh_command[-2] if len(modified_ssh_command) >= 2 else None
 
                 if host_target is None:
                     raise RuntimeError("Could not determine host target from SSH command")
@@ -469,9 +468,7 @@ class SshBackend(BackendInterface):
                     fingerprint_str = mfp.group(0)
 
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.info(
-                            f"Preflight fingerprint detected: {fingerprint_str} ({key_type})"
-                        )
+                        self.logger.info(f"Preflight fingerprint detected: {fingerprint_str} ({key_type})")
 
                     # Callback do GUI
                     decision = fingerprint_callback(fingerprint_str)
@@ -494,21 +491,15 @@ class SshBackend(BackendInterface):
                     kh_override = None
                     try:
                         kh_override = (
-                            self.ssh_options.get("UserKnownHostsFile")
-                            if isinstance(self.ssh_options, dict)
-                            else None
+                            self.ssh_options.get("UserKnownHostsFile") if isinstance(self.ssh_options, dict) else None
                         )
                     except Exception:
                         kh_override = None
                     known_hosts = (
-                        os.path.expanduser(kh_override)
-                        if kh_override
-                        else os.path.expanduser("~/.ssh/known_hosts")
+                        os.path.expanduser(kh_override) if kh_override else os.path.expanduser("~/.ssh/known_hosts")
                     )
                     os.makedirs(os.path.dirname(known_hosts), exist_ok=True)
-                    host_entry = (
-                        f"[{host_target}]:{port_value}" if port_value != 22 else host_target
-                    )
+                    host_entry = f"[{host_target}]:{port_value}" if port_value != 22 else host_target
                     with open(known_hosts, "a", encoding="utf-8") as fh:
                         fh.write(f"{host_entry} {key_type} {key_b64}\n")
                     try:
@@ -533,9 +524,8 @@ class SshBackend(BackendInterface):
 
                 # Wykonaj właściwe SSH (bez interakcji)
                 if hasattr(self, "logger") and self.logger:
-                    self.logger.info(
-                        f"Starting SSH with fingerprint handling. Command: {' '.join(modified_ssh_command)}"
-                    )
+                    cmd_str = " ".join(modified_ssh_command)
+                    self.logger.info(f"Starting SSH with fingerprint handling. Command: {cmd_str}")
                 run_env = dict(os.environ)
                 if env_vars:
                     run_env.update(env_vars)
@@ -583,9 +573,7 @@ class SshBackend(BackendInterface):
                             os.remove(cleanup_script)
                         except Exception:
                             pass
-                final_output = (result.stdout or "") + (
-                    "\n" + result.stderr if result.stderr else ""
-                )
+                final_output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
                 result_queue.put(
                     CommandResult(
                         success=result.returncode == 0,
@@ -653,9 +641,7 @@ class SshBackend(BackendInterface):
 
         return options
 
-    def scp_upload(
-        self, local_path: str, remote_path: str, session_id: Optional[str] = None
-    ) -> SCPTransfer:
+    def scp_upload(self, local_path: str, remote_path: str, session_id: Optional[str] = None) -> SCPTransfer:
         """Upload pliku przez SCP"""
         target_session = session_id or self.active_session
         if not target_session or target_session not in self.sessions:
@@ -679,9 +665,7 @@ class SshBackend(BackendInterface):
 
         return transfer
 
-    def scp_download(
-        self, remote_path: str, local_path: str, session_id: Optional[str] = None
-    ) -> SCPTransfer:
+    def scp_download(self, remote_path: str, local_path: str, session_id: Optional[str] = None) -> SCPTransfer:
         """Download pliku przez SCP"""
         target_session = session_id or self.active_session
         if not target_session or target_session not in self.sessions:
@@ -733,7 +717,7 @@ class SshBackend(BackendInterface):
             else:
                 transfer.status = "failed"
 
-        except Exception as e:
+        except Exception:
             transfer.status = "failed"
 
         transfer.end_time = datetime.now()
@@ -766,7 +750,7 @@ class SshBackend(BackendInterface):
             else:
                 transfer.status = "failed"
 
-        except Exception as e:
+        except Exception:
             transfer.status = "failed"
 
         transfer.end_time = datetime.now()
@@ -791,9 +775,7 @@ class SshBackend(BackendInterface):
                     return True
         return False
 
-    def parse_output(
-        self, command: str, raw_output: str, exit_code: int, error_output: str = ""
-    ) -> CommandResult:
+    def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
         """Parse command output into a standard CommandResult."""
         success = exit_code == 0
 
@@ -847,9 +829,7 @@ class SshBackend(BackendInterface):
 
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
-                return self._execute_with_fingerprint_handling(
-                    ssh_command, None, None, fingerprint_callback
-                ).success
+                return self._execute_with_fingerprint_handling(ssh_command, None, None, fingerprint_callback).success
             else:
                 # Standardowy test
                 result = subprocess.run(

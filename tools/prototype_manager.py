@@ -10,7 +10,6 @@ Umożliwia:
 """
 
 import argparse
-import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -100,11 +99,7 @@ class PrototypeManager:
         """Wczytuje listę wymagań."""
         try:
             content = requirements_path.read_text()
-            return [
-                line.strip()
-                for line in content.split("\n")
-                if line.strip() and not line.startswith("#")
-            ]
+            return [line.strip() for line in content.split("\n") if line.strip() and not line.startswith("#")]
         except Exception:
             return []
 

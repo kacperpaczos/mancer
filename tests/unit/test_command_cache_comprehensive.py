@@ -5,9 +5,7 @@ Kompleksowe testy dla CommandCache - zwiększenie pokrycia do 85%+
 import threading
 import time
 from datetime import datetime
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from mancer.application.command_cache import CommandCache
 from mancer.domain.model.command_result import CommandResult

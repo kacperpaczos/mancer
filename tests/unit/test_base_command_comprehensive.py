@@ -2,9 +2,7 @@
 Kompleksowe testy dla BaseCommand - zwiększenie pokrycia do 85%+
 """
 
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from mancer.application.commands.base_command import BaseCommand
 from mancer.domain.model.command_context import CommandContext
@@ -45,11 +43,7 @@ class TestBaseCommandComprehensive:
 
     def test_with_param_chaining(self):
         """Test łańcuchowania parametrów"""
-        result = (
-            self.command.with_param("param1", "value1")
-            .with_param("param2", "value2")
-            .with_param("param3", 123)
-        )
+        result = self.command.with_param("param1", "value1").with_param("param2", "value2").with_param("param3", 123)
 
         assert result is self.command
         assert self.command._params["param1"] == "value1"
@@ -262,7 +256,7 @@ class TestBaseCommandComprehensive:
             exit_code=0,
         )
 
-        result = self.command.execute(self.context, input_result)
+        self.command.execute(self.context, input_result)
 
         # Sprawdź czy stdin został przekazany
         call_args = mock_backend_instance.execute_command.call_args

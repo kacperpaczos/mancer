@@ -3,7 +3,6 @@
 Script to check Mancer versions installed in prototype environments.
 """
 
-import json
 import os
 import subprocess
 import sys
@@ -23,12 +22,13 @@ def check_environment(env_path, prototype_name):
 
     try:
         # Command to get Mancer version
-        cmd = f"source {activate_script} && python -c \"import pkg_resources; print(pkg_resources.get_distribution('mancer').version)\""
+        cmd = (
+            f"source {activate_script} && python -c "
+            f"\"import pkg_resources; print(pkg_resources.get_distribution('mancer').version)\""
+        )
 
         # Run the command
-        result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, executable="/bin/bash"
-        )
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, executable="/bin/bash")
 
         if result.returncode != 0:
             return {
@@ -87,13 +87,7 @@ def main():
             for line in f:
                 if "version" in line and "=" in line:
                     try:
-                        latest_version = (
-                            line.split("=")[1]
-                            .strip()
-                            .replace('"', "")
-                            .replace("'", "")
-                            .replace(",", "")
-                        )
+                        latest_version = line.split("=")[1].strip().replace('"', "").replace("'", "").replace(",", "")
                         break
                     except:
                         pass

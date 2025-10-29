@@ -3,12 +3,11 @@ Utilities do testów integracyjnych Docker dla Mancer - używające docker exec 
 """
 
 import json
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 # Dodaj ścieżkę do Mancer
 sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
@@ -135,10 +134,8 @@ except Exception as e:
                 for cmd in test_commands:
                     cmd_result = {"command": cmd, "timestamp": time.time()}
 
-                    stdout, stderr, exit_code = (
-                        MancerDockerTestUtils.execute_bash_command_in_container(
-                            container_name, cmd, f"/home/mancer1/mancer/{app_path}"
-                        )
+                    stdout, stderr, exit_code = MancerDockerTestUtils.execute_bash_command_in_container(
+                        container_name, cmd, f"/home/mancer1/mancer/{app_path}"
                     )
 
                     cmd_result.update(

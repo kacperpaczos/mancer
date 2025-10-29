@@ -9,11 +9,9 @@ Ten skrypt testuje:
 4. Generowanie raportów
 """
 
-import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 
@@ -63,7 +61,7 @@ def test_prototype_creation():
         shutil.rmtree(test_path)
 
     # Utwórz nowy prototyp
-    cmd = f'python tools/prototype_manager.py create --name "{test_name}" --description "{test_description}"'
+    cmd = f'python tools/prototype_manager.py create --name "{test_name}" ' f'--description "{test_description}"'
     result = run_command(cmd)
 
     if result and result.returncode == 0:

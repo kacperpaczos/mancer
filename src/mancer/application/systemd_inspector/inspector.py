@@ -71,9 +71,7 @@ class SystemdInspector:
             print(f"Błąd deszyfrowania hasła: {str(e)}")
             return None
 
-    def get_systemd_units(
-        self, hostname: str, username: str, password: Optional[str] = None
-    ) -> Optional[str]:
+    def get_systemd_units(self, hostname: str, username: str, password: Optional[str] = None) -> Optional[str]:
         """
         Pobiera listę jednostek systemd z serwera.
 
@@ -113,9 +111,7 @@ class SystemdInspector:
 
             # Usuń plik tymczasowy na zdalnym serwerze
             if password:
-                cleanup_cmd = (
-                    f"sshpass -p '{password}' ssh {username}@{hostname} 'rm {remote_temp_file}'"
-                )
+                cleanup_cmd = f"sshpass -p '{password}' ssh {username}@{hostname} 'rm {remote_temp_file}'"
             else:
                 cleanup_cmd = f"ssh {username}@{hostname} 'rm {remote_temp_file}'"
 
@@ -169,7 +165,6 @@ class SystemdInspector:
             return units
 
         lines = units_output.split("\n")
-        parsing_units = False
 
         for line in lines:
             # Pomijamy puste linie i nagłówki
@@ -178,7 +173,6 @@ class SystemdInspector:
 
             # Sprawdzamy czy linia zawiera informacje o jednostce
             if "●" in line or ("." in line and not line.startswith("To show")):
-                parsing_units = True
                 parts = line.split()
                 if len(parts) < 3:
                     continue
@@ -198,9 +192,7 @@ class SystemdInspector:
 
                 # Aktualizuj statystyki
                 units["summary"]["total"] += 1
-                units["summary"][
-                    status if status in ["active", "inactive", "failed"] else "inactive"
-                ] += 1
+                units["summary"][status if status in ["active", "inactive", "failed"] else "inactive"] += 1
 
                 # Kategoryzuj według typu
                 unit_type = unit_name.split(".")[-1] if "." in unit_name else "other"
@@ -229,9 +221,7 @@ class SystemdInspector:
 
         return units
 
-    def save_report(
-        self, hostname: str, units: Dict[str, Any], output_dir: Optional[str] = None
-    ) -> str:
+    def save_report(self, hostname: str, units: Dict[str, Any], output_dir: Optional[str] = None) -> str:
         """
         Zapisuje raport o jednostkach systemd do pliku.
 
@@ -305,9 +295,7 @@ class SystemdInspector:
 
         return str(full_path)
 
-    def load_profile(
-        self, profile_name: Optional[str] = None
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def load_profile(self, profile_name: Optional[str] = None) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """
         Wczytuje profil połączenia z pliku.
 
@@ -326,18 +314,14 @@ class SystemdInspector:
 
             if profile_name and profile_name in profiles:
                 profile = profiles[profile_name]
-                password = (
-                    self.decrypt_password(profile["password"]) if profile["password"] else None
-                )
+                password = self.decrypt_password(profile["password"]) if profile["password"] else None
                 return profile["hostname"], profile["username"], password
 
             if profile_name is None and profiles:
                 # Zwróć pierwszy profil, jeśli nie podano nazwy
                 first_profile_name = next(iter(profiles))
                 profile = profiles[first_profile_name]
-                password = (
-                    self.decrypt_password(profile["password"]) if profile["password"] else None
-                )
+                password = self.decrypt_password(profile["password"]) if profile["password"] else None
                 return profile["hostname"], profile["username"], password
 
         except Exception as e:

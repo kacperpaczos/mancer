@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
+from typing import Callable, Dict, List, Optional, TypeVar, cast
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
@@ -93,9 +93,7 @@ class CommandEnforcer:
         new_instance.error_handlers[error_pattern] = handler_func
         return new_instance
 
-    def on_success(
-        self, handler_func: Callable[[CommandResult], CommandResult]
-    ) -> "CommandEnforcer":
+    def on_success(self, handler_func: Callable[[CommandResult], CommandResult]) -> "CommandEnforcer":
         """
         Dodaje handler sukcesu, który zostanie wywołany po pomyślnym wykonaniu komendy.
 
@@ -109,9 +107,7 @@ class CommandEnforcer:
         new_instance.success_handlers.append(handler_func)
         return new_instance
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """
         Wykonuje komendę z obsługą retry, walidacją, timeoutem i obsługą błędów.
 
@@ -168,9 +164,9 @@ class CommandEnforcer:
                     if re.search(pattern, str(e)):
                         try:
                             # Wywołaj handler błędu
-                            error_result = cast(
-                                Callable[[CommandResult, Exception], CommandResult], handler
-                            )(error_result, e)
+                            error_result = cast(Callable[[CommandResult, Exception], CommandResult], handler)(
+                                error_result, e
+                            )
                         except Exception:
                             # Jeśli handler też rzucił wyjątek, kontynuuj normalną obsługę
                             pass
@@ -216,9 +212,7 @@ class CommandEnforcer:
         new_instance.success_handlers = list(self.success_handlers)
         return new_instance
 
-    def __call__(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def __call__(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """
         Umożliwia używanie CommandEnforcer jak normalnej komendy.
 

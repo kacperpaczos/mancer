@@ -3,7 +3,6 @@ Testy integracyjne dla frameworka Mancer w środowisku Docker - testowanie core 
 """
 
 import json
-import os
 import subprocess
 import time
 from pathlib import Path
@@ -21,12 +20,7 @@ class TestMancerFrameworkIntegration:
     @pytest.fixture(scope="class")
     def docker_compose_file(self):
         """Ścieżka do docker-compose.yml dla testów"""
-        return str(
-            Path(__file__).parent.parent.parent
-            / "development"
-            / "docker_test"
-            / "docker-compose.yml"
-        )
+        return str(Path(__file__).parent.parent.parent / "development" / "docker_test" / "docker-compose.yml")
 
     @pytest.fixture(scope="class")
     def docker_setup(self):
@@ -112,9 +106,7 @@ class TestMancerFrameworkIntegration:
         results = MancerDockerTestUtils.test_mancer_core_commands(container_name)
 
         assert "error" not in results, f"Błąd testowania komend Mancer: {results}"
-        assert results.get(
-            "shell_runner_initialized", False
-        ), "ShellRunner nie został zainicjalizowany"
+        assert results.get("shell_runner_initialized", False), "ShellRunner nie został zainicjalizowany"
 
         # Sprawdź czy komendy zostały wykonane
         commands_tested = results.get("commands_tested", [])
@@ -122,13 +114,9 @@ class TestMancerFrameworkIntegration:
 
         # Sprawdź czy przynajmniej niektóre komendy przeszły
         successful_commands = [cmd for cmd in commands_tested if cmd.get("success", False)]
-        assert (
-            len(successful_commands) > 0
-        ), f"Żadne komendy frameworka nie przeszły: {commands_tested}"
+        assert len(successful_commands) > 0, f"Żadne komendy frameworka nie przeszły: {commands_tested}"
 
-        print(
-            f"✅ Przetestowano {len(commands_tested)} komend frameworka, {len(successful_commands)} successful"
-        )
+        print(f"✅ Przetestowano {len(commands_tested)} komend frameworka, {len(successful_commands)} successful")
 
     def test_bash_backend_functionality(self, container_ready):
         """Test funkcjonalności BashBackend bezpośrednio"""
@@ -230,9 +218,7 @@ except Exception as e:
         )
 
         # Parse results
-        assert (
-            "COMMAND_FACTORY_RESULTS:" in stdout
-        ), f"Brak wyników CommandFactory: {stdout} {stderr}"
+        assert "COMMAND_FACTORY_RESULTS:" in stdout, f"Brak wyników CommandFactory: {stdout} {stderr}"
 
         json_part = stdout.split("COMMAND_FACTORY_RESULTS:")[1].strip()
         results = json.loads(json_part)
@@ -304,9 +290,7 @@ except Exception as e:
         )
 
         # Parse results
-        assert (
-            "COMMAND_CHAINS_RESULTS:" in stdout
-        ), f"Brak wyników command chains: {stdout} {stderr}"
+        assert "COMMAND_CHAINS_RESULTS:" in stdout, f"Brak wyników command chains: {stdout} {stderr}"
 
         json_part = stdout.split("COMMAND_CHAINS_RESULTS:")[1].strip()
         results = json.loads(json_part)
@@ -433,9 +417,7 @@ except Exception as e:
             commands_executed = results.get("commands_executed", [])
             successful = [cmd for cmd in commands_executed if cmd.get("success", False)]
 
-            assert (
-                len(successful) > 0
-            ), f"Żadne komendy end-to-end nie przeszły: {commands_executed}"
+            assert len(successful) > 0, f"Żadne komendy end-to-end nie przeszły: {commands_executed}"
 
             print(f"✅ Framework E2E: {len(successful)}/{len(commands_executed)} komend successful")
 

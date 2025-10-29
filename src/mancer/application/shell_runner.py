@@ -186,7 +186,7 @@ class ShellRunner:
             result = command(context) if hasattr(command, "__call__") else command.execute(context)
 
         # Store the result in the cache if caching is enabled (but not for live output)
-        if self._cache_enabled and result and not use_live_output:
+        if self._cache_enabled and result and not use_live_output and cache_id is not None:
             command_str = str(command)
 
             # Get the command type (class name or command name)
@@ -195,9 +195,7 @@ class ShellRunner:
                 command_type = command.name
 
             # Get the full command string
-            command_string = (
-                command.build_command() if hasattr(command, "build_command") else str(command)
-            )
+            command_string = command.build_command() if hasattr(command, "build_command") else str(command)
 
             metadata = {
                 "context": {
@@ -219,7 +217,10 @@ class ShellRunner:
 
     def get_command(self, alias: str) -> CommandInterface:
         """Gets a preconfigured command by alias"""
-        return self.factory.get_command(alias)
+        command = self.factory.get_command(alias)
+        if command is None:
+            raise ValueError(f"Command '{alias}' not found")
+        return command
 
     def _prepare_context(self, context_params: Optional[Dict[str, Any]] = None) -> CommandContext:
         """Prepares the command execution context"""
@@ -249,9 +250,7 @@ class ShellRunner:
 
         # Add remote host info if applicable
         if context.remote_host:
-            context_str += (
-                f"{context.remote_host.host}|{context.remote_host.user}|{context.remote_host.port}"
-            )
+            context_str += f"{context.remote_host.host}|{context.remote_host.user}|{context.remote_host.port}"
 
         # Combine and hash
         combined = f"{cmd_str}|{context_str}"
@@ -350,9 +349,7 @@ class ShellRunner:
             # Use local bash backend
             return BashBackend()
 
-    def enable_cache(
-        self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5
-    ) -> None:
+    def enable_cache(self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5) -> None:
         """
         Enables command result caching.
 
@@ -374,7 +371,7 @@ class ShellRunner:
     def disable_cache(self) -> None:
         """Disables command result caching"""
         self._cache_enabled = False
-        self._command_cache.set_auto_refresh(False)  # type: ignore
+        self._command_cache.set_auto_refresh(False)
 
         # Log the change
         logger = MancerLogger.get_instance()
@@ -402,9 +399,7 @@ class ShellRunner:
                 "refresh_interval": 0,
             }
 
-    def get_command_history(
-        self, limit: Optional[int] = None, success_only: bool = False
-    ) -> List[Any]:
+    def get_command_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Any]:
         """
         Gets the command execution history.
 
@@ -446,9 +441,7 @@ class ShellRunner:
         """
         return self._command_cache.export_data(include_results=include_results)
 
-    def execute_live(
-        self, command: CommandInterface, context_params: Optional[Dict[str, Any]] = None
-    ) -> CommandResult:
+    def execute_live(self, command: CommandInterface, context_params: Optional[Dict[str, Any]] = None) -> CommandResult:
         """Execute a command with live (streamed) output.
 
         Args:
@@ -500,10 +493,7 @@ class ShellRunner:
         """
         language = language or self._context.get_parameter("language", "en")
 
-        if (
-            language in COMMAND_TYPES_TRANSLATION
-            and command_type in COMMAND_TYPES_TRANSLATION[language]
-        ):
+        if language in COMMAND_TYPES_TRANSLATION and command_type in COMMAND_TYPES_TRANSLATION[language]:
             return COMMAND_TYPES_TRANSLATION[language][command_type]
 
         return command_type

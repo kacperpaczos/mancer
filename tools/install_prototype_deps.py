@@ -18,9 +18,7 @@ def create_venv(venv_path):
         return True
 
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "venv", venv_path], check=True, capture_output=True
-        )
+        subprocess.run([sys.executable, "-m", "venv", venv_path], check=True, capture_output=True)
         print(f"Created virtual environment at {venv_path}")
         return True
     except subprocess.CalledProcessError as e:
@@ -125,9 +123,7 @@ def main():
     parser = argparse.ArgumentParser(description="Install dependencies for prototypes")
     parser.add_argument("prototype", nargs="?", help="Prototype directory name to configure")
     parser.add_argument("--all", action="store_true", help="Configure all prototypes")
-    parser.add_argument(
-        "--force", action="store_true", help="Force recreation of virtual environment"
-    )
+    parser.add_argument("--force", action="store_true", help="Force recreation of virtual environment")
     args = parser.parse_args()
 
     workspace_dir = Path(os.getcwd())
@@ -161,9 +157,7 @@ def main():
                 else:
                     failure_count += 1
 
-        print(
-            f"\nSummary: {success_count} prototypes configured successfully, {failure_count} with errors"
-        )
+        print(f"\nSummary: {success_count} prototypes configured successfully, " f"{failure_count} with errors")
 
     else:
         # List available prototypes
@@ -172,9 +166,7 @@ def main():
             if prototype_dir.is_dir():
                 print(f"  - {prototype_dir.name}")
 
-        print(
-            "\nUsage: install_prototype_deps.py <prototype_name> or --all to configure all prototypes"
-        )
+        print("\nUsage: install_prototype_deps.py <prototype_name> or --all " "to configure all prototypes")
 
     return 0
 

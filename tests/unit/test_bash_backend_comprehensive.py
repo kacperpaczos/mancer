@@ -2,13 +2,8 @@
 Kompleksowe testy dla BashBackend - zwiększenie pokrycia do 80%+
 """
 
-import os
 import subprocess
-import time
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from mancer.domain.model.command_result import CommandResult
 from mancer.infrastructure.backend.bash_backend import BashBackend
@@ -110,7 +105,7 @@ class TestBashBackendComprehensive:
         mock_popen.return_value = mock_process
 
         context_params = {"live_output": True}
-        result = self.backend.execute_command("echo test", context_params=context_params)
+        self.backend.execute_command("echo test", context_params=context_params)
 
         # Sprawdź czy Popen został wywołany z odpowiednimi parametrami
         mock_popen.assert_called_once()
@@ -216,9 +211,7 @@ class TestBashBackendComprehensive:
 
     def test_build_command_string_with_flags(self):
         """Test budowania komendy z flagami"""
-        command = self.backend.build_command_string(
-            "ls", [], {}, ["--recursive", "--human-readable"]
-        )
+        command = self.backend.build_command_string("ls", [], {}, ["--recursive", "--human-readable"])
         assert command == "ls --recursive --human-readable"
 
     def test_build_command_string_with_short_params(self):

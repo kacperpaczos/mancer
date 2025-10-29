@@ -52,9 +52,7 @@ class SystemdService:
 
             try:
                 # Tworzymy unikalną nazwę pliku tymczasowego
-                temp_filename = (
-                    f"systemd_units_temp_{hostname}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-                )
+                temp_filename = f"systemd_units_temp_{hostname}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
                 remote_temp_file = f"/tmp/{temp_filename}"
                 local_temp_file = f"/tmp/{temp_filename}"
 
@@ -117,12 +115,9 @@ class SystemdService:
 
         # Wykonaj dla każdego profilu
         if parallel and len(profile_names) > 1:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=min(max_workers, len(profile_names))
-            ) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(profile_names))) as executor:
                 future_to_profile = {
-                    executor.submit(fetch_units, profile_name): profile_name
-                    for profile_name in profile_names
+                    executor.submit(fetch_units, profile_name): profile_name for profile_name in profile_names
                 }
                 for future in concurrent.futures.as_completed(future_to_profile):
                     profile_name = future_to_profile[future]
@@ -141,9 +136,7 @@ class SystemdService:
 
         return results
 
-    def manage_systemd_service(
-        self, profile_name: str, service_name: str, action: str
-    ) -> Dict[str, Any]:
+    def manage_systemd_service(self, profile_name: str, service_name: str, action: str) -> Dict[str, Any]:
         """
         Zarządza usługą systemd na zdalnym serwerze.
 
@@ -234,7 +227,6 @@ class SystemdService:
             return units
 
         lines = units_output.split("\n")
-        parsing_units = False
 
         for line in lines:
             # Pomijamy puste linie i nagłówki
@@ -243,7 +235,6 @@ class SystemdService:
 
             # Sprawdzamy czy linia zawiera informacje o jednostce
             if "●" in line or ("." in line and not line.startswith("To show")):
-                parsing_units = True
                 parts = line.split()
                 if len(parts) < 3:
                     continue
@@ -263,9 +254,7 @@ class SystemdService:
 
                 # Aktualizuj statystyki
                 units["summary"]["total"] += 1
-                units["summary"][
-                    status if status in ["active", "inactive", "failed"] else "inactive"
-                ] += 1
+                units["summary"][status if status in ["active", "inactive", "failed"] else "inactive"] += 1
 
                 # Kategoryzuj według typu
                 unit_type = unit_name.split(".")[-1] if "." in unit_name else "other"
@@ -285,9 +274,7 @@ class SystemdService:
                     # Wyodrębnij nazwę kategorii z nazwy jednostki
                     parts = unit_name.lower().split("dimark_")
                     if len(parts) > 1:
-                        category = (
-                            parts[1].split("_")[0] if "_" in parts[1] else parts[1].split(".")[0]
-                        )
+                        category = parts[1].split("_")[0] if "_" in parts[1] else parts[1].split(".")[0]
                         if category not in units["dimark"]:
                             units["dimark"][category] = []
                         units["dimark"][category].append(unit_info)
@@ -302,9 +289,7 @@ class SystemdService:
 
         return units
 
-    def save_report(
-        self, hostname: str, units: Dict[str, Any], output_dir: Optional[str] = None
-    ) -> str:
+    def save_report(self, hostname: str, units: Dict[str, Any], output_dir: Optional[str] = None) -> str:
         """
         Zapisuje raport z jednostkami systemd do pliku.
 

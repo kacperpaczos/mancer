@@ -30,9 +30,7 @@ def find_main_script(prototype_dir):
 
     # If no common pattern is found, look for any .py file that might be the main script
     py_files = [
-        f
-        for f in os.listdir(prototype_dir)
-        if f.endswith(".py") and os.path.isfile(os.path.join(prototype_dir, f))
+        f for f in os.listdir(prototype_dir) if f.endswith(".py") and os.path.isfile(os.path.join(prototype_dir, f))
     ]
 
     if py_files:
@@ -83,7 +81,8 @@ def run_prototype(prototype_dir, script_path=None, args=None):
     try:
         # Prepare command
         args_str = " ".join(args) if args else ""
-        cmd = f"cd {prototype_dir} && source {activate_script} && python {os.path.basename(script_path)} {args_str}"
+        script_name = os.path.basename(script_path)
+        cmd = f"cd {prototype_dir} && source {activate_script} && " f"python {script_name} {args_str}"
 
         # Run the command
         print(f"Executing: {os.path.basename(script_path)} {args_str}")

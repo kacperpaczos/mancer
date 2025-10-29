@@ -2,9 +2,8 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
 
