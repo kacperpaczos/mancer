@@ -48,7 +48,7 @@ class TestCommandCacheComprehensive:
         assert cache._refresh_thread.daemon
 
         # Cleanup
-        cache.clear()  # type: ignore[unreachable]
+        cache.clear()
 
     def test_store_and_get_basic(self):
         """Test podstawowego dodawania i pobierania z cache"""
