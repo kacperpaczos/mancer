@@ -16,7 +16,7 @@ except ImportError:
     # Icecream nie jest dostępny, tworzymy fallback
     ICECREAM_AVAILABLE = False
 
-    def ic(*args, **kwargs):
+    def _ic_fallback(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         """Fallback dla icecream, który po prostu wypisuje argumenty."""
         if not args and not kwargs:
             return
@@ -29,6 +29,9 @@ except ImportError:
 
         print("[IC]", " | ".join(output_parts))
         return args[0] if len(args) == 1 else args
+
+    # Użyj fallback jako ic
+    ic = _ic_fallback
 
 
 class IcecreamBackend(LogBackendInterface):
