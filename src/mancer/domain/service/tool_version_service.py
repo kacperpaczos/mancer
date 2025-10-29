@@ -170,12 +170,14 @@ class ToolVersionService:
                 )
                 return (
                     False,
-                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona (dozwolone wersje: {allowed_str})",
+                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona "
+                    f"(dozwolone wersje: {allowed_str})",
                 )
             else:
                 return (
                     True,
-                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona, ale ostrzeżenia są wyłączone",
+                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona, "
+                    f"ale ostrzeżenia są wyłączone",
                 )
 
     def register_allowed_version(self, tool_name: str, version: str) -> None:
