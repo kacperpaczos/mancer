@@ -2,15 +2,9 @@
 Testy unit dla łańcuchów komend (command chains) frameworka Mancer
 """
 
-import os
-import sys
-from pathlib import Path
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from mancer.application.shell_runner import ShellRunner
-from mancer.domain.model.command_context import CommandContext
 from mancer.domain.model.command_result import CommandResult
 
 

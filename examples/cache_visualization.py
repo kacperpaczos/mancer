@@ -19,9 +19,7 @@ def simulate_commands(runner, count=20, interval=0.5):
         runner.create_command("ps").aux(),
         runner.create_command("hostname"),
         runner.create_command("netstat").with_param("options", "all"),
-        runner.create_command("systemctl")
-        .with_param("command", "status")
-        .with_param("service", "ssh"),
+        runner.create_command("systemctl").with_param("command", "status").with_param("service", "ssh"),
         runner.create_command("df").human_readable(),
         runner.create_command("echo").text("Hello from visualization example!"),
         runner.create_command("cat").file("/etc/hostname"),

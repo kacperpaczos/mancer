@@ -222,9 +222,7 @@ except Exception as e:
                         "successful": len(successful),
                         "total": total,
                     }
-                    print(
-                        f"  ✅ BashBackend direct test: {len(successful)}/{total} komend successful"
-                    )
+                    print(f"  ✅ BashBackend direct test: {len(successful)}/{total} komend successful")
                 else:
                     test_result["status"] = "failed"
                     test_result["details"] = {
@@ -352,9 +350,7 @@ except Exception as e:
         }
 
         try:
-            cache_results = MancerDockerTestUtils.test_framework_cache_functionality(
-                self.container_name
-            )
+            cache_results = MancerDockerTestUtils.test_framework_cache_functionality(self.container_name)
 
             if "error" not in cache_results:
                 test_result["status"] = "passed"
@@ -363,9 +359,7 @@ except Exception as e:
                 cache_tests = cache_results.get("cache_tests", [])
                 successful_tests = len([t for t in cache_tests if t.get("success", False)])
 
-                print(
-                    f"  ✅ Framework cache test: {successful_tests}/{len(cache_tests)} testów successful"
-                )
+                print(f"  ✅ Framework cache test: {successful_tests}/{len(cache_tests)} testów successful")
 
                 if "cache_stats" in cache_results:
                     print(f"  📊 Cache stats: {cache_results['cache_stats']}")
@@ -518,9 +512,7 @@ except Exception as e:
                 if len(successful) > 0:
                     test_result["status"] = "passed"
                     test_result["details"] = results
-                    print(
-                        f"  ✅ Framework E2E: {len(successful)}/{len(integration_tests)} testów successful"
-                    )
+                    print(f"  ✅ Framework E2E: {len(successful)}/{len(integration_tests)} testów successful")
 
                     for test in integration_tests:
                         test_name = test.get("test", "unknown")

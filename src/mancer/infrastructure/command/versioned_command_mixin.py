@@ -92,9 +92,7 @@ class VersionedCommandMixin:
 
         return None
 
-    def adapt_to_version(
-        self, version: Optional[ToolVersion], method_base_name: str, *args, **kwargs
-    ) -> Any:
+    def adapt_to_version(self, version: Optional[ToolVersion], method_base_name: str, *args, **kwargs) -> Any:
         """
         Adapts behavior based on the detected version
 

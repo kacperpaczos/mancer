@@ -13,7 +13,7 @@ class DataFormatConverter:
     """
 
     @staticmethod
-    def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Optional[Any]:
+    def convert(data: Any, source_format: DataFormat, target_format: DataFormat) -> Optional[List[Dict[str, Any]]]:
         """Convert data from source_format to target_format using LIST as intermediate if needed."""
         # Jeśli formaty są takie same, zwróć dane bez zmian
         if source_format == target_format:
@@ -51,7 +51,9 @@ class DataFormatConverter:
                 import pandas as pd
 
                 if isinstance(data, pd.DataFrame):
-                    return data.to_dict(orient="records")
+                    records = data.to_dict(orient="records")
+                    # Convert Hashable keys to str keys
+                    return [{str(k): v for k, v in record.items()} for record in records]
                 return data  # Jeśli to nie DataFrame, zwróć dane bez zmian
             except ImportError:
                 return None
@@ -64,7 +66,7 @@ class DataFormatConverter:
                     if data.ndim == 1:
                         return [{"value": x} for x in data]
                     elif data.ndim == 2:
-                        return [dict(zip(range(data.shape[1]), row)) for row in data]
+                        return [dict(zip([str(i) for i in range(data.shape[1])], row)) for row in data]
                     else:
                         return None
                 return data

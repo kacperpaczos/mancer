@@ -1,6 +1,5 @@
 import threading
 import uuid
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackend, SSHSession
@@ -21,17 +20,13 @@ class SSHSessionService:
         self.lock = threading.Lock()
 
         # Inicjalizacja loggera
+        self.logger: Optional[Any] = None
         self._setup_logger()
 
         # Inicjalizacja CredentialStore
-        try:
-            from ..model.credential_store import CredentialStore
+        from ..model.credential_store import CredentialStore
 
-            self.credential_store = CredentialStore()
-        except Exception as e:
-            if self.logger:
-                self.logger.warning(f"Nie udało się zainicjalizować CredentialStore: {e}")
-            self.credential_store = None
+        self.credential_store: Optional[Any] = CredentialStore()
 
     def _setup_logger(self):
         """Konfiguruje logger dla serwisu"""
@@ -119,17 +114,13 @@ class SSHSessionService:
 
         return session
 
-    def create_session_from_profile(
-        self, profile: "SSHProfile", password: Optional[str] = None
-    ) -> SSHSession:
+    def create_session_from_profile(self, profile: "SSHProfile", password: Optional[str] = None) -> SSHSession:
         """Tworzy sesję SSH z profilu"""
         if self.logger:
-            self.logger.info(
-                f"Tworzenie sesji SSH z profilu: {profile.name} ({profile.hostname}:{profile.port})"
-            )
+            self.logger.info(f"Tworzenie sesji SSH z profilu: {profile.name} ({profile.hostname}:{profile.port})")
 
         # Użyj hasła z profilu jeśli nie podano
-        if not password and profile.save_password:
+        if not password and profile.save_password and self.credential_store:
             try:
                 # Pobierz hasło z CredentialStore
                 password = self.credential_store.get_password(profile.id)
@@ -137,9 +128,7 @@ class SSHSessionService:
                     self.logger.info(f"Pobrano zapisane hasło dla profilu: {profile.name}")
             except Exception as e:
                 if self.logger:
-                    self.logger.warning(
-                        f"Nie udało się pobrać hasła dla profilu {profile.name}: {e}"
-                    )
+                    self.logger.warning(f"Nie udało się pobrać hasła dla profilu {profile.name}: {e}")
 
         # Stwórz sesję używając parametrów z profilu
         # Usuń fingerprint_callback z ssh_options żeby nie trafiło do create_session
@@ -227,7 +216,6 @@ class SSHSessionService:
             key_filename=profile.key_filename,
             password=password,
             proxy_config=profile.proxy_config,
-            **final_final_ultimate_clean_options,
         )
 
         # Aktualizuj statystyki użycia profilu
@@ -237,9 +225,7 @@ class SSHSessionService:
                 self.logger.info(f"Zaktualizowano statystyki użycia profilu: {profile.name}")
         except Exception as e:
             if self.logger:
-                self.logger.warning(
-                    f"Nie udało się zaktualizować statystyk profilu {profile.name}: {e}"
-                )
+                self.logger.warning(f"Nie udało się zaktualizować statystyk profilu {profile.name}: {e}")
 
         return session
 
@@ -292,9 +278,7 @@ class SSHSessionService:
                 if is_known:
                     self.logger.info(f"Host {hostname}:{port} is known in known_hosts")
                 else:
-                    self.logger.info(
-                        f"Host {hostname}:{port} is not known - will be handled during connection"
-                    )
+                    self.logger.info(f"Host {hostname}:{port} is not known - will be handled during connection")
 
             return (
                 is_known,
@@ -307,9 +291,7 @@ class SSHSessionService:
                 self.logger.error(f"Error checking host fingerprint for {hostname}:{port}: {e}")
             return False, None, None
 
-    def add_host_to_known_hosts(
-        self, hostname: str, port: int, key_type: str, fingerprint: str
-    ) -> bool:
+    def add_host_to_known_hosts(self, hostname: str, port: int, key_type: str, fingerprint: str) -> bool:
         """Dodaje host do known_hosts
 
         Args:
@@ -323,14 +305,11 @@ class SSHSessionService:
         """
         try:
             # Import tutaj żeby uniknąć circular imports
-            import os
             import sys
             from pathlib import Path
 
             # Dodaj ścieżkę do prototypów
-            prototype_path = (
-                Path(__file__).parent.parent.parent.parent.parent / "prototypes" / "mancer-terminal"
-            )
+            prototype_path = Path(__file__).parent.parent.parent.parent.parent / "prototypes" / "mancer-terminal"
             sys.path.insert(0, str(prototype_path))
 
             try:
@@ -458,9 +437,7 @@ class SSHSessionService:
             env_vars=env_vars,
         )
 
-    def scp_upload(
-        self, local_path: str, remote_path: str, session_id: str
-    ) -> Optional[SCPTransfer]:
+    def scp_upload(self, local_path: str, remote_path: str, session_id: str) -> Optional[SCPTransfer]:
         """Upload pliku przez SCP"""
         if session_id not in self.sessions:
             return None
@@ -478,9 +455,7 @@ class SSHSessionService:
 
         return transfer
 
-    def scp_download(
-        self, remote_path: str, local_path: str, session_id: str
-    ) -> Optional[SCPTransfer]:
+    def scp_download(self, remote_path: str, local_path: str, session_id: str) -> Optional[SCPTransfer]:
         """Download pliku przez SCP"""
         if session_id not in self.sessions:
             return None
@@ -549,9 +524,9 @@ class SSHSessionService:
             return None
 
         session = self.sessions[session_id]
-        backend = session.connection_info.get("backend")
+        session.connection_info.get("backend")
 
-        info = {
+        info: Dict[str, Any] = {
             "id": session.id,
             "hostname": session.hostname,
             "username": session.username,

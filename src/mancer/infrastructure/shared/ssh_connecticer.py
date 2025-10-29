@@ -54,7 +54,7 @@ class SSHConnecticer(SshBackend):
         )
         self.session_name = session_name or f"{username}@{hostname}:{port}"
         self._connection_alive = False
-        self._last_error = None
+        self._last_error: Optional[str] = None
 
     def check_connection(self) -> bool:
         """
@@ -72,9 +72,7 @@ class SSHConnecticer(SshBackend):
             self._connection_alive = False
             return False
 
-    def upload_file(
-        self, local_path: str, remote_path: str, create_dirs: bool = True
-    ) -> CommandResult:
+    def upload_file(self, local_path: str, remote_path: str, create_dirs: bool = True) -> CommandResult:
         """
         Wysyła plik na zdalny serwer poprzez SCP.
 
@@ -129,7 +127,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)
+            result = super().execute(cmd)  # type: ignore
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku
@@ -151,9 +149,7 @@ class SSHConnecticer(SshBackend):
                 error_message=f"Error uploading file: {str(e)}",
             )
 
-    def download_file(
-        self, remote_path: str, local_path: str, create_dirs: bool = True
-    ) -> CommandResult:
+    def download_file(self, remote_path: str, local_path: str, create_dirs: bool = True) -> CommandResult:
         """
         Pobiera plik ze zdalnego serwera poprzez SCP.
 
@@ -196,7 +192,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)
+            result = super().execute(cmd)  # type: ignore
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku

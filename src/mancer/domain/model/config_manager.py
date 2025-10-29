@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -14,7 +14,8 @@ class ConfigManager:
     Responsible for loading settings from configuration files and making them available to other components.
     """
 
-    _instance = None  # Singleton instance
+    _instance: Optional["ConfigManager"] = None  # Singleton instance
+    _initialized: bool = False  # Type annotation for mypy
 
     def __new__(cls):
         """Singleton implementation for ConfigManager"""

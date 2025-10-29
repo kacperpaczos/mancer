@@ -30,11 +30,11 @@ class BashBackend(BackendInterface):
 
             # Sprawdź, czy używamy live output
             use_live_output = False
-            live_output_interval = 0.1  # domyślnie odświeżaj co 0.1 sekundy
 
             if context_params:
                 use_live_output = context_params.get("live_output", False)
-                live_output_interval = context_params.get("live_output_interval", 0.1)
+                # live_output_interval nie jest używany obecnie, pozostawiamy dla przyszłości
+                _ = context_params.get("live_output_interval", 0.1)
 
             # Wykonanie komendy
             if use_live_output:
@@ -43,8 +43,8 @@ class BashBackend(BackendInterface):
                 import threading
 
                 # Utwórz kolejkę dla wyjścia
-                output_queue = queue.Queue()
-                error_queue = queue.Queue()
+                output_queue: queue.Queue[str] = queue.Queue()
+                error_queue: queue.Queue[str] = queue.Queue()
 
                 # Uruchom proces z pipe'ami
                 process = subprocess.Popen(
@@ -61,7 +61,7 @@ class BashBackend(BackendInterface):
                 )
 
                 # Jeśli mamy dane wejściowe, przekazujemy je do procesu
-                if stdin:
+                if stdin and process.stdin:
                     process.stdin.write(stdin)
                     process.stdin.flush()
                     process.stdin.close()
@@ -87,12 +87,8 @@ class BashBackend(BackendInterface):
                     done_event.set()
 
                 # Uruchom wątki do odczytu wyjścia
-                stdout_thread = threading.Thread(
-                    target=read_output, args=(process.stdout, stdout_done, output_queue)
-                )
-                stderr_thread = threading.Thread(
-                    target=read_error, args=(process.stderr, stderr_done, error_queue)
-                )
+                stdout_thread = threading.Thread(target=read_output, args=(process.stdout, stdout_done, output_queue))
+                stderr_thread = threading.Thread(target=read_error, args=(process.stderr, stderr_done, error_queue))
 
                 stdout_thread.daemon = True
                 stderr_thread.daemon = True
@@ -116,14 +112,16 @@ class BashBackend(BackendInterface):
                     error_output += error_queue.get()
 
                 # Zamknij pipe'y
-                process.stdout.close()
-                process.stderr.close()
+                if process.stdout:
+                    process.stdout.close()
+                if process.stderr:
+                    process.stderr.close()
 
                 # Parsowanie wyniku
                 return self.parse_output(command, raw_output, exit_code, error_output)
             else:
                 # Standardowe wykonanie bez live output
-                process = subprocess.run(
+                completed_process = subprocess.run(
                     command,
                     shell=True,
                     text=True,
@@ -135,7 +133,10 @@ class BashBackend(BackendInterface):
 
                 # Parsowanie wyniku
                 return self.parse_output(
-                    command, process.stdout, process.returncode, process.stderr
+                    command,
+                    completed_process.stdout or "",
+                    completed_process.returncode,
+                    completed_process.stderr or "",
                 )
 
         except Exception as e:
@@ -224,9 +225,7 @@ class BashBackend(BackendInterface):
             print(f"Error executing command: {str(e)}")
             return -1, "", str(e)
 
-    def parse_output(
-        self, command: str, raw_output: str, exit_code: int, error_output: str = ""
-    ) -> CommandResult:
+    def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
         """Parse command output into a standard CommandResult."""
         success = exit_code == 0
 

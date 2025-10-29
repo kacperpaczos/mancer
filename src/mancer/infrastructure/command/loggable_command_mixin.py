@@ -31,7 +31,7 @@ class LoggableCommandMixin:
         # Pobierz nazwę komendy (nazwę klasy lub atrybut name)
         command_name = self.__class__.__name__
         if hasattr(self, "name"):
-            command_name = getattr(self, "name")
+            command_name = str(getattr(self, "name"))
 
         # Przygotuj parametry kontekstu do logowania
         context_params = {
@@ -52,7 +52,7 @@ class LoggableCommandMixin:
                 "token",
                 "key",
             ):
-                context_params[key] = value
+                context_params[key] = str(value)
 
         # Loguj rozpoczęcie komendy
         return self._get_logger().log_command_start(
@@ -79,9 +79,7 @@ class LoggableCommandMixin:
 
         # Loguj dane wejściowe i wyjściowe dla pipeline'ów
         if hasattr(result, "command_name") and result.structured_output:
-            self._get_logger().log_command_output(
-                command_name=result.command_name, data=result.structured_output
-            )
+            self._get_logger().log_command_output(command_name=result.command_name, data=result.structured_output)
 
     def execute_with_logging(
         self,
@@ -110,11 +108,9 @@ class LoggableCommandMixin:
         if input_result:
             command_name = self.__class__.__name__
             if hasattr(self, "name"):
-                command_name = getattr(self, "name")
+                command_name = str(getattr(self, "name"))
 
-            self._get_logger().log_command_input(
-                command_name=command_name, data=input_result.structured_output
-            )
+            self._get_logger().log_command_input(command_name=command_name, data=input_result.structured_output)
 
             # Dodaj nazwę komendy dla logowania danych wyjściowych
             if not hasattr(input_result, "command_name"):
@@ -128,7 +124,7 @@ class LoggableCommandMixin:
             if not hasattr(result, "command_name"):
                 command_name = self.__class__.__name__
                 if hasattr(self, "name"):
-                    command_name = getattr(self, "name")
+                    command_name = str(getattr(self, "name"))
                 setattr(result, "command_name", command_name)
 
             # Logujemy zakończenie
@@ -148,7 +144,7 @@ class LoggableCommandMixin:
             # Dodaj nazwę komendy dla logowania
             command_name = self.__class__.__name__
             if hasattr(self, "name"):
-                command_name = getattr(self, "name")
+                command_name = str(getattr(self, "name"))
             setattr(error_result, "command_name", command_name)
 
             self._log_command_end(command_info, error_result)

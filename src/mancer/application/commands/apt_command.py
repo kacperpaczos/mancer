@@ -24,7 +24,8 @@ class AptCommand(BaseCommand):
             try:
                 os.makedirs(state_dir, exist_ok=True)
             except (OSError, PermissionError):
-                pass  # Ignorujemy błędy - użyjemy pamięci tymczasowej jeśli nie możemy zapisać na dysku
+                # Ignorujemy błędy - użyjemy pamięci tymczasowej jeśli nie możemy zapisać
+                pass
 
     def _load_state(self) -> Dict[str, Any]:
         """Ładuje stan apt z pliku"""
@@ -136,9 +137,7 @@ class AptCommand(BaseCommand):
         """Sprawdza czy pakiet jest zainstalowany"""
         return cast(
             AptCommand,
-            self.with_param("command", "list")
-            .with_param("package", f"^{package}$")
-            .with_option("installed"),
+            self.with_param("command", "list").with_param("package", f"^{package}$").with_option("installed"),
         )
 
     def isInstalled(self, package: str) -> "AptCommand":
@@ -156,7 +155,8 @@ class AptCommand(BaseCommand):
         # Szukamy dokładnie stanu 'install ok installed', który jest stały w dpkg
         cmd = f"""
         # Sprawdź dokładną nazwę pakietu dla bezpieczeństwa
-        if dpkg-query -W -f='${{{{Status}}}}' {package} 2>/dev/null | grep -q 'install ok installed'; then
+        if dpkg-query -W -f='${{{{Status}}}}' {package} 2>/dev/null | \
+            grep -q 'install ok installed'; then
             echo 'TRUE'
         else
             # Spróbuj też szukać z wildcards, gdy nazwa może być częścią większego pakietu
@@ -168,7 +168,8 @@ class AptCommand(BaseCommand):
                 if command -v {package} >/dev/null 2>&1; then
                     # Pakiet (lub polecenie) istnieje w systemie
                     echo 'TRUE'
-                elif command -v {package}d >/dev/null 2>&1 || command -v {package}c >/dev/null 2>&1; then
+                elif command -v {package}d >/dev/null 2>&1 || \
+                    command -v {package}c >/dev/null 2>&1; then
                     # Sprawdź typowe sufiksy (daemon, client)
                     echo 'TRUE (jako {package}d lub {package}c)'
                 else
@@ -201,7 +202,8 @@ class AptCommand(BaseCommand):
         cmd = f"""
         # Sprawdź plik stanu frameworka
         if [ -f "{self.APT_STATE_FILE}" ]; then
-            LAST_UPDATE=$(cat "{self.APT_STATE_FILE}" | grep -o '"last_update": "[^"]*"' | cut -d'"' -f4)
+            LAST_UPDATE=$(cat "{self.APT_STATE_FILE}" | \
+                grep -o '"last_update": "[^"]*"' | cut -d'"' -f4)
             if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "null" ]; then
                 echo "$LAST_UPDATE"
                 exit 0
@@ -235,8 +237,10 @@ class AptCommand(BaseCommand):
         cmd = f"""
         # Sprawdź plik stanu frameworka
         if [ -f "{self.APT_STATE_FILE}" ]; then
-            IS_UPDATED=$(cat "{self.APT_STATE_FILE}" | grep -o '"is_updated": [^,}}]*' | cut -d' ' -f2)
-            LAST_UPDATE=$(cat "{self.APT_STATE_FILE}" | grep -o '"last_update": "[^"]*"' | cut -d'"' -f4)
+            IS_UPDATED=$(cat "{self.APT_STATE_FILE}" | \
+                grep -o '"is_updated": [^,}}]*' | cut -d' ' -f2)
+            LAST_UPDATE=$(cat "{self.APT_STATE_FILE}" | \
+                grep -o '"last_update": "[^"]*"' | cut -d'"' -f4)
             if [ "$IS_UPDATED" = "true" ]; then
                 echo "FALSE (zaktualizowano w ramach tej sesji)"
                 exit 0
@@ -266,7 +270,8 @@ class AptCommand(BaseCommand):
             if [ $AGE -lt {max_age_seconds} ]; then
                 echo "FALSE (zaktualizowano $(date -d @$UPDATE_TIME '+%Y-%m-%d %H:%M:%S'))"
             else
-                echo "TRUE (ostatnia aktualizacja: $(date -d @$UPDATE_TIME '+%Y-%m-%d %H:%M:%S'), wiek: $AGE s)"
+                UPDATE_STR=$(date -d @$UPDATE_TIME '+%Y-%m-%d %H:%M:%S')
+                echo "TRUE (ostatnia aktualizacja: $UPDATE_STR, wiek: $AGE s)"
             fi
         else
             echo "TRUE (brak informacji o aktualizacji)"
@@ -314,7 +319,10 @@ class AptCommand(BaseCommand):
                     mv $TMP_FILE "{apt_state_file}"
                 else
                     # Utwórz nowy plik
-                    echo '{{"last_update": "'$(date -Iseconds)'", "installed_packages": {{}}, "auto_update_interval": {max_age_seconds}, "is_updated": true}}' > "{apt_state_file}"
+                    echo '{{"last_update": "'$(date -Iseconds)'", ' \
+                        '"installed_packages": {{}}, ' \
+                        '"auto_update_interval": {max_age_seconds}, ' \
+                        '"is_updated": true}}' > "{apt_state_file}"
                 fi
                 exit 0
             else
@@ -385,9 +393,7 @@ class AptCommand(BaseCommand):
             .with_param("sleep_time", sleep_time),
         )
 
-    def refresh_if_locked(
-        self, max_attempts: int = 10, sleep_time: int = 3, timeout: int = 10
-    ) -> "AptCommand":
+    def refresh_if_locked(self, max_attempts: int = 10, sleep_time: int = 3, timeout: int = 10) -> "AptCommand":
         """
         Sprawdza czy apt jest zablokowany, odświeżając informację co określoną liczbę sekund.
 
@@ -416,7 +422,8 @@ class AptCommand(BaseCommand):
         # Utwórz funkcję, która wykona sprawdzanie z timeoutem
         check_lock_with_timeout() {{
             # Uruchom komendę lsof w tle z timeoutem
-            ( lsof /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock >/dev/null 2>&1 ) & pid=$!
+            ( lsof /var/lib/dpkg/lock /var/lib/apt/lists/lock \
+                /var/cache/apt/archives/lock >/dev/null 2>&1 ) & pid=$!
             
             # Czekaj na zakończenie procesu, maksymalnie {timeout} sekund
             ( sleep $timeout && kill -9 $pid 2>/dev/null ) & watcher=$!
@@ -437,7 +444,8 @@ class AptCommand(BaseCommand):
             # Sprawdź czy apt jest zablokowany z timeoutem
             if check_lock_with_timeout; then
                 # Odśwież informację na ekranie
-                print_refresh "Apt jest zablokowany. Próba $attempt/$max_attempts. Odświeżam za $sleep_time sekundy... (czas: ${{SECONDS}}s)"
+                print_refresh "Apt jest zablokowany. Próba $attempt/$max_attempts. " \
+                    "Odświeżam za $sleep_time sekundy... (czas: ${{SECONDS}}s)"
                 
                 # Czekaj przez sleep_time, ale nie dłużej niż pozostały timeout
                 remaining_time=$(( timeout - SECONDS ))
@@ -464,7 +472,8 @@ class AptCommand(BaseCommand):
             echo  # Dodaj pustą linię na końcu
             exit 0
         else
-            print_refresh "Osiągnięto maksymalną liczbę prób ($max_attempts). Apt nadal zablokowany."
+            print_refresh "Osiągnięto maksymalną liczbę prób ($max_attempts). " \
+                "Apt nadal zablokowany."
             echo  # Dodaj pustą linię na końcu
             exit 1
         fi
@@ -499,7 +508,8 @@ class AptCommand(BaseCommand):
         """
         cmd = f"""
         # Najpierw sprawdź czy pakiet jest zainstalowany
-        if dpkg-query -W -f='${{{{Status}}}}' {package} 2>/dev/null | grep -q 'install ok installed'; then
+        if dpkg-query -W -f='${{{{Status}}}}' {package} 2>/dev/null | \
+            grep -q 'install ok installed'; then
             # Jeśli jest zainstalowany, pobierz wersję
             dpkg-query -W -f='${{{{Version}}}}' {package} 2>/dev/null
         else
@@ -536,9 +546,7 @@ class AptCommand(BaseCommand):
         """
         return cast(
             AptCommand,
-            self.with_param("command", "package-version")
-            .with_param("package", package)
-            .with_param("custom_cmd", cmd),
+            self.with_param("command", "package-version").with_param("package", package).with_param("custom_cmd", cmd),
         )
 
     def get_repository_status(self) -> "AptCommand":
@@ -612,9 +620,7 @@ class AptCommand(BaseCommand):
         """
         return cast(
             AptCommand,
-            self.with_param("command", "get-commands")
-            .with_param("package", package)
-            .with_param("custom_cmd", cmd),
+            self.with_param("command", "get-commands").with_param("package", package).with_param("custom_cmd", cmd),
         )
 
     def build_command(self) -> str:
@@ -641,8 +647,10 @@ class AptCommand(BaseCommand):
                 sleep_time={sleep_time}
                 attempt=1
 
-                while lsof /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock >/dev/null 2>&1; do
-                    echo "Apt jest zablokowany. Próba $attempt/$max_attempts. Czekam {sleep_time}s..."
+                while lsof /var/lib/dpkg/lock /var/lib/apt/lists/lock \
+                    /var/cache/apt/archives/lock >/dev/null 2>&1; do
+                    echo "Apt jest zablokowany. Próba $attempt/$max_attempts. " \
+                        "Czekam {sleep_time}s..."
                     if [ $attempt -ge $max_attempts ]; then
                         echo "Osiągnięto maksymalną liczbę prób. Apt nadal zablokowany."
                         exit 1
@@ -713,9 +721,11 @@ class AptCommand(BaseCommand):
                     mv $TMP_FILE "{apt_state_file}"
                 else
                     # Utwórz nowy plik
-                    echo '{{"last_update": "'"$(date -Iseconds)"'", "installed_packages": {{}}, "auto_update_interval": 86400, "is_updated": true}}' > "{apt_state_file}"
-                fi
-                """
+                    echo '{{"last_update": "'"$(date -Iseconds)"'", ' \
+                        '"installed_packages": {{}}, ' \
+                        '"auto_update_interval": 86400, ' \
+                        '"is_updated": true}}' > "{apt_state_file}"
+                fi"""
                 cmd += cmd_template.format(apt_state_file=self.APT_STATE_FILE)
                 return cmd
 
@@ -742,7 +752,10 @@ class AptCommand(BaseCommand):
                             mv $TMP_FILE "{apt_state_file}"
                         else
                             # Utwórz nowy plik
-                            echo '{{"last_update": "'"$(date -Iseconds)"'", "installed_packages": {{}}, "auto_update_interval": 86400, "is_updated": true}}' > "{apt_state_file}"
+                            echo '{{"last_update": "'"$(date -Iseconds)"'", ' \
+                                '"installed_packages": {{}}, ' \
+                                '"auto_update_interval": 86400, ' \
+                                '"is_updated": true}}' > "{apt_state_file}"
                         fi
                     fi
                     """
@@ -765,12 +778,16 @@ class AptCommand(BaseCommand):
                         mkdir -p "$(dirname "{apt_state_file}")" 2>/dev/null
                         if [ -f "{apt_state_file}" ]; then
                             # Pusta sekcja
-                            sed_cmd='s/"installed_packages": {{}}/"installed_packages": {{"{package}": {{"version": "'$VERSION'", "install_time": "'$(date -Iseconds)'"}}}}/g'
+                            sed_cmd='s/"installed_packages": {{}}/' \
+                                '"installed_packages": {{"{package}": {{"version": "' \
+                                "'$VERSION'", "install_time": "'$(date -Iseconds)'"}}}}/g'
                             cat "{apt_state_file}" | sed "$sed_cmd" > $TMP_FILE
                             mv $TMP_FILE "{apt_state_file}"
                         else
                             # Niepusta sekcja
-                            sed_cmd='s/"installed_packages": {{/"installed_packages": {{"{package}": {{"version": "'$VERSION'", "install_time": "'$(date -Iseconds)'"}}, /g'
+                            sed_cmd='s/"installed_packages": {{/' \
+                                '"installed_packages": {{"{package}": {{"version": "' \
+                                "'$VERSION'", "install_time": "'$(date -Iseconds)'"}}, /g'
                             cat "{apt_state_file}" | sed "$sed_cmd" > $TMP_FILE
                             mv $TMP_FILE "{apt_state_file}"
                         fi
@@ -794,9 +811,7 @@ class AptCommand(BaseCommand):
                     fi
                 fi
                 """
-                command += install_template.format(
-                    apt_state_file=self.APT_STATE_FILE, package=package
-                )
+                command += install_template.format(apt_state_file=self.APT_STATE_FILE, package=package)
 
             # Obsługa zwykłych komend apt
             else:

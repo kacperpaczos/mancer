@@ -23,29 +23,21 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Dostępne polecenia")
 
     # Polecenie inspect - pobranie i wygenerowanie raportu jednostek systemd
-    inspect_parser = subparsers.add_parser(
-        "inspect", help="Pobierz i wygeneruj raport jednostek systemd"
-    )
+    inspect_parser = subparsers.add_parser("inspect", help="Pobierz i wygeneruj raport jednostek systemd")
     inspect_parser.add_argument("-H", "--host", help="Adres serwera", type=str)
     inspect_parser.add_argument("-u", "--user", help="Nazwa użytkownika", type=str)
     inspect_parser.add_argument("-p", "--profile", help="Nazwa profilu do użycia", type=str)
-    inspect_parser.add_argument(
-        "-o", "--output-dir", help="Katalog wyjściowy dla raportu", type=str
-    )
+    inspect_parser.add_argument("-o", "--output-dir", help="Katalog wyjściowy dla raportu", type=str)
 
     # Polecenie profile - zarządzanie profilami połączeń
     profile_parser = subparsers.add_parser("profile", help="Zarządzaj profilami połączeń")
-    profile_subparsers = profile_parser.add_subparsers(
-        dest="profile_command", help="Dostępne operacje na profilach"
-    )
+    profile_subparsers = profile_parser.add_subparsers(dest="profile_command", help="Dostępne operacje na profilach")
 
     # Polecenie profile add - dodanie nowego profilu
     profile_add_parser = profile_subparsers.add_parser("add", help="Dodaj nowy profil połączenia")
     profile_add_parser.add_argument("name", help="Nazwa profilu", type=str)
     profile_add_parser.add_argument("-H", "--host", help="Adres serwera", type=str, required=True)
-    profile_add_parser.add_argument(
-        "-u", "--user", help="Nazwa użytkownika", type=str, required=True
-    )
+    profile_add_parser.add_argument("-u", "--user", help="Nazwa użytkownika", type=str, required=True)
     profile_add_parser.add_argument(
         "--password",
         help="Hasło (opcjonalnie, jeśli nie podane, zostanie zapytane interaktywnie)",
@@ -53,9 +45,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # Polecenie profile list - wyświetlenie listy profili
-    profile_list_parser = profile_subparsers.add_parser(
-        "list", help="Wyświetl listę profili połączeń"
-    )
+    profile_subparsers.add_parser("list", help="Wyświetl listę profili połączeń")
 
     # Polecenie profile remove - usunięcie profilu
     profile_remove_parser = profile_subparsers.add_parser("remove", help="Usuń profil połączenia")
@@ -120,6 +110,9 @@ def command_inspect(inspector: SystemdInspector, args: argparse.Namespace) -> in
                 print("Błąd: Nie podano nazwy profilu")
 
     # Pobierz jednostki systemd
+    if not hostname or not username:
+        print("Błąd: Nie podano adresu hosta lub nazwy użytkownika")
+        return 1
     print(f"Łączenie z serwerem {hostname}...")
     units_output = inspector.get_systemd_units(hostname, username, password)
 

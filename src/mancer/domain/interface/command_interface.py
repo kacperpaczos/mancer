@@ -14,9 +14,7 @@ class CommandInterface(ABC, Generic[T]):
     """Interfejs dla wszystkich komend"""
 
     @abstractmethod
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę w danym kontekście z opcjonalnym wejściem"""
         pass
 

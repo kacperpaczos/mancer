@@ -47,9 +47,7 @@ class CustomGreetingCommand(BaseCommand, VersionedCommandMixin):
         self.name = "World"  # Default name to greet
         self.preferred_data_format = DataFormat.TEXT
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the greeting command"""
         # Call base method to check tool version
         super().execute(context, input_result)
@@ -194,9 +192,7 @@ def demonstrate_version_adaptation():
         version = ToolVersion("greeting_tool", version_str)
 
         # Mock version detection
-        version_service.detect_tool_version = lambda tool_name: (
-            version if tool_name == "greeting_tool" else None
-        )
+        version_service.detect_tool_version = lambda tool_name: (version if tool_name == "greeting_tool" else None)
 
         # Create context
         context = CommandContext()

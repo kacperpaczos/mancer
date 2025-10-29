@@ -209,9 +209,7 @@ def main():
         nargs="?",
         help="Name of the prototype to generate requirements for",
     )
-    parser.add_argument(
-        "--all", action="store_true", help="Generate requirements for all prototypes"
-    )
+    parser.add_argument("--all", action="store_true", help="Generate requirements for all prototypes")
     args = parser.parse_args()
 
     workspace_dir = Path(os.getcwd())
@@ -245,9 +243,7 @@ def main():
                 else:
                     failure_count += 1
 
-        print(
-            f"\nSummary: {success_count} requirements files generated successfully, {failure_count} with errors"
-        )
+        print(f"\nSummary: {success_count} requirements files generated successfully, " f"{failure_count} with errors")
 
     else:
         # List available prototypes

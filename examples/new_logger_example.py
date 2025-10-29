@@ -128,9 +128,7 @@ def demo_pipeline_logging():
     time.sleep(0.5)
 
     # Logowanie danych wyjściowych komendy
-    logger.log_command_output(
-        command_name="grep", data=["line1: important data", "line3: important stuff"]
-    )
+    logger.log_command_output(command_name="grep", data=["line1: important data", "line3: important stuff"])
 
     # Pokaż historię pipeline'ów
     print("\nDane pipeline'ów:")
@@ -154,21 +152,16 @@ def demo_command_chain():
     result = chain.execute(context)
 
     print(f"\nWynik łańcucha komend: {result.success}\n")
-    print(
-        f"Dane wyjściowe: {result.raw_output[:150]}{'...' if len(result.raw_output) > 150 else ''}\n"
-    )
+    print(f"Dane wyjściowe: {result.raw_output[:150]}{'...' if len(result.raw_output) > 150 else ''}\n")
 
     # Wyświetl historię wykonania
     print("Historia komend:")
-    for entry in logger.get_command_history():
+    logger_instance = MancerLogger.get_instance()
+    for entry in logger_instance.get_command_history():
         cmd = entry.get("command", {})
         cmd_name = cmd.get("command_name", "unknown")
         cmd_str = cmd.get("command_string", "")
-        status = (
-            "✓"
-            if entry.get("completed", False) and entry.get("result", {}).get("success", False)
-            else "✗"
-        )
+        status = "✓" if entry.get("completed", False) and entry.get("result", {}).get("success", False) else "✗"
 
         print(f"{status} {cmd_name}: {cmd_str}")
 

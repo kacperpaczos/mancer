@@ -27,7 +27,7 @@ class CommandCache:
         self._max_size = max_size
         self._auto_refresh = auto_refresh
         self._refresh_interval = refresh_interval
-        self._refresh_thread = None
+        self._refresh_thread: Optional[threading.Thread] = None
         self._stop_refresh = threading.Event()
         self._lock = threading.RLock()
 
@@ -39,7 +39,8 @@ class CommandCache:
         """Uruchamia wątek odświeżający cache"""
         self._stop_refresh.clear()
         self._refresh_thread = threading.Thread(target=self._refresh_loop, daemon=True)
-        self._refresh_thread.start()
+        if self._refresh_thread:
+            self._refresh_thread.start()
 
     def _refresh_loop(self):
         """Pętla odświeżająca cache"""
@@ -104,9 +105,7 @@ class CommandCache:
                 return self._cache[command_id][0]
             return None
 
-    def get_with_metadata(
-        self, command_id: str
-    ) -> Optional[Tuple[CommandResult, datetime, Dict[str, Any]]]:
+    def get_with_metadata(self, command_id: str) -> Optional[Tuple[CommandResult, datetime, Dict[str, Any]]]:
         """
         Pobiera wynik komendy wraz z metadanymi.
 
@@ -119,9 +118,7 @@ class CommandCache:
         with self._lock:
             return self._cache.get(command_id)
 
-    def get_history(
-        self, limit: Optional[int] = None, success_only: bool = False
-    ) -> List[Tuple[str, datetime, bool]]:
+    def get_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Tuple[str, datetime, bool]]:
         """
         Pobiera historię wykonanych komend.
 
@@ -198,10 +195,8 @@ class CommandCache:
             Słownik z danymi cache
         """
         with self._lock:
-            export = {
-                "history": [
-                    (cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history
-                ],
+            export: Dict[str, Any] = {
+                "history": [(cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history],
                 "statistics": self.get_statistics(),
             }
 

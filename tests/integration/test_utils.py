@@ -3,7 +3,6 @@ Utilities do testów integracyjnych Docker dla Mancer - używające docker exec 
 """
 
 import json
-import os
 import subprocess
 import sys
 import time
@@ -83,7 +82,7 @@ class MancerDockerTestUtils:
 
     @staticmethod
     def execute_mancer_app_with_shell_runner(
-        container_name: str, app_path: str, test_commands: List[str] = None
+        container_name: str, app_path: str, test_commands: Optional[List[str]] = None
     ) -> Dict:
         """
         Uruchamia aplikację Mancer używając ShellRunner w kontenerze
@@ -135,10 +134,8 @@ except Exception as e:
                 for cmd in test_commands:
                     cmd_result = {"command": cmd, "timestamp": time.time()}
 
-                    stdout, stderr, exit_code = (
-                        MancerDockerTestUtils.execute_bash_command_in_container(
-                            container_name, cmd, f"/home/mancer1/mancer/{app_path}"
-                        )
+                    stdout, stderr, exit_code = MancerDockerTestUtils.execute_bash_command_in_container(
+                        container_name, cmd, f"/home/mancer1/mancer/{app_path}"
                     )
 
                     cmd_result.update(
@@ -150,7 +147,8 @@ except Exception as e:
                         }
                     )
 
-                    results["commands_executed"].append(cmd_result)
+                    if "commands_executed" in results and isinstance(results["commands_executed"], list):
+                        results["commands_executed"].append(cmd_result)
 
         except Exception as e:
             results["exception"] = str(e)

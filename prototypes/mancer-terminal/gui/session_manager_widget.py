@@ -112,10 +112,10 @@ class SessionManagerWidget(QWidget):
         self.update_sessions_list()
 
     def create_session(
-        self, 
-        connection_data: dict, 
+        self,
+        connection_data: dict,
         request_password_callback: callable = None,
-        fingerprint_callback: callable = None
+        fingerprint_callback: callable = None,
     ) -> str:
         """Tworzy nową sesję SSH z obsługą fingerprinta"""
         try:

@@ -2,9 +2,8 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
 
@@ -79,7 +78,7 @@ class StandardBackend(LogBackendInterface):
         # Opcjonalnie wymuś UTC na formaterach
         formatter = logging.Formatter(self._log_format)
         if self._use_utc:
-            formatter.converter = time.gmtime  # type: ignore[attr-defined]
+            formatter.converter = time.gmtime
 
         # Dodaj handler konsoli, jeśli włączony
         if self._console_enabled:

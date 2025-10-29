@@ -27,56 +27,56 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
         self.parameters: Dict[str, Any] = {}
         self.flags: List[str] = []
         self.backend = BashBackend()  # Default backend
-        self.pipeline = None  # Optional pipeline (e.g., | grep)
+        self.pipeline: Optional[str] = None  # Optional pipeline (e.g., | grep)
         self.requires_sudo = False  # Whether the command requires sudo
         self._args: List[str] = []  # Additional arguments
         self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
 
-    def with_option(self, option: str) -> T:
+    def with_option(self, option: str) -> "BaseCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value: Any) -> T:
+    def with_param(self, name: str, value: Any) -> "BaseCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
-    def with_flag(self, flag: str) -> T:
+    def with_flag(self, flag: str) -> "BaseCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
-    def with_sudo(self) -> T:
+    def with_sudo(self) -> "BaseCommand":
         """Return a new instance marked to require sudo."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
-    def add_arg(self, arg: str) -> T:
+    def add_arg(self, arg: str) -> "BaseCommand":
         """Return a new instance with an added positional argument."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance._args.append(arg)
         return new_instance
 
-    def add_args(self, args: List[str]) -> T:
+    def add_args(self, args: List[str]) -> "BaseCommand":
         """Return a new instance with extended positional arguments."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance._args.extend(args)
         return new_instance
 
-    def with_data_format(self, format_type: DataFormat) -> T:
+    def with_data_format(self, format_type: DataFormat) -> "BaseCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance = self.clone()
+        new_instance: BaseCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 
-    def clone(self) -> T:
+    def clone(self) -> "BaseCommand":
         """Create a copy of the command instance (immutable builder pattern)."""
-        new_instance = type(self)()  # Call no-arg constructor
+        new_instance = type(self)(self.name)  # Call constructor with name
         new_instance.name = self.name
         new_instance.options = deepcopy(self.options)
         new_instance.parameters = deepcopy(self.parameters)
@@ -141,18 +141,14 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
             return self.backend
 
     @abstractmethod
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the command (to be implemented by subclasses).
 
         Do not call directly; the __call__ wrapper ensures logging.
         """
         pass
 
-    def __call__(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def __call__(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the command with logging (main entry point).
 
         Args:

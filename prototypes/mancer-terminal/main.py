@@ -12,9 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 try:
-    from PyQt6.QtWidgets import QApplication
-
     from gui.main_window import MancerTerminalWindow
+    from PyQt6.QtWidgets import QApplication
 except ImportError as e:
     print(f"Błąd importu: {e}")
     print("Upewnij się, że PyQt6 jest zainstalowane: pip install PyQt6")

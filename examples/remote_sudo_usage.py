@@ -49,11 +49,7 @@ def main():
     try:
         apt_result = runner.execute(remote_apt)
         print("Remote apt update result with sudo:")
-        print(
-            apt_result.raw_output[:200] + "..."
-            if len(apt_result.raw_output) > 200
-            else apt_result.raw_output
-        )
+        print(apt_result.raw_output[:200] + "..." if len(apt_result.raw_output) > 200 else apt_result.raw_output)
     except Exception as e:
         print(f"Remote execution error with sudo: {e}")
 
@@ -88,11 +84,7 @@ def main():
     try:
         cat_result = runner.execute(remote_cat)
         print("Remote cat /var/log/syslog result (automatic sudo if needed):")
-        print(
-            cat_result.raw_output[:200] + "..."
-            if len(cat_result.raw_output) > 200
-            else cat_result.raw_output
-        )
+        print(cat_result.raw_output[:200] + "..." if len(cat_result.raw_output) > 200 else cat_result.raw_output)
     except Exception as e:
         print(f"Remote execution error: {e}")
 

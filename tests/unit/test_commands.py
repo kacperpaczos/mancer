@@ -2,12 +2,7 @@
 Testy unit dla core komend frameworka Mancer
 """
 
-import os
-import sys
-from pathlib import Path
 from unittest.mock import Mock, patch
-
-import pytest
 
 from mancer.domain.model.command_context import CommandContext
 from mancer.domain.model.command_result import CommandResult

@@ -273,9 +273,7 @@ class CommandLoggerService:
 
         # Zaloguj zakończenie
         status = "SUCCESS" if success else "FAILED"
-        logger.info(
-            f"Command {status} [{command_name}] (exit: {exit_code}) in {execution_time:.3f}s"
-        )
+        logger.info(f"Command {status} [{command_name}] (exit: {exit_code}) in {execution_time:.3f}s")
 
         # Zaloguj szczegóły na poziomie DEBUG
         if self._log_level <= logging.DEBUG:
@@ -297,9 +295,7 @@ class CommandLoggerService:
                     }
                     break
 
-    def get_command_history(
-        self, limit: Optional[int] = None, success_only: bool = False
-    ) -> List[Dict[str, Any]]:
+    def get_command_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Dict[str, Any]]:
         """
         Pobiera historię wykonanych komend.
 
@@ -322,8 +318,7 @@ class CommandLoggerService:
                 history = [
                     entry
                     for entry in history
-                    if entry.get("completed", False)
-                    and entry.get("result", {}).get("success", False)
+                    if entry.get("completed", False) and entry.get("result", {}).get("success", False)
                 ]
 
             if limit is not None and limit > 0:

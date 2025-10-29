@@ -48,11 +48,11 @@ class VersionInfo:
         except (metadata.PackageNotFoundError, ImportError):
             try:
                 # Alternatywna metoda z pkg_resources
-                pkg_info = pkg_resources.get_distribution("mancer")
+                dist = pkg_resources.get_distribution("mancer")
                 return cls(
                     name="mancer",
-                    version=pkg_info.version,
-                    summary=pkg_info.project_name,
+                    version=dist.version,
+                    summary=getattr(dist, "project_name", "mancer"),
                     author=None,
                     author_email=None,
                 )

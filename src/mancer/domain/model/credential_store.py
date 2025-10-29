@@ -87,9 +87,7 @@ class CredentialStore:
         decrypted = "".join(chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(encrypted))
         return decrypted
 
-    def store_password(
-        self, profile_id: str, password: str, expires_in_days: Optional[int] = None
-    ) -> str:
+    def store_password(self, profile_id: str, password: str, expires_in_days: Optional[int] = None) -> str:
         """Zapisuje hasło dla profilu"""
         credential_id = f"{profile_id}_password"
 
@@ -231,16 +229,8 @@ class CredentialStore:
                     encrypted_value=cred_data["encrypted_value"],
                     salt=cred_data["salt"],
                     created_at=datetime.fromisoformat(cred_data["created_at"]),
-                    expires_at=(
-                        datetime.fromisoformat(cred_data["expires_at"])
-                        if cred_data["expires_at"]
-                        else None
-                    ),
-                    last_used=(
-                        datetime.fromisoformat(cred_data["last_used"])
-                        if cred_data["last_used"]
-                        else None
-                    ),
+                    expires_at=(datetime.fromisoformat(cred_data["expires_at"]) if cred_data["expires_at"] else None),
+                    last_used=(datetime.fromisoformat(cred_data["last_used"]) if cred_data["last_used"] else None),
                     use_count=cred_data["use_count"],
                 )
 

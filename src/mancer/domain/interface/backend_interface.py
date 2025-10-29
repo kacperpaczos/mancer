@@ -18,9 +18,7 @@ class BackendInterface(ABC):
         pass
 
     @abstractmethod
-    def parse_output(
-        self, command: str, raw_output: str, exit_code: int, error_output: str = ""
-    ) -> CommandResult:
+    def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
         """Parsuje wyjście komendy do standardowego formatu"""
         pass
 

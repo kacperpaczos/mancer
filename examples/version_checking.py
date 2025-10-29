@@ -23,8 +23,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-logger = logging.getLogger(__name__)
-
 # Add path to mancer module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -38,6 +36,8 @@ from src.mancer.infrastructure.command.system.df_command import DfCommand
 from src.mancer.infrastructure.command.system.grep_command import GrepCommand
 from src.mancer.infrastructure.command.system.ls_command import LsCommand
 from src.mancer.infrastructure.command.system.ps_command import PsCommand
+
+logger = logging.getLogger(__name__)
 
 
 class DemoVersionAdaptiveCommand(BaseCommand):

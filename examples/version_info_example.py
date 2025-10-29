@@ -21,10 +21,10 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-logger = logging.getLogger(__name__)
-
 # Import klasy VersionInfo bezpośrednio z modułu
 from src.mancer.domain.model.version_info import VersionInfo
+
+logger = logging.getLogger(__name__)
 
 
 def demonstrate_version_info():

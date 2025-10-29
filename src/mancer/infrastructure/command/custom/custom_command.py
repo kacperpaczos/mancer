@@ -15,9 +15,7 @@ class CustomCommand(BaseCommand):
     def __init__(self, command_name: str = ""):
         super().__init__(command_name or "echo")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the custom command"""
         # Build the command string
         command_str = self.build_command()
@@ -38,7 +36,7 @@ class CustomCommand(BaseCommand):
         error_message = error if error and not success else None
 
         # Parse the output
-        structured_output = self._parse_output(output)
+        self._parse_output(output)
 
         # Create and return the result
         return self._prepare_result(

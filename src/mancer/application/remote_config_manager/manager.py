@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from paramiko import AutoAddPolicy, SSHClient
+from paramiko import AutoAddPolicy, SSHClient  # type: ignore[import-untyped]
 
 from .config import AppConfig, ServerConfig
 from .file_operations import FileDiff, FileManager
@@ -29,7 +29,7 @@ class SSHManager:
             server_config: Konfiguracja serwera z danymi do połączenia
         """
         self.config = server_config
-        self.ssh = None
+        self.ssh: Optional[SSHClient] = None
 
     def connect(self) -> Tuple[bool, Optional[str]]:
         """
@@ -92,7 +92,10 @@ class SSHManager:
 
         try:
             # Wykonaj komendę find na serwerze dla wszystkich typów plików konfiguracyjnych
-            find_cmd = f'find {self.config.app_dir} -type f \\( -name "*.json" -o -name "*.config" -o -name "config.js" \\)'
+            find_cmd = (
+                f"find {self.config.app_dir} -type f "
+                f'\\( -name "*.json" -o -name "*.config" -o -name "config.js" \\)'
+            )
             stdin, stdout, stderr = self.ssh.exec_command(find_cmd)
 
             # Pobierz wyniki
@@ -152,9 +155,7 @@ class SSHManager:
             sftp.close()
 
             # Użyj sudo do przeniesienia pliku
-            sudo_command = (
-                f"echo '{self.config.sudo_password}' | sudo -S mv {temp_path} {remote_path}"
-            )
+            sudo_command = f"echo '{self.config.sudo_password}' | sudo -S mv {temp_path} {remote_path}"
 
             # Wykonaj komendę sudo
             stdin, stdout, stderr = self.ssh.exec_command(sudo_command)
@@ -187,9 +188,7 @@ class SSHManager:
             return False, "Brak połączenia SSH"
 
         try:
-            restart_cmd = (
-                f"echo '{self.config.sudo_password}' | sudo -S systemctl restart {service_name}"
-            )
+            restart_cmd = f"echo '{self.config.sudo_password}' | sudo -S systemctl restart {service_name}"
             stdin, stdout, stderr = self.ssh.exec_command(restart_cmd)
 
             # Sprawdź czy wystąpiły błędy
@@ -198,9 +197,7 @@ class SSHManager:
                 return False, error
 
             # Sprawdź status usługi
-            status_cmd = (
-                f"echo '{self.config.sudo_password}' | sudo -S systemctl is-active {service_name}"
-            )
+            status_cmd = f"echo '{self.config.sudo_password}' | sudo -S systemctl is-active {service_name}"
             stdin, stdout, stderr = self.ssh.exec_command(status_cmd)
             status = stdout.read().decode().strip()
 
@@ -456,9 +453,7 @@ class RemoteConfigManager:
 
             if cache_file.exists():
                 # Porównaj pliki
-                is_different, diff_content = self.file_manager.compare_files(
-                    server_file, cache_file
-                )
+                is_different, diff_content = self.file_manager.compare_files(server_file, cache_file)
                 if is_different:
                     differences.append(
                         FileDiff(

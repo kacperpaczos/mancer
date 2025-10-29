@@ -5,9 +5,7 @@ Kompleksowe testy dla CommandCache - zwiększenie pokrycia do 85%+
 import threading
 import time
 from datetime import datetime
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from mancer.application.command_cache import CommandCache
 from mancer.domain.model.command_result import CommandResult
@@ -50,7 +48,7 @@ class TestCommandCacheComprehensive:
         assert cache._refresh_thread.daemon
 
         # Cleanup
-        cache.clear()
+        cache.clear()  # type: ignore[unreachable]
 
     def test_store_and_get_basic(self):
         """Test podstawowego dodawania i pobierania z cache"""

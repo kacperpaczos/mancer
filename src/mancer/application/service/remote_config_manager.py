@@ -3,12 +3,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from ...domain.shared.config_balancer import (
-    ConfigBalancer,
-    ConfigDiff,
-    ConfigFormat,
-    ConfigTemplate,
-)
+from ...domain.shared.config_balancer import ConfigBalancer, ConfigDiff, ConfigFormat, ConfigTemplate
 from ...domain.shared.profile_producer import ProfileProducer
 from ...infrastructure.shared.file_tracer import FileTracer
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
@@ -46,7 +41,7 @@ class ConfigSyncTask:
         self.description = description
         self.validate_before_sync = validate_before_sync
         self.created_at = datetime.datetime.now()
-        self.last_run = None
+        self.last_run: Optional[datetime.datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the task to a dictionary."""
@@ -59,7 +54,7 @@ class ConfigSyncTask:
             "description": self.description,
             "validate_before_sync": self.validate_before_sync,
             "created_at": self.created_at.isoformat(),
-            "last_run": self.last_run.isoformat() if self.last_run else None,
+            "last_run": self.last_run.isoformat() if self.last_run is not None else None,
         }
 
     @classmethod
@@ -268,9 +263,7 @@ class RemoteConfigManager:
             ConfigDiff describing differences.
         """
         # Upewnij się, że są połączenia
-        if not self._ensure_connection(source_profile) or not self._ensure_connection(
-            target_profile
-        ):
+        if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
             return ConfigDiff(
                 source_path=source_path,
                 target_path=target_path,
@@ -308,9 +301,7 @@ class RemoteConfigManager:
             Tuple (success, backup_path_or_error_msg).
         """
         # Upewnij się, że są połączenia
-        if not self._ensure_connection(source_profile) or not self._ensure_connection(
-            target_profile
-        ):
+        if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
             return False, "Błąd połączenia z jednym z serwerów"
 
         # Synchronizuj plik

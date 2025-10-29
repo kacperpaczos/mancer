@@ -73,7 +73,7 @@ class MancerFlask:
         self.host = host
         self.port = port
         self.debug = debug
-        self.thread = None
+        self.thread: Optional[threading.Thread] = None
         self.running = False
 
         # Add Mancer headers to all responses
@@ -88,7 +88,7 @@ class MancerFlask:
             rules = []
             for rule in self.app.url_map.iter_rules():
                 if rule.endpoint != "static":
-                    methods = [m for m in rule.methods if m != "HEAD" and m != "OPTIONS"]
+                    methods = [m for m in (rule.methods or set()) if m != "HEAD" and m != "OPTIONS"]
                     rules.append(
                         {
                             "endpoint": rule.endpoint,

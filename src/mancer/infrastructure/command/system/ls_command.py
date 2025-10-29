@@ -14,12 +14,8 @@ class LsCommand(BaseCommand):
     def __init__(self):
         super().__init__("ls")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""
-        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)
 
         # Build the command string
         command_str = self.build_command()
@@ -41,7 +37,7 @@ class LsCommand(BaseCommand):
             metadata["version_warnings"] = warnings
 
         # Parse the output
-        structured_output = self._parse_output(output)
+        self._parse_output(output)
 
         # Create and return the result
         return self._prepare_result(

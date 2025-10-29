@@ -14,9 +14,7 @@ class WcCommand(BaseCommand):
         if file_path:
             self._args.append(file_path)
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the wc command"""
         # Build the command string
         command_str = self.build_command()
@@ -37,7 +35,7 @@ class WcCommand(BaseCommand):
         error_message = error if error and not success else None
 
         # Parse the output
-        structured_output = self._parse_output(output)
+        self._parse_output(output)
 
         # Create and return the result
         return self._prepare_result(
@@ -59,7 +57,7 @@ class WcCommand(BaseCommand):
             parts = re.split(r"\s+", line.strip())
 
             # Default structure for wc output
-            result = {}
+            result: Dict[str, Any] = {}
 
             # Different format based on options used
             if "-l" in self.options and len(parts) >= 2:

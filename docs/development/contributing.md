@@ -23,7 +23,7 @@ pip install -e ".[dev]"
 ### 3. Install Pre-commit Hooks
 ```bash
 pip install pre-commit
-pre-commit install
+pre-commit install --install-hooks -t pre-commit -t pre-push
 ```
 
 ### 4. Verify Setup
@@ -32,8 +32,7 @@ pre-commit install
 pytest
 
 # Check code quality
-black --check src/ tests/
-flake8 src/ tests/
+pre-commit run --all-files
 ```
 
 ## Development Workflow
@@ -69,20 +68,18 @@ pytest tests/unit/test_your_feature.py
 
 ### 4. Check Code Quality
 ```bash
-# Format code
-black src/ tests/
+# Run all linting tools
+pre-commit run --all-files
 
-# Sort imports
-isort src/ tests/
-
-# Check code style
-flake8 src/ tests/
-
-# Type checking
+# Run specific tools
+ruff check src/ tests/
+black --check src/ tests/
+isort --check-only src/ tests/
 mypy src/
 ```
 
 ### 5. Commit Your Changes
+Pre-commit hooks will automatically format and check your code:
 ```bash
 git add .
 git commit -m "Description of your changes
@@ -92,8 +89,24 @@ git commit -m "Description of your changes
 - Any breaking changes"
 ```
 
+**Note**: Pre-commit hooks will automatically:
+- Fix linting issues with Ruff
+- Format code with Black and Ruff
+- Sort imports with isort
+- Check types with mypy (non-blocking)
+
 ### 6. Submit a Pull Request
-- Push your branch to GitHub
+Pre-push hooks will run additional checks before pushing:
+```bash
+git push --set-upstream origin feature/your-feature-name
+```
+
+**Note**: Pre-push hooks will:
+- Verify code formatting (check-only mode)
+- Verify import sorting (check-only mode)
+- Run type checking with mypy (reports errors but doesn't block push)
+
+Then:
 - Create a pull request with a clear description
 - Include any relevant issue numbers
 - Request review from maintainers
@@ -106,12 +119,16 @@ git commit -m "Description of your changes
 - Maximum line length: 88 characters (Black formatter)
 - Use type hints for all function parameters and return values
 
-### Code Formatting
-The project uses several tools for code quality:
-- **Black**: Code formatting
-- **isort**: Import sorting
-- **flake8**: Code style checking
-- **mypy**: Type checking
+### Code Quality Tools
+The project uses automated tools for code quality assurance:
+
+- **Ruff**: Fast Python linter and formatter (replaces flake8)
+- **Black**: Code formatting with consistent style
+- **isort**: Import sorting and organization
+- **mypy**: Static type checking
+- **pre-commit**: Git hooks for automated quality checks
+
+These tools run automatically on commit and push to ensure code consistency.
 
 ### Documentation Standards
 - Use docstrings for all public classes and methods
