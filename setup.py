@@ -2,7 +2,7 @@ from setuptools import find_namespace_packages, setup
 
 setup(
     name="mancer",
-    version="0.1.5",
+    version="0.1.7",
     package_dir={"": "src"},
     packages=find_namespace_packages(where="src"),
     description="Programmable automation engine - execute commands on any platform (Linux/Windows/macOS) locally or remotely through one Python interface",
