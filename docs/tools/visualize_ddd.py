@@ -105,9 +105,7 @@ def install_dependencies():
                 subprocess.run(["tach", "--version"], check=True, capture_output=True)
                 print("Tach installed successfully.")
             except (subprocess.CalledProcessError, FileNotFoundError):
-                print(
-                    "Error: Failed to install tach. Please install it manually with 'pip install tach'."
-                )
+                print("Error: Failed to install tach. Please install it manually with 'pip install tach'.")
                 sys.exit(1)
 
         # Install other dependencies
@@ -397,41 +395,25 @@ def generate_dot_file(tach_data, output_file, detailed=False):
         infrastructure_node = "src_mancer_infrastructure"
 
         # Check if nodes exist, if not use placeholders
-        if not any(
-            module.replace("/", "_").replace(".", "_") == interface_node for module in valid_modules
-        ):
+        if not any(module.replace("/", "_").replace(".", "_") == interface_node for module in valid_modules):
             interface_node = "interface_placeholder"
             f.write(f'  "{interface_node}" [label="Interface Layer", style="invis"];\n')
 
-        if not any(
-            module.replace("/", "_").replace(".", "_") == application_node
-            for module in valid_modules
-        ):
+        if not any(module.replace("/", "_").replace(".", "_") == application_node for module in valid_modules):
             application_node = "application_placeholder"
             f.write(f'  "{application_node}" [label="Application Layer", style="invis"];\n')
 
-        if not any(
-            module.replace("/", "_").replace(".", "_") == domain_node for module in valid_modules
-        ):
+        if not any(module.replace("/", "_").replace(".", "_") == domain_node for module in valid_modules):
             domain_node = "domain_placeholder"
             f.write(f'  "{domain_node}" [label="Domain Layer", style="invis"];\n')
 
-        if not any(
-            module.replace("/", "_").replace(".", "_") == infrastructure_node
-            for module in valid_modules
-        ):
+        if not any(module.replace("/", "_").replace(".", "_") == infrastructure_node for module in valid_modules):
             infrastructure_node = "infrastructure_placeholder"
             f.write(f'  "{infrastructure_node}" [label="Infrastructure Layer", style="invis"];\n')
 
-        f.write(
-            f'  "{interface_node}" -> "{application_node}" [color="#1f78b4", style=dashed, penwidth=2];\n'
-        )
-        f.write(
-            f'  "{application_node}" -> "{domain_node}" [color="#1f78b4", style=dashed, penwidth=2];\n'
-        )
-        f.write(
-            f'  "{domain_node}" -> "{infrastructure_node}" [color="#1f78b4", style=dashed, penwidth=2];\n'
-        )
+        f.write(f'  "{interface_node}" -> "{application_node}" [color="#1f78b4", style=dashed, penwidth=2];\n')
+        f.write(f'  "{application_node}" -> "{domain_node}" [color="#1f78b4", style=dashed, penwidth=2];\n')
+        f.write(f'  "{domain_node}" -> "{infrastructure_node}" [color="#1f78b4", style=dashed, penwidth=2];\n')
 
         # End of DOT file
         f.write("}\n")
@@ -510,9 +492,7 @@ def open_diagram(diagram_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="DDD Architecture Visualization Tool for Mancer Project"
-    )
+    parser = argparse.ArgumentParser(description="DDD Architecture Visualization Tool for Mancer Project")
     parser.add_argument("--output-dir", default="./diagrams", help="Output directory for files")
     parser.add_argument(
         "--format",

@@ -61,9 +61,7 @@ class FileTracer:
 
         return False, diff
 
-    def backup_file(
-        self, file_path: str, is_remote: bool = False, suffix: Optional[str] = None
-    ) -> str:
+    def backup_file(self, file_path: str, is_remote: bool = False, suffix: Optional[str] = None) -> str:
         """
         Tworzy kopię zapasową pliku.
 

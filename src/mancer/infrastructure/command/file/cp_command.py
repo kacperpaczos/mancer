@@ -12,9 +12,7 @@ class CpCommand(BaseCommand):
     def __init__(self):
         super().__init__("cp")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cp"""
         # Budujemy komendę z uwzględnieniem kontekstu
         cmd_str = self.build_command()

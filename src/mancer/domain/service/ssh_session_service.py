@@ -20,17 +20,13 @@ class SSHSessionService:
         self.lock = threading.Lock()
 
         # Inicjalizacja loggera
+        self.logger: Optional[Any] = None
         self._setup_logger()
 
         # Inicjalizacja CredentialStore
-        try:
-            from ..model.credential_store import CredentialStore
+        from ..model.credential_store import CredentialStore
 
-            self.credential_store = CredentialStore()
-        except Exception as e:
-            if self.logger:
-                self.logger.warning(f"Nie udało się zainicjalizować CredentialStore: {e}")
-            self.credential_store = None
+        self.credential_store: Optional[Any] = CredentialStore()
 
     def _setup_logger(self):
         """Konfiguruje logger dla serwisu"""
@@ -124,7 +120,7 @@ class SSHSessionService:
             self.logger.info(f"Tworzenie sesji SSH z profilu: {profile.name} ({profile.hostname}:{profile.port})")
 
         # Użyj hasła z profilu jeśli nie podano
-        if not password and profile.save_password:
+        if not password and profile.save_password and self.credential_store:
             try:
                 # Pobierz hasło z CredentialStore
                 password = self.credential_store.get_password(profile.id)
@@ -220,7 +216,6 @@ class SSHSessionService:
             key_filename=profile.key_filename,
             password=password,
             proxy_config=profile.proxy_config,
-            **final_final_ultimate_clean_options,
         )
 
         # Aktualizuj statystyki użycia profilu
@@ -531,7 +526,7 @@ class SSHSessionService:
         session = self.sessions[session_id]
         session.connection_info.get("backend")
 
-        info = {
+        info: Dict[str, Any] = {
             "id": session.id,
             "hostname": session.hostname,
             "username": session.username,

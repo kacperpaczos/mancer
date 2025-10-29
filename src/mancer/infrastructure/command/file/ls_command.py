@@ -12,9 +12,7 @@ class LsCommand(BaseCommand):
     def __init__(self):
         super().__init__("ls")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę ls"""
         # Budujemy komendę z uwzględnieniem kontekstu
         cmd_str = self.build_command()

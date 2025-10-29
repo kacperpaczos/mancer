@@ -16,9 +16,7 @@ class PsCommand(BaseCommand):
         super().__init__("ps")
         self.preferred_data_format = DataFormat.TABLE
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the ps command and return a structured result."""
         super().execute(context, input_result)  # type: ignore
 

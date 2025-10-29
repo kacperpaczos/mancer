@@ -143,9 +143,7 @@ class FileManager:
 
         # Filtruj linie z różnicami
         interesting_diff = [
-            line
-            for line in diff
-            if line.startswith("+ ") or line.startswith("- ") or line.startswith("? ")
+            line for line in diff if line.startswith("+ ") or line.startswith("- ") or line.startswith("? ")
         ]
 
         return True, interesting_diff

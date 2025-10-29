@@ -141,18 +141,14 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
             return self.backend
 
     @abstractmethod
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the command (to be implemented by subclasses).
 
         Do not call directly; the __call__ wrapper ensures logging.
         """
         pass
 
-    def __call__(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def __call__(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the command with logging (main entry point).
 
         Args:

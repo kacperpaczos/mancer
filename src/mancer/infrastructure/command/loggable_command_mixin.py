@@ -79,9 +79,7 @@ class LoggableCommandMixin:
 
         # Loguj dane wejściowe i wyjściowe dla pipeline'ów
         if hasattr(result, "command_name") and result.structured_output:
-            self._get_logger().log_command_output(
-                command_name=result.command_name, data=result.structured_output
-            )
+            self._get_logger().log_command_output(command_name=result.command_name, data=result.structured_output)
 
     def execute_with_logging(
         self,
@@ -112,9 +110,7 @@ class LoggableCommandMixin:
             if hasattr(self, "name"):
                 command_name = str(getattr(self, "name"))
 
-            self._get_logger().log_command_input(
-                command_name=command_name, data=input_result.structured_output
-            )
+            self._get_logger().log_command_input(command_name=command_name, data=input_result.structured_output)
 
             # Dodaj nazwę komendy dla logowania danych wyjściowych
             if not hasattr(input_result, "command_name"):

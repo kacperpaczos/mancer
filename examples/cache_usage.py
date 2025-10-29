@@ -79,9 +79,7 @@ def main():
     print("\nHistory of executed commands:")
     history = runner.get_command_history()
     for i, (cmd_id, timestamp, success) in enumerate(history):
-        print(
-            f"{i+1}. ID: {cmd_id[:8]}... | Time: {timestamp} | Status: {'Success' if success else 'Error'}"
-        )
+        print(f"{i+1}. ID: {cmd_id[:8]}... | Time: {timestamp} | Status: {'Success' if success else 'Error'}")
 
     # Export cache data to JSON
     print("\nExporting cache data (without results):")

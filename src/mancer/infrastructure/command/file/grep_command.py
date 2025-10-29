@@ -12,9 +12,7 @@ class GrepCommand(BaseCommand):
     def __init__(self):
         super().__init__("grep")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę grep"""
         # Jeśli mamy dane wejściowe, używamy ich jako standardowego wejścia
         stdin_data = None

@@ -27,18 +27,14 @@ class CommandChain:
         """Dodaje kolejną komendę do łańcucha (sekwencyjnie)"""
         self.commands.append(next_command)
         self.is_pipeline.append(False)
-        self.preferred_formats.append(
-            getattr(next_command, "preferred_data_format", DataFormat.LIST)
-        )
+        self.preferred_formats.append(getattr(next_command, "preferred_data_format", DataFormat.LIST))
         return self
 
     def pipe(self, next_command: CommandInterface) -> "CommandChain":
         """Dodaje komendę jako potok (stdout -> stdin)"""
         self.commands.append(next_command)
         self.is_pipeline.append(True)
-        self.preferred_formats.append(
-            getattr(next_command, "preferred_data_format", DataFormat.LIST)
-        )
+        self.preferred_formats.append(getattr(next_command, "preferred_data_format", DataFormat.LIST))
         return self
 
     def with_data_format(self, format_type: DataFormat) -> "CommandChain":

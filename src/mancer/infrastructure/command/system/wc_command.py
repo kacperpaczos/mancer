@@ -57,7 +57,7 @@ class WcCommand(BaseCommand):
             parts = re.split(r"\s+", line.strip())
 
             # Default structure for wc output
-            result = {}
+            result: Dict[str, Any] = {}
 
             # Different format based on options used
             if "-l" in self.options and len(parts) >= 2:

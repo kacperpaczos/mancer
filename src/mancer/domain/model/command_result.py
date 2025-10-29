@@ -82,9 +82,7 @@ class CommandResult:
         if self.data_format == target_format:
             return self
 
-        converted_data = DataFormatConverter.convert(
-            self.structured_output, self.data_format, target_format
-        )
+        converted_data = DataFormatConverter.convert(self.structured_output, self.data_format, target_format)
 
         if converted_data is None:
             return CommandResult(

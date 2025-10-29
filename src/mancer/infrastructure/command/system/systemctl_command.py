@@ -12,9 +12,7 @@ class SystemctlCommand(BaseCommand):
     def __init__(self):
         super().__init__("systemctl")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę systemctl"""
         # Budujemy komendę
         cmd_str = self.build_command()

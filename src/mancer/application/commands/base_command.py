@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypeVar, cast
+from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
@@ -85,9 +85,7 @@ class BaseCommand(CommandInterface[T]):
 
         return " ".join(parts)
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """
         Wykonuje komendę w podanym kontekście.
 
@@ -108,32 +106,47 @@ class BaseCommand(CommandInterface[T]):
         stdin = input_result.raw_output if input_result else None
 
         # Pobieramy odpowiedni backend
+        from ...infrastructure.backend.bash_backend import BashBackend
+        from ...infrastructure.backend.ssh_backend import SshBackend
+
+        backend: Union[BashBackend, SshBackend]
+
         if context.is_remote():
-            from ...infrastructure.backend.ssh_backend import SshBackend
-
             # Tworzymy backend SSH z informacjami o hoście
-            backend = SshBackend(
-                host=context.remote_host.host,
-                user=context.remote_host.user,
-                port=context.remote_host.port,
-                key_file=context.remote_host.key_file,
-                password=context.remote_host.password,
-                use_sudo=context.remote_host.use_sudo,
-                sudo_password=context.remote_host.sudo_password,
-            )
+            if context.remote_host is None:
+                backend = BashBackend()
+            else:
+                backend = SshBackend(
+                    hostname=context.remote_host.host,
+                    username=context.remote_host.user,
+                    port=context.remote_host.port,
+                    key_filename=context.remote_host.key_file,
+                    password=context.remote_host.password,
+                )
         else:
-            from ...infrastructure.backend.bash_backend import BashBackend
-
             backend = BashBackend()
 
         # Wykonujemy komendę
-        return backend.execute_command(
-            command_str,
-            context.current_directory,
-            context.environment_variables,
-            context.parameters,  # Przekazujemy wszystkie parametry kontekstu
-            stdin,
-        )
+        if isinstance(backend, BashBackend):
+            # BashBackend.execute_command
+            return backend.execute_command(
+                command_str,
+                context.current_directory,
+                context.environment_variables,
+                context.parameters,
+                stdin,
+            )
+        else:
+            # SshBackend.execute_command nie przyjmuje parameters ani stdin w tej formie
+            # Musimy utworzyć sesję najpierw
+            # TODO: Implement proper SSH session handling
+            return CommandResult(
+                success=False,
+                raw_output="",
+                structured_output=[],
+                exit_code=1,
+                error_message="SSH execution not fully implemented in this context",
+            )
 
     def clone(self) -> T:
         """

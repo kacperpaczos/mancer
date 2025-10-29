@@ -19,9 +19,7 @@ class EchoCommand(BaseCommand):
         if message:
             self.add_arg(message)
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the echo command."""
         # Build the command
         cmd_str = self.build_command()

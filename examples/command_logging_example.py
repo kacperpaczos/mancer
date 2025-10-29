@@ -148,9 +148,7 @@ def demonstracja_zaawansowana():
         wynik = runner.execute(cmd)
         czas = time.time() - start
 
-        print(
-            f"Komenda {i}: {cmd.name} - Status: {'OK' if wynik.success else 'BŁĄD'} (czas: {czas:.3f}s)"
-        )
+        print(f"Komenda {i}: {cmd.name} - Status: {'OK' if wynik.success else 'BŁĄD'} (czas: {czas:.3f}s)")
 
     # Pobieranie historii tylko udanych komend
     udane = command_logger.get_command_history(success_only=True)
@@ -176,17 +174,13 @@ def analiza_logów():
     # Statystyki
     liczba_komend = len(historia)
     udane_komendy = sum(
-        1
-        for entry in historia
-        if entry.get("completed", False) and entry.get("result", {}).get("success", False)
+        1 for entry in historia if entry.get("completed", False) and entry.get("result", {}).get("success", False)
     )
 
     błędne_komendy = liczba_komend - udane_komendy
 
     # Średni czas wykonania
-    czasy = [
-        entry.get("result", {}).get("execution_time", 0) for entry in historia if "result" in entry
-    ]
+    czasy = [entry.get("result", {}).get("execution_time", 0) for entry in historia if "result" in entry]
     średni_czas = sum(czasy) / len(czasy) if czasy else 0
 
     # Wypisanie statystyk

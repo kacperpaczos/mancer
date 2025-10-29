@@ -12,9 +12,7 @@ class HostnameCommand(BaseCommand):
     def __init__(self):
         super().__init__("hostname")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę hostname"""
         # Pobieramy backend
         backend = self._get_backend(context)

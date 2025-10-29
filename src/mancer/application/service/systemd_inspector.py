@@ -161,9 +161,7 @@ class SystemdInspector:
         command = SystemctlCommand().list_units()
 
         # Dodaj obsługę retry i walidację
-        enforced_command: CommandEnforcer = (
-            CommandEnforcer(command).with_retry(max_retries=1).with_timeout(30)
-        )
+        enforced_command: CommandEnforcer = CommandEnforcer(command).with_retry(max_retries=1).with_timeout(30)
 
         # Wykonaj komendę
         if self.context is None:

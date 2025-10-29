@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Dodaj ścieżkę do Mancer
 sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
@@ -82,7 +82,7 @@ class MancerDockerTestUtils:
 
     @staticmethod
     def execute_mancer_app_with_shell_runner(
-        container_name: str, app_path: str, test_commands: List[str] = None
+        container_name: str, app_path: str, test_commands: Optional[List[str]] = None
     ) -> Dict:
         """
         Uruchamia aplikację Mancer używając ShellRunner w kontenerze
@@ -147,7 +147,8 @@ except Exception as e:
                         }
                     )
 
-                    results["commands_executed"].append(cmd_result)
+                    if "commands_executed" in results and isinstance(results["commands_executed"], list):
+                        results["commands_executed"].append(cmd_result)
 
         except Exception as e:
             results["exception"] = str(e)

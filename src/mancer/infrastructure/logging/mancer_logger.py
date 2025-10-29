@@ -296,9 +296,7 @@ class MancerLogger:
         self._ensure_initialized()
         self._backend.log_command_chain(chain)
 
-    def get_command_history(
-        self, limit: Optional[int] = None, success_only: bool = False
-    ) -> List[Dict[str, Any]]:
+    def get_command_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Dict[str, Any]]:
         """
         Pobiera historię wykonanych komend.
 
@@ -316,8 +314,7 @@ class MancerLogger:
                 history = [
                     entry
                     for entry in history
-                    if entry.get("completed", False)
-                    and entry.get("result", {}).get("success", False)
+                    if entry.get("completed", False) and entry.get("result", {}).get("success", False)
                 ]
 
             if limit is not None and limit > 0:

@@ -12,9 +12,7 @@ class HeadCommand(BaseCommand):
     def __init__(self):
         super().__init__("head")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę head"""
         # Jeśli mamy dane wejściowe, używamy ich jako standardowego wejścia
         stdin_data = None

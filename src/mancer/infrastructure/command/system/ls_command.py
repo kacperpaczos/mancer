@@ -16,8 +16,6 @@ class LsCommand(BaseCommand):
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""
-        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)
 
         # Build the command string
         command_str = self.build_command()

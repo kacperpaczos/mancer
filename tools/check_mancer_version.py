@@ -89,7 +89,7 @@ def main():
                     try:
                         latest_version = line.split("=")[1].strip().replace('"', "").replace("'", "").replace(",", "")
                         break
-                    except:
+                    except Exception:
                         pass
 
     print(f"Latest Mancer version: {latest_version}\n")

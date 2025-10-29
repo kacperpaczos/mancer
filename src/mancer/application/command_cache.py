@@ -105,9 +105,7 @@ class CommandCache:
                 return self._cache[command_id][0]
             return None
 
-    def get_with_metadata(
-        self, command_id: str
-    ) -> Optional[Tuple[CommandResult, datetime, Dict[str, Any]]]:
+    def get_with_metadata(self, command_id: str) -> Optional[Tuple[CommandResult, datetime, Dict[str, Any]]]:
         """
         Pobiera wynik komendy wraz z metadanymi.
 
@@ -120,9 +118,7 @@ class CommandCache:
         with self._lock:
             return self._cache.get(command_id)
 
-    def get_history(
-        self, limit: Optional[int] = None, success_only: bool = False
-    ) -> List[Tuple[str, datetime, bool]]:
+    def get_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Tuple[str, datetime, bool]]:
         """
         Pobiera historię wykonanych komend.
 
@@ -200,9 +196,7 @@ class CommandCache:
         """
         with self._lock:
             export: Dict[str, Any] = {
-                "history": [
-                    (cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history
-                ],
+                "history": [(cmd_id, ts.isoformat(), success) for cmd_id, ts, success in self._history],
                 "statistics": self.get_statistics(),
             }
 

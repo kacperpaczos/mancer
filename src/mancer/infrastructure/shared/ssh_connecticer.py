@@ -72,9 +72,7 @@ class SSHConnecticer(SshBackend):
             self._connection_alive = False
             return False
 
-    def upload_file(
-        self, local_path: str, remote_path: str, create_dirs: bool = True
-    ) -> CommandResult:
+    def upload_file(self, local_path: str, remote_path: str, create_dirs: bool = True) -> CommandResult:
         """
         Wysyła plik na zdalny serwer poprzez SCP.
 
@@ -151,9 +149,7 @@ class SSHConnecticer(SshBackend):
                 error_message=f"Error uploading file: {str(e)}",
             )
 
-    def download_file(
-        self, remote_path: str, local_path: str, create_dirs: bool = True
-    ) -> CommandResult:
+    def download_file(self, remote_path: str, local_path: str, create_dirs: bool = True) -> CommandResult:
         """
         Pobiera plik ze zdalnego serwera poprzez SCP.
 

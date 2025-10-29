@@ -128,9 +128,7 @@ class SSHProfileService:
                 return profile
         return None
 
-    def list_profiles(
-        self, category: Optional[str] = None, tags: Optional[List[str]] = None
-    ) -> List[SSHProfile]:
+    def list_profiles(self, category: Optional[str] = None, tags: Optional[List[str]] = None) -> List[SSHProfile]:
         """Listuje profile z filtrowaniem"""
         profiles = list(self.profiles.values())
 
@@ -187,9 +185,7 @@ class SSHProfileService:
         """Pobiera zapisane poświadczenia dla profilu"""
         return self.credential_store.get_password(profile_id)
 
-    def store_profile_credentials(
-        self, profile_id: str, password: str, expires_in_days: Optional[int] = None
-    ) -> str:
+    def store_profile_credentials(self, profile_id: str, password: str, expires_in_days: Optional[int] = None) -> str:
         """Zapisuje poświadczenia dla profilu"""
         return self.credential_store.store_password(profile_id, password, expires_in_days)
 

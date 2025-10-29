@@ -15,7 +15,7 @@ class SystemdInspector:
     Umożliwia pobieranie, analizowanie i generowanie raportów o jednostkach systemd.
     """
 
-    def __init__(self, config_dir: str = None):
+    def __init__(self, config_dir: Optional[str] = None):
         """
         Inicjalizuje inspektor z określonym katalogiem konfiguracji.
 
@@ -143,7 +143,7 @@ class SystemdInspector:
         Returns:
             Słownik z rozparsowanymi jednostkami systemd
         """
-        units = {
+        units: Dict[str, Any] = {
             "summary": {"total": 0, "active": 0, "inactive": 0, "failed": 0},
             "by_type": {
                 "service": [],

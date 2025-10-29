@@ -12,9 +12,7 @@ class FindCommand(BaseCommand):
     def __init__(self):
         super().__init__("find")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę find"""
         # Budujemy komendę
         cmd_str = self.build_command()

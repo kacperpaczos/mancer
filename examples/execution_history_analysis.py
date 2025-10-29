@@ -42,9 +42,7 @@ def analyze_execution_history(history):
     successful_steps = sum(1 for step in history if step.success)
 
     print(f"Number of steps: {total_steps}")
-    print(
-        f"Successful steps: {successful_steps}/{total_steps} ({successful_steps/total_steps*100:.1f}%)"
-    )
+    print(f"Successful steps: {successful_steps}/{total_steps} ({successful_steps/total_steps*100:.1f}%)")
 
     # Time analysis
     if total_steps > 1:
@@ -56,9 +54,7 @@ def analyze_execution_history(history):
         # Analysis of individual step times
         print("\nExecution time of individual steps:")
         for i in range(1, total_steps):
-            step_time = (
-                history.steps[i].timestamp - history.steps[i - 1].timestamp
-            ).total_seconds()
+            step_time = (history.steps[i].timestamp - history.steps[i - 1].timestamp).total_seconds()
             print(f"  Step {i} -> {i+1}: {step_time:.3f}s")
 
     # Problem analysis

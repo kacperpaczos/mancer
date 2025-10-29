@@ -3,12 +3,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from ...domain.shared.config_balancer import (
-    ConfigBalancer,
-    ConfigDiff,
-    ConfigFormat,
-    ConfigTemplate,
-)
+from ...domain.shared.config_balancer import ConfigBalancer, ConfigDiff, ConfigFormat, ConfigTemplate
 from ...domain.shared.profile_producer import ProfileProducer
 from ...infrastructure.shared.file_tracer import FileTracer
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
@@ -268,9 +263,7 @@ class RemoteConfigManager:
             ConfigDiff describing differences.
         """
         # Upewnij się, że są połączenia
-        if not self._ensure_connection(source_profile) or not self._ensure_connection(
-            target_profile
-        ):
+        if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
             return ConfigDiff(
                 source_path=source_path,
                 target_path=target_path,
@@ -308,9 +301,7 @@ class RemoteConfigManager:
             Tuple (success, backup_path_or_error_msg).
         """
         # Upewnij się, że są połączenia
-        if not self._ensure_connection(source_profile) or not self._ensure_connection(
-            target_profile
-        ):
+        if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
             return False, "Błąd połączenia z jednym z serwerów"
 
         # Synchronizuj plik

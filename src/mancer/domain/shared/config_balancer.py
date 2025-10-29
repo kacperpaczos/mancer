@@ -336,9 +336,7 @@ class ConfigBalancer:
         backup_path = None
         if make_backup:
             try:
-                backup_path = target_tracer.backup_file(
-                    target_path, is_target_remote, "before_sync"
-                )
+                backup_path = target_tracer.backup_file(target_path, is_target_remote, "before_sync")
             except Exception:
                 # Kontynuuj nawet jeśli backup się nie powiedzie
                 pass

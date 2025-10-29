@@ -12,9 +12,7 @@ class NetstatCommand(BaseCommand):
     def __init__(self):
         super().__init__("netstat")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę netstat"""
         # Budujemy komendę
         cmd_str = self.build_command()

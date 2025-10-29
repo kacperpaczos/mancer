@@ -110,6 +110,9 @@ def command_inspect(inspector: SystemdInspector, args: argparse.Namespace) -> in
                 print("Błąd: Nie podano nazwy profilu")
 
     # Pobierz jednostki systemd
+    if not hostname or not username:
+        print("Błąd: Nie podano adresu hosta lub nazwy użytkownika")
+        return 1
     print(f"Łączenie z serwerem {hostname}...")
     units_output = inspector.get_systemd_units(hostname, username, password)
 

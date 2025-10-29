@@ -52,9 +52,7 @@ def check_and_install_chronyd(runner: ShellRunner, sudo_password: Optional[str] 
     # Najpierw sprawdźmy czy polecenie chronyd jest dostępne w systemie
     print(f"Sprawdzanie czy polecenie {DAEMON_NAME} jest dostępne...")
     command_check = runner.execute(
-        ShellRunner.create_bash_command(
-            f"command -v {DAEMON_NAME} >/dev/null 2>&1 && echo 'TRUE' || echo 'FALSE'"
-        )
+        ShellRunner.create_bash_command(f"command -v {DAEMON_NAME} >/dev/null 2>&1 && echo 'TRUE' || echo 'FALSE'")
     )
 
     if command_check.success and command_check.raw_output.strip() == "TRUE":
@@ -62,9 +60,7 @@ def check_and_install_chronyd(runner: ShellRunner, sudo_password: Optional[str] 
 
         # Sprawdźmy, do jakiego pakietu należy to polecenie
         package_check = runner.execute(
-            ShellRunner.create_bash_command(
-                f"dpkg -S $(which {DAEMON_NAME}) 2>/dev/null | cut -d: -f1"
-            )
+            ShellRunner.create_bash_command(f"dpkg -S $(which {DAEMON_NAME}) 2>/dev/null | cut -d: -f1")
         )
         if package_check.success and package_check.raw_output.strip():
             actual_package = package_check.raw_output.strip()
@@ -78,19 +74,13 @@ def check_and_install_chronyd(runner: ShellRunner, sudo_password: Optional[str] 
             return True
 
     # Sprawdź czy pakiet, który powinien zawierać chronyd, jest dostępny w repozytoriach
-    print(
-        f"Polecenie {DAEMON_NAME} nie jest dostępne. Sprawdzam dostępność pakietu {PACKAGE_NAME}..."
-    )
+    print(f"Polecenie {DAEMON_NAME} nie jest dostępne. Sprawdzam dostępność pakietu {PACKAGE_NAME}...")
     package_available = runner.execute(
-        ShellRunner.create_bash_command(
-            f"apt-cache show {PACKAGE_NAME} >/dev/null 2>&1 && echo 'TRUE' || echo 'FALSE'"
-        )
+        ShellRunner.create_bash_command(f"apt-cache show {PACKAGE_NAME} >/dev/null 2>&1 && echo 'TRUE' || echo 'FALSE'")
     )
 
     if package_available.success and package_available.raw_output.strip() == "FALSE":
-        print(
-            f"Pakiet {PACKAGE_NAME} nie istnieje w repozytoriach. Nie można zainstalować polecenia {DAEMON_NAME}."
-        )
+        print(f"Pakiet {PACKAGE_NAME} nie istnieje w repozytoriach. Nie można zainstalować polecenia {DAEMON_NAME}.")
         return False
 
     print(f"Pakiet {PACKAGE_NAME} jest dostępny. Rozpoczynam instalację...")
@@ -132,17 +122,13 @@ def check_and_install_chronyd(runner: ShellRunner, sudo_password: Optional[str] 
             cmd_result = runner.execute(apt.get_commands_for_package(PACKAGE_NAME))
             if cmd_result.success:
                 print("Polecenia dostarczane przez pakiet:")
-                for line in cmd_result.raw_output.strip().split("\n")[
-                    1:
-                ]:  # Pomiń pierwszy wiersz z nagłówkiem
+                for line in cmd_result.raw_output.strip().split("\n")[1:]:  # Pomiń pierwszy wiersz z nagłówkiem
                     if line.strip():
                         print(f"  - {line.strip()}")
 
             return True
         else:
-            print(
-                f"Mimo że komenda instalacji zwróciła sukces, pakiet {PACKAGE_NAME} nie został zainstalowany."
-            )
+            print(f"Mimo że komenda instalacji zwróciła sukces, pakiet {PACKAGE_NAME} nie został zainstalowany.")
             print("Prawdopodobnie wystąpił problem z uprawnieniami lub konfiguracją apt.")
             return False
     else:
@@ -242,9 +228,7 @@ def main():
     print("     - apt.clean() - czyszczenie cache")
 
     print("\n  2. Sprawdzanie stanu:")
-    print(
-        "     - apt.isInstalled(package) - sprawdzanie czy pakiet jest zainstalowany (TRUE/FALSE)"
-    )
+    print("     - apt.isInstalled(package) - sprawdzanie czy pakiet jest zainstalowany (TRUE/FALSE)")
     print("     - apt.is_installed(package) - sprawdzanie czy pakiet jest zainstalowany (tekstowo)")
     print("     - apt.get_package_version(package) - pobieranie wersji pakietu")
     print("     - apt.get_commands_for_package(package) - pobieranie listy poleceń z pakietu")
@@ -255,9 +239,7 @@ def main():
 
     print("\n  3. Zarządzanie blokadami i stanem apt:")
     print("     - apt.check_if_locked() - sprawdzenie czy apt jest zablokowany")
-    print(
-        "     - apt.wait_if_locked(max_attempts, sleep_time) - czekanie aż apt nie będzie zablokowany"
-    )
+    print("     - apt.wait_if_locked(max_attempts, sleep_time) - czekanie aż apt nie będzie zablokowany")
     print(
         "     - apt.refresh_if_locked(max_attempts, sleep_time) - odświeżanie informacji o blokadzie co określony czas"
     )

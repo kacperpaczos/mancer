@@ -105,12 +105,7 @@ class ToolVersionService:
         Returns:
             True, jeśli narzędzie jest dostępne, False w przeciwnym razie
         """
-        return (
-            subprocess.run(
-                ["which", tool_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            ).returncode
-            == 0
-        )
+        return subprocess.run(["which", tool_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode == 0
 
     def is_version_allowed(self, tool_name: str) -> Tuple[bool, str]:
         """
@@ -136,9 +131,7 @@ class ToolVersionService:
 
         # Jeśli nie udało się wykryć wersji, zwróć odpowiedni komunikat
         if not tool_version:
-            warn_on_missing = self.config_manager.get_setting(
-                "version_checking.warn_on_missing", True
-            )
+            warn_on_missing = self.config_manager.get_setting("version_checking.warn_on_missing", True)
             if warn_on_missing:
                 return False, f"Nie można wykryć wersji narzędzia {tool_name}"
             else:
@@ -158,16 +151,10 @@ class ToolVersionService:
             )
         else:
             # Jeśli wersja nie jest dozwolona, sprawdź czy ostrzeżenia są włączone
-            warn_on_mismatch = self.config_manager.get_setting(
-                "version_checking.warn_on_mismatch", True
-            )
+            warn_on_mismatch = self.config_manager.get_setting("version_checking.warn_on_mismatch", True)
             if warn_on_mismatch:
                 allowed_versions = self.registry.allowed_versions.get(tool_name, set())
-                allowed_str = (
-                    ", ".join(allowed_versions)
-                    if allowed_versions
-                    else "brak zdefiniowanych wersji"
-                )
+                allowed_str = ", ".join(allowed_versions) if allowed_versions else "brak zdefiniowanych wersji"
                 return (
                     False,
                     f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona "

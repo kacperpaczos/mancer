@@ -52,16 +52,11 @@ class SSHProfile:
             except Exception:
                 safe_proxy_config = {"error": "Nie można skonwertować proxy_config"}
 
-        safe_ssh_options = {}
-        if self.ssh_options:
-            try:
-                for key, value in self.ssh_options.items():
-                    if isinstance(value, (str, int, float, bool, type(None))):
-                        safe_ssh_options[str(key)] = value
-                    else:
-                        safe_ssh_options[str(key)] = str(value)
-            except Exception:
-                safe_ssh_options = {"error": "Nie można skonwertować ssh_options"}
+        # Konwersja ssh_options do bezpiecznych typów bez zagnieżdżonych try/except
+        safe_ssh_options = {
+            str(key): (value if isinstance(value, (str, int, float, bool, type(None))) else str(value))
+            for key, value in (self.ssh_options or {}).items()
+        }
 
         return {
             "id": self.id,

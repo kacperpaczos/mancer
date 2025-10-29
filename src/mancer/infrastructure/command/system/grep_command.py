@@ -17,12 +17,8 @@ class GrepCommand(BaseCommand):
         if pattern:
             self._args.append(pattern)
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the grep command"""
-        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)
 
         # Build command string based on provided parameters
         command_str = self.build_command()
@@ -30,9 +26,7 @@ class GrepCommand(BaseCommand):
         # Handle pipeline input
         if input_result and input_result.raw_output:
             backend = self._get_backend(context)
-            exit_code, output, error = backend.execute_with_input(
-                command_str, input_result.raw_output
-            )
+            exit_code, output, error = backend.execute_with_input(command_str, input_result.raw_output)
         else:
             # Execute the command with the appropriate backend
             backend = self._get_backend(context)

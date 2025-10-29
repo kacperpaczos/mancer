@@ -13,9 +13,7 @@ class CdCommand(BaseCommand):
     def __init__(self):
         super().__init__("cd")
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cd - zmienia katalog w kontekście"""
         # Pobieramy ścieżkę docelową
         target_path = None
@@ -24,10 +22,7 @@ class CdCommand(BaseCommand):
         if input_result and input_result.is_success() and "directory" not in self.parameters:
             # Próbujemy znaleźć katalog w structured_output
             if input_result.structured_output:
-                if (
-                    isinstance(input_result.structured_output[0], dict)
-                    and "name" in input_result.structured_output[0]
-                ):
+                if isinstance(input_result.structured_output[0], dict) and "name" in input_result.structured_output[0]:
                     # Jeśli mamy listę słowników (np. z ls), bierzemy pierwszy element
                     target_path = input_result.structured_output[0]["name"]
                 elif isinstance(input_result.structured_output[0], str):
@@ -76,9 +71,7 @@ class CdCommand(BaseCommand):
         context.change_directory(full_path)
 
         # Zwracamy sukces
-        return CommandResult(
-            raw_output="", success=True, structured_output=[full_path], exit_code=0
-        )
+        return CommandResult(raw_output="", success=True, structured_output=[full_path], exit_code=0)
 
     # Przepisane metody buildera dla poprawnego typu zwracanego
 

@@ -24,9 +24,7 @@ class DfCommand(BaseCommand):
         super().__init__("df")
         self.preferred_data_format = DataFormat.TABLE
 
-    def execute(
-        self, context: CommandContext, input_result: Optional[CommandResult] = None
-    ) -> CommandResult:
+    def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the df command"""
         # Call base method to check tool version
         super().execute(context, input_result)  # type: ignore
