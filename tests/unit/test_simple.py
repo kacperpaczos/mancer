@@ -23,7 +23,7 @@ def test_mancer_import():
 def test_mancer_application_import():
     """Test mancer.application import"""
     try:
-        import mancer.application
+        import mancer.application  # noqa: F401
 
         assert True
     except ImportError as e:
@@ -34,7 +34,7 @@ def test_mancer_application_import():
 def test_shell_runner_import():
     """Test ShellRunner import"""
     try:
-        from mancer.application.shell_runner import ShellRunner
+        from mancer.application.shell_runner import ShellRunner  # noqa: F401
 
         assert True
     except ImportError as e:
