@@ -11,8 +11,14 @@ class GrepCommand(BaseCommand):
     # Zdefiniuj nazwę narzędzia
     tool_name = "grep"
 
-    def __init__(self, pattern=None):
-        super().__init__("grep")
+    def __init__(self, name: str = "grep", pattern=None):
+        """Initialize grep command.
+
+        Args:
+            name: Command name (default: "grep").
+            pattern: Optional pattern to search for.
+        """
+        super().__init__(name)
 
         if pattern:
             self._args.append(pattern)

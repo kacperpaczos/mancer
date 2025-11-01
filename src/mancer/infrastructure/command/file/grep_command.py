@@ -9,8 +9,13 @@ from ..base_command import BaseCommand
 class GrepCommand(BaseCommand):
     """Komenda grep - wyszukuje wzorce w plikach"""
 
-    def __init__(self):
-        super().__init__("grep")
+    def __init__(self, name: str = "grep"):
+        """Initialize grep command.
+
+        Args:
+            name: Command name (default: "grep").
+        """
+        super().__init__(name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę grep"""

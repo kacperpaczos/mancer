@@ -9,8 +9,14 @@ from ..base_command import BaseCommand
 class WcCommand(BaseCommand):
     """Command implementation for the 'wc' (word count) command"""
 
-    def __init__(self, file_path: str = ""):
-        super().__init__("wc")
+    def __init__(self, name: str = "wc", file_path: str = ""):
+        """Initialize wc command.
+
+        Args:
+            name: Command name (default: "wc").
+            file_path: Optional file path to count.
+        """
+        super().__init__(name)
         if file_path:
             self._args.append(file_path)
 

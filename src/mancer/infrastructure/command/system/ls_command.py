@@ -11,8 +11,13 @@ class LsCommand(BaseCommand):
     # Zdefiniuj nazwę narzędzia
     tool_name = "ls"
 
-    def __init__(self):
-        super().__init__("ls")
+    def __init__(self, name: str = "ls"):
+        """Initialize ls command.
+
+        Args:
+            name: Command name (default: "ls").
+        """
+        super().__init__(name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""

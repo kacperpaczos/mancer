@@ -9,8 +9,13 @@ from ..base_command import BaseCommand
 class LsCommand(BaseCommand):
     """Komenda ls - listuje pliki i katalogi"""
 
-    def __init__(self):
-        super().__init__("ls")
+    def __init__(self, name: str = "ls"):
+        """Initialize ls command.
+
+        Args:
+            name: Command name (default: "ls").
+        """
+        super().__init__(name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę ls"""

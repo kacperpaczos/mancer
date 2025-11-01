@@ -20,8 +20,13 @@ class DfCommand(BaseCommand):
         "9.x": "_parse_output_v9",
     }
 
-    def __init__(self):
-        super().__init__("df")
+    def __init__(self, name: str = "df"):
+        """Initialize df command.
+
+        Args:
+            name: Command name (default: "df").
+        """
+        super().__init__(name)
         self.preferred_data_format = DataFormat.TABLE
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
