@@ -72,6 +72,24 @@ Mancer is a domain-focused automation framework; Plumbum is a lightweight Python
 
 See Plumbum: https://github.com/tomerfiliba/plumbum
 
+## How Mancer differs from Fabric
+Fabric is a Python library primarily focused on remote execution over SSH and task automation via `fab` tasks. Mancer is a domain-driven automation framework unifying local Bash and remote SSH with structured results and version-aware commands.
+
+- Focus and model
+  - Mancer: Domain model, structured `CommandResult`, execution history, composable commands and chains
+  - Fabric: Task runner and SSH orchestration (fabfile tasks, run/sudo wrappers)
+- Local vs remote
+  - Mancer: Unified API for local Bash and remote SSH backends
+  - Fabric: Strong focus on SSH (local execution available but not the primary model)
+- Data handling
+  - Mancer: Built-in adapters to JSON/DataFrame/ndarray for downstream processing
+  - Fabric: Returns stdout/stderr; structuring data left to the user
+- Version-aware behavior
+  - Mancer: Detects tool versions and adapts parsing/behavior
+  - Fabric: No built-in per-tool version compatibility layer
+
+See Fabric: https://www.fabfile.org/
+
 ## Roadmap & Status
 - Status: Early development version 0.1, API subject to change
 - Planned: richer CLI, more system commands, more backends, Windows/PowerShell maturity, extended data adapters
