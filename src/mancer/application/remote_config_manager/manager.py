@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from paramiko import AutoAddPolicy, SSHClient  # type: ignore[import-untyped]
+from paramiko import AutoAddPolicy, SSHClient  # type: ignore[import-untyped,unused-ignore]
 
 from .config import AppConfig, ServerConfig
 from .file_operations import FileDiff, FileManager
