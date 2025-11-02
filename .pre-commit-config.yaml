@@ -49,6 +49,14 @@ repos:
         exclude: ^(prototypes/|examples/)
         stages: [pre-commit]
 
+      # Pre-push (on push) - auto-fix imports if needed
+      - id: isort
+        name: isort (pre-push, fix)
+        args: ["--profile=black"]
+        files: ^(src/|tests/|tools/).*\.py$
+        exclude: ^(prototypes/|examples/)
+        stages: [pre-push]
+
       # Pre-push (on push) - check only
       - id: isort
         name: isort (pre-push, check)
