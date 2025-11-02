@@ -1,8 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [ main, develop ]
+  push:  # Uruchamia się przy każdym pushu do dowolnej gałęzi
   pull_request:
     branches: [ main, develop ]
 
