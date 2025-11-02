@@ -12,8 +12,13 @@ class PsCommand(BaseCommand):
     # Tool name
     tool_name = "ps"
 
-    def __init__(self):
-        super().__init__("ps")
+    def __init__(self, name: str = "ps"):
+        """Initialize ps command.
+
+        Args:
+            name: Command name (default: "ps").
+        """
+        super().__init__(name)
         self.preferred_data_format = DataFormat.TABLE
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:

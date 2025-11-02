@@ -46,8 +46,12 @@ class TestShellRunner:
         """Test tworzenia nieistniejącej komendy"""
         runner = ShellRunner(backend_type="bash")
 
-        nonexistent_cmd = runner.create_command("nonexistent_command_123")
-        assert nonexistent_cmd is None
+        # create_command rzuca ValueError dla nieistniejących komend
+        try:
+            _ = runner.create_command("nonexistent_command_123")
+            assert False, "Expected ValueError to be raised"
+        except ValueError as e:
+            assert "not found" in str(e).lower()
 
     @patch("mancer.infrastructure.backend.bash_backend.BashBackend.execute_command")
     def test_shell_runner_execute_simple_command(self, mock_execute):

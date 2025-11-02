@@ -9,8 +9,13 @@ from ...command.base_command import BaseCommand
 class HostnameCommand(BaseCommand):
     """Komenda hostname - wyświetla lub ustawia nazwę hosta"""
 
-    def __init__(self):
-        super().__init__("hostname")
+    def __init__(self, name: str = "hostname"):
+        """Initialize hostname command.
+
+        Args:
+            name: Command name (default: "hostname").
+        """
+        super().__init__(name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę hostname"""

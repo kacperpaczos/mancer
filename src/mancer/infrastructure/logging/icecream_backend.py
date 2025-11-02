@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from pprint import pformat
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 # Importuję interfejs backendu logowania
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
@@ -16,7 +16,7 @@ except ImportError:
     # Icecream nie jest dostępny, tworzymy fallback
     ICECREAM_AVAILABLE = False
 
-    def ic(*args, **kwargs):
+    def _ic_fallback(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         """Fallback dla icecream, który po prostu wypisuje argumenty."""
         if not args and not kwargs:
             return
@@ -29,6 +29,12 @@ except ImportError:
 
         print("[IC]", " | ".join(output_parts))
         return args[0] if len(args) == 1 else args
+
+    # Użyj fallback jako ic
+    # Mypy widzi konflikt typów między IceCreamDebugger a Callable,
+    # ale w runtime to działa poprawnie, ponieważ oba są callable.
+    # Używamy explicit cast przez Any aby zaspokoić mypy na różnych wersjach
+    ic = cast(Any, _ic_fallback)
 
 
 class IcecreamBackend(LogBackendInterface):

@@ -11,8 +11,14 @@ class CatCommand(BaseCommand):
     # Zdefiniuj nazwę narzędzia
     tool_name = "cat"
 
-    def __init__(self, file_path=None):
-        super().__init__("cat")
+    def __init__(self, name: str = "cat", file_path=None):
+        """Initialize cat command.
+
+        Args:
+            name: Command name (default: "cat").
+            file_path: Optional file path to read.
+        """
+        super().__init__(name)
 
         if file_path:
             self._args.append(file_path)

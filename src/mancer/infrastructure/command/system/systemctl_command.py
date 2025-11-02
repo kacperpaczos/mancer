@@ -9,8 +9,13 @@ from ..base_command import BaseCommand
 class SystemctlCommand(BaseCommand):
     """Komenda systemctl - zarządza usługami systemowymi"""
 
-    def __init__(self):
-        super().__init__("systemctl")
+    def __init__(self, name: str = "systemctl"):
+        """Initialize systemctl command.
+
+        Args:
+            name: Command name (default: "systemctl").
+        """
+        super().__init__(name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę systemctl"""

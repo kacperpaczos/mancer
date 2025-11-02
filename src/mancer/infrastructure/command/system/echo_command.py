@@ -9,15 +9,17 @@ from ..base_command import BaseCommand
 class EchoCommand(BaseCommand):
     """Command implementation for 'echo' to print text to stdout."""
 
-    def __init__(self, message: str = ""):
+    def __init__(self, name: str = "echo", message: str = ""):
         """Initialize echo command.
 
         Args:
+            name: Command name (default: "echo").
             message: Optional text to print.
         """
-        super().__init__("echo")
+        super().__init__(name)
         if message:
-            self.add_arg(message)
+            # Bezpośrednio dodaj do _args zamiast używać add_arg (które wywołuje clone)
+            self._args.append(message)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the echo command."""

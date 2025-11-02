@@ -9,8 +9,14 @@ from ..base_command import BaseCommand
 class FindCommand(BaseCommand):
     """Command implementation for the 'find' command"""
 
-    def __init__(self, path: str = "."):
-        super().__init__("find")
+    def __init__(self, name: str = "find", path: str = "."):
+        """Initialize find command.
+
+        Args:
+            name: Command name (default: "find").
+            path: Path to search in (default: ".").
+        """
+        super().__init__(name)
         self._args.append(path)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:

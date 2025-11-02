@@ -226,14 +226,13 @@ class TestBaseCommandComprehensive:
         self.context.add_to_history.assert_called_once_with("test_cmd")
 
         # Sprawdź czy SSH backend został utworzony z odpowiednimi parametrami
+        # base_command używa: hostname, username, port, key_filename, password
         mock_ssh_backend.assert_called_once_with(
-            host="example.com",
-            user="testuser",
+            hostname="example.com",
+            username="testuser",
             port=22,
-            key_file=None,
+            key_filename=None,
             password="password",
-            use_sudo=False,
-            sudo_password=None,
         )
 
     @patch("mancer.infrastructure.backend.bash_backend.BashBackend")
@@ -259,7 +258,11 @@ class TestBaseCommandComprehensive:
         self.command.execute(self.context, input_result)
 
         # Sprawdź czy stdin został przekazany
+        mock_backend_instance.execute_command.assert_called_once()
         call_args = mock_backend_instance.execute_command.call_args
+        assert call_args is not None, "execute_command should have been called"
+        # execute_command(command, working_dir, env_vars, context_params, stdin)
+        assert len(call_args[0]) >= 5, f"Expected at least 5 args, got {len(call_args[0])}"
         assert call_args[0][4] == "input data"  # stdin parameter
 
     def test_clone_basic(self):

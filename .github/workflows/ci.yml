@@ -1,8 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [ main, develop ]
+  push:  # Uruchamia się przy każdym pushu do dowolnej gałęzi
   pull_request:
     branches: [ main, develop ]
 
@@ -23,7 +22,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-cov ruff black isort mypy
+        pip install pytest pytest-cov ruff black isort mypy build twine
         
     - name: Lint with ruff
       run: |
