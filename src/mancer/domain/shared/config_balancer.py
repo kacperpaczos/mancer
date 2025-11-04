@@ -5,38 +5,21 @@ import os
 from typing import Callable, Dict, List, Optional, Tuple
 
 import yaml
+from pydantic import BaseModel, Field
 
 from ...infrastructure.shared.file_tracer import FileTracer
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
-class ConfigDiff:
+class ConfigDiff(BaseModel):
     """Reprezentuje różnice między konfiguracjami."""
 
-    def __init__(
-        self,
-        source_path: str,
-        target_path: str,
-        differences: List[str],
-        is_source_remote: bool = False,
-        is_target_remote: bool = False,
-    ):
-        """
-        Inicjalizuje obiekt różnic.
-
-        Args:
-            source_path: Ścieżka do pliku źródłowego
-            target_path: Ścieżka do pliku docelowego
-            differences: Lista linii różnic
-            is_source_remote: Czy źródło jest zdalne
-            is_target_remote: Czy cel jest zdalny
-        """
-        self.source_path = source_path
-        self.target_path = target_path
-        self.differences = differences
-        self.is_source_remote = is_source_remote
-        self.is_target_remote = is_target_remote
-        self.timestamp = datetime.datetime.now()
+    source_path: str
+    target_path: str
+    differences: List[str]
+    is_source_remote: bool = False
+    is_target_remote: bool = False
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
     def has_differences(self) -> bool:
         """
@@ -110,32 +93,14 @@ class ConfigFormat:
             return ConfigFormat.PLAIN
 
 
-class ConfigTemplate:
+class ConfigTemplate(BaseModel):
     """Reprezentuje szablon konfiguracji."""
 
-    def __init__(
-        self,
-        name: str,
-        template_content: str,
-        format_type: str,
-        description: Optional[str] = None,
-        variables: Optional[Dict[str, str]] = None,
-    ):
-        """
-        Inicjalizuje szablon konfiguracji.
-
-        Args:
-            name: Nazwa szablonu
-            template_content: Zawartość szablonu
-            format_type: Format (ini, json, yaml, xml, plain)
-            description: Opis szablonu
-            variables: Słownik zmiennych do zastąpienia
-        """
-        self.name = name
-        self.template_content = template_content
-        self.format_type = format_type
-        self.description = description
-        self.variables = variables or {}
+    name: str
+    template_content: str
+    format_type: str
+    description: Optional[str] = None
+    variables: Dict[str, str] = Field(default_factory=dict)
 
     def render(self, variables: Optional[Dict[str, str]] = None) -> str:
         """

@@ -3,16 +3,16 @@ Model profilu SSH - przechowuje konfigurację połączenia
 """
 
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
 
-@dataclass
-class SSHProfile:
+
+class SSHProfile(BaseModel):
     """Profil połączenia SSH"""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
     hostname: str = ""
@@ -20,16 +20,16 @@ class SSHProfile:
     port: int = 22
     key_filename: Optional[str] = None
     proxy_config: Optional[Dict[str, Any]] = None
-    ssh_options: Dict[str, str] = field(default_factory=dict)
+    ssh_options: Dict[str, str] = Field(default_factory=dict)
 
     # Metadane
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
     last_used: Optional[datetime] = None
     use_count: int = 0
 
     # Tagi i kategorie
-    tags: List[str] = field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
     category: str = "default"
 
     # Ustawienia bezpieczeństwa
@@ -38,6 +38,9 @@ class SSHProfile:
 
     def to_dict(self) -> Dict[str, Any]:
         """Konwertuje profil do słownika"""
+        # Użyj model_dump() jako podstawy
+        data = self.model_dump()
+
         # Bezpieczne konwersje dla proxy_config i ssh_options
         safe_proxy_config = None
         if self.proxy_config:
@@ -58,55 +61,46 @@ class SSHProfile:
             for key, value in (self.ssh_options or {}).items()
         }
 
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "hostname": self.hostname,
-            "username": self.username,
-            "port": self.port,
-            "key_filename": self.key_filename,
-            "proxy_config": safe_proxy_config,
-            "ssh_options": safe_ssh_options,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "last_used": self.last_used.isoformat() if self.last_used else None,
-            "use_count": self.use_count,
-            "tags": self.tags,
-            "category": self.category,
-            "save_password": self.save_password,
-            "password_hash": self.password_hash,
-        }
+        # Zaktualizuj dane bezpiecznymi wersjami
+        data.update(
+            {
+                "proxy_config": safe_proxy_config,
+                "ssh_options": safe_ssh_options,
+                "created_at": self.created_at.isoformat(),
+                "updated_at": self.updated_at.isoformat(),
+                "last_used": self.last_used.isoformat() if self.last_used else None,
+            }
+        )
+
+        return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SSHProfile":
         """Tworzy profil ze słownika"""
-        profile = cls()
-        profile.id = data.get("id", str(uuid.uuid4()))
-        profile.name = data.get("name", "")
-        profile.description = data.get("description", "")
-        profile.hostname = data.get("hostname", "")
-        profile.username = data.get("username", "")
-        profile.port = data.get("port", 22)
-        profile.key_filename = data.get("key_filename")
-        profile.proxy_config = data.get("proxy_config")
-        profile.ssh_options = data.get("ssh_options", {})
+        # Przygotuj dane dla model_validate
+        processed_data = data.copy()
 
         # Parsuj daty
-        if "created_at" in data:
-            profile.created_at = datetime.fromisoformat(data["created_at"])
-        if "updated_at" in data:
-            profile.updated_at = datetime.fromisoformat(data["updated_at"])
-        if "last_used" in data and data["last_used"]:
-            profile.last_used = datetime.fromisoformat(data["last_used"])
+        if "created_at" in processed_data and isinstance(processed_data["created_at"], str):
+            processed_data["created_at"] = datetime.fromisoformat(processed_data["created_at"])
+        if "updated_at" in processed_data and isinstance(processed_data["updated_at"], str):
+            processed_data["updated_at"] = datetime.fromisoformat(processed_data["updated_at"])
+        if (
+            "last_used" in processed_data
+            and processed_data["last_used"]
+            and isinstance(processed_data["last_used"], str)
+        ):
+            processed_data["last_used"] = datetime.fromisoformat(processed_data["last_used"])
 
-        profile.use_count = data.get("use_count", 0)
-        profile.tags = data.get("tags", [])
-        profile.category = data.get("category", "default")
-        profile.save_password = data.get("save_password", False)
-        profile.password_hash = data.get("password_hash")
+        # Ustaw domyślne wartości jeśli brak
+        if "id" not in processed_data:
+            processed_data["id"] = str(uuid.uuid4())
+        if "ssh_options" not in processed_data:
+            processed_data["ssh_options"] = {}
+        if "tags" not in processed_data:
+            processed_data["tags"] = []
 
-        return profile
+        return cls.model_validate(processed_data)
 
     def update_usage(self):
         """Aktualizuje statystyki użycia"""

@@ -16,7 +16,7 @@ class WcCommand(BaseCommand):
             name: Command name (default: "wc").
             file_path: Optional file path to count.
         """
-        super().__init__(name)
+        super().__init__(name=name)
         if file_path:
             self._args.append(file_path)
 

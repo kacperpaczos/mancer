@@ -2,16 +2,16 @@ import shlex
 import subprocess
 import threading
 import time
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from pydantic import BaseModel, Field
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 
-@dataclass
-class SSHSession:
+class SSHSession(BaseModel):
     """Reprezentuje sesję SSH"""
 
     id: str
@@ -19,13 +19,12 @@ class SSHSession:
     username: str
     port: int
     status: str = "disconnected"  # connected, disconnected, connecting, error
-    created_at: datetime = field(default_factory=datetime.now)
-    last_activity: datetime = field(default_factory=datetime.now)
-    connection_info: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = Field(default_factory=datetime.now)
+    last_activity: datetime = Field(default_factory=datetime.now)
+    connection_info: Dict[str, Any] = Field(default_factory=dict)
 
 
-@dataclass
-class SCPTransfer:
+class SCPTransfer(BaseModel):
     """Reprezentuje transfer pliku przez SCP"""
 
     id: str
@@ -36,7 +35,7 @@ class SCPTransfer:
     progress: float = 0.0
     bytes_transferred: int = 0
     total_bytes: int = 0
-    start_time: datetime = field(default_factory=datetime.now)
+    start_time: datetime = Field(default_factory=datetime.now)
     end_time: Optional[datetime] = None
 
 

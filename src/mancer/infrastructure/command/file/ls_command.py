@@ -15,7 +15,7 @@ class LsCommand(BaseCommand):
         Args:
             name: Command name (default: "ls").
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę ls"""

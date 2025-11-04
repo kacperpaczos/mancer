@@ -16,7 +16,7 @@ class FindCommand(BaseCommand):
             name: Command name (default: "find").
             path: Path to search in (default: ".").
         """
-        super().__init__(name)
+        super().__init__(name=name)
         self._args.append(path)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:

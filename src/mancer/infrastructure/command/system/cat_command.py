@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -9,7 +11,7 @@ class CatCommand(BaseCommand):
     """Implementacja komendy 'cat' do wyświetlania zawartości plików"""
 
     # Zdefiniuj nazwę narzędzia
-    tool_name = "cat"
+    tool_name: ClassVar[str] = "cat"
 
     def __init__(self, name: str = "cat", file_path=None):
         """Initialize cat command.
@@ -18,7 +20,7 @@ class CatCommand(BaseCommand):
             name: Command name (default: "cat").
             file_path: Optional file path to read.
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
         if file_path:
             self._args.append(file_path)

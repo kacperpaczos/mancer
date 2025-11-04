@@ -10,7 +10,7 @@ class FindCommand(BaseCommand):
     """Komenda find - wyszukuje pliki i katalogi"""
 
     def __init__(self):
-        super().__init__("find")
+        super().__init__(name="find")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę find"""

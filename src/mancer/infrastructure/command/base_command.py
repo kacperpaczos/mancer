@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext, ExecutionMode
@@ -14,23 +18,30 @@ from .loggable_command_mixin import LoggableCommandMixin
 T = TypeVar("T", bound="BaseCommand")
 
 
-class BaseCommand(CommandInterface, LoggableCommandMixin):
+class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     """Base implementation of a command.
 
     Provides common building, execution and result preparation logic.
     Subclasses should override execute() and _parse_output().
     """
 
-    def __init__(self, name: str):
-        self.name = name
-        self.options: List[str] = []
-        self.parameters: Dict[str, Any] = {}
-        self.flags: List[str] = []
-        self.backend = BashBackend()  # Default backend
-        self.pipeline: Optional[str] = None  # Optional pipeline (e.g., | grep)
-        self.requires_sudo = False  # Whether the command requires sudo
-        self._args: List[str] = []  # Additional arguments
-        self.preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+        ignored_types=(str, int, float, bool),  # Ignore simple class attributes
+        populate_by_name=True,  # Allow both field names and aliases
+    )  # Allow backend and other non-serializable types
+
+    name: str
+    options: List[str] = Field(default_factory=list)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    flags: List[str] = Field(default_factory=list)
+    backend: Any = Field(default_factory=BashBackend, exclude=True)  # Backend instance (not serializable)
+    pipeline: Optional[str] = None  # Optional pipeline (e.g., | grep)
+    requires_sudo: bool = False  # Whether the command requires sudo
+    preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
+
+    _args: PrivateAttr[List[str]] = PrivateAttr(default_factory=list)  # Additional arguments (private)
 
     def with_option(self, option: str) -> "BaseCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
@@ -76,16 +87,11 @@ class BaseCommand(CommandInterface, LoggableCommandMixin):
 
     def clone(self) -> "BaseCommand":
         """Create a copy of the command instance (immutable builder pattern)."""
-        new_instance = type(self)(self.name)  # Call constructor with name
-        new_instance.name = self.name
-        new_instance.options = deepcopy(self.options)
-        new_instance.parameters = deepcopy(self.parameters)
-        new_instance.flags = deepcopy(self.flags)
+        # Use model_copy for Pydantic models
+        new_instance = self.model_copy(deep=True)
+        # Ensure backend and private attributes are properly copied
         new_instance.backend = self.backend
-        new_instance.pipeline = self.pipeline
-        new_instance.requires_sudo = self.requires_sudo
         new_instance._args = deepcopy(self._args)
-        new_instance.preferred_data_format = self.preferred_data_format
         return new_instance
 
     def build_command(self) -> str:

@@ -231,7 +231,7 @@ class SSHProfileService:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
 
         profile = self.profiles[profile_id]
-        export_data = profile.to_dict()
+        export_data = profile.model_dump()
 
         # Dodaj poświadczenia jeśli wymagane
         if include_credentials:
@@ -253,7 +253,7 @@ class SSHProfileService:
                 self.delete_profile(existing_profile.id)
 
         # Stwórz profil
-        profile = SSHProfile.from_dict(profile_data)
+        profile = SSHProfile.model_validate(profile_data)
 
         # Zapisz profil
         self.profiles[profile.id] = profile
@@ -276,7 +276,7 @@ class SSHProfileService:
             profiles_file = os.path.join(self.storage_path, "ssh_profiles.json")
 
             # Konwertuj profile do słowników
-            data = {profile_id: profile.to_dict() for profile_id, profile in self.profiles.items()}
+            data = {profile_id: profile.model_dump() for profile_id, profile in self.profiles.items()}
 
             # Zapisz do pliku
             with open(profiles_file, "w") as f:
@@ -299,7 +299,7 @@ class SSHProfileService:
             # Konwertuj ze słowników z zabezpieczeniem
             for profile_id, profile_data in data.items():
                 try:
-                    profile = SSHProfile.from_dict(profile_data)
+                    profile = SSHProfile.model_validate(profile_data)
                     self.profiles[profile_id] = profile
                 except Exception as e:
                     logger.warning(f"Pominięto problematyczny profil {profile_id}: {e}")

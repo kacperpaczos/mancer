@@ -13,7 +13,7 @@ class AptCommand(BaseCommand):
     APT_STATE_FILE = os.path.expanduser("~/.mancer/apt_state.json")
 
     def __init__(self):
-        super().__init__("apt")
+        super().__init__(command_name="apt")
         self._ensure_state_dir()
         self._state = self._load_state()
 

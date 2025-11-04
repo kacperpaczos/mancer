@@ -1,15 +1,14 @@
 import importlib.metadata as metadata
 import logging
-from dataclasses import dataclass
 from typing import Optional
 
 import pkg_resources
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class VersionInfo:
+class VersionInfo(BaseModel):
     """
     Holds version information for the installed Mancer package.
 

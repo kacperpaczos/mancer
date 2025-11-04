@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -9,7 +11,7 @@ class GrepCommand(BaseCommand):
     """Command implementation for the 'grep' command"""
 
     # Zdefiniuj nazwę narzędzia
-    tool_name = "grep"
+    tool_name: ClassVar[str] = "grep"
 
     def __init__(self, name: str = "grep", pattern=None):
         """Initialize grep command.
@@ -18,7 +20,7 @@ class GrepCommand(BaseCommand):
             name: Command name (default: "grep").
             pattern: Optional pattern to search for.
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
         if pattern:
             self._args.append(pattern)

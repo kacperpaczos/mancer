@@ -7,15 +7,15 @@ import hashlib
 import json
 import logging
 import os
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class StoredCredential:
+class StoredCredential(BaseModel):
     """Przechowywane poświadczenie"""
 
     id: str
@@ -23,7 +23,7 @@ class StoredCredential:
     credential_type: str  # "password", "key_passphrase", "proxy_password"
     encrypted_value: str
     salt: str
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
     expires_at: Optional[datetime] = None
     last_used: Optional[datetime] = None
     use_count: int = 0

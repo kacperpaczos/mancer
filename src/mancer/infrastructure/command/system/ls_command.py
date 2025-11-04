@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -9,7 +11,7 @@ class LsCommand(BaseCommand):
     """Command implementation for the 'ls' command"""
 
     # Zdefiniuj nazwę narzędzia
-    tool_name = "ls"
+    tool_name: ClassVar[str] = "ls"
 
     def __init__(self, name: str = "ls"):
         """Initialize ls command.
@@ -17,7 +19,7 @@ class LsCommand(BaseCommand):
         Args:
             name: Command name (default: "ls").
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""

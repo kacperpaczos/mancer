@@ -10,7 +10,7 @@ class NetstatCommand(BaseCommand):
     """Komenda netstat - wyświetla połączenia sieciowe"""
 
     def __init__(self):
-        super().__init__("netstat")
+        super().__init__(name="netstat")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę netstat"""

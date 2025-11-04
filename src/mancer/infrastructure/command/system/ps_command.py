@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -10,7 +12,7 @@ class PsCommand(BaseCommand):
     """Command implementation for 'ps' to display running processes."""
 
     # Tool name
-    tool_name = "ps"
+    tool_name: ClassVar[str] = "ps"
 
     def __init__(self, name: str = "ps"):
         """Initialize ps command.
@@ -18,7 +20,7 @@ class PsCommand(BaseCommand):
         Args:
             name: Command name (default: "ps").
         """
-        super().__init__(name)
+        super().__init__(name=name)
         self.preferred_data_format = DataFormat.TABLE
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:

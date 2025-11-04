@@ -3,6 +3,8 @@ import os
 import re
 from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel
+
 from ...domain.model.command_context import CommandContext, ExecutionMode, RemoteHostInfo
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
@@ -10,35 +12,20 @@ from ...infrastructure.shared.command_enforcer import CommandEnforcer
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
-class SystemdUnit:
+class SystemdUnit(BaseModel):
     """Systemd unit model."""
 
-    def __init__(
-        self,
-        name: str,
-        load_state: str = "",
-        active_state: str = "",
-        sub_state: str = "",
-        description: str = "",
-    ):
-        """Initialize a systemd unit.
+    name: str
+    load_state: str = ""
+    active_state: str = ""
+    sub_state: str = ""
+    description: str = ""
 
-        Args:
-            name: Unit name
-            load_state: Load state (loaded, not-found, etc.).
-            active_state: Active state (active, inactive, failed, etc.).
-            sub_state: Detailed state (running, dead, exited, etc.).
-            description: Human-readable description.
-        """
-        self.name = name
-        self.load_state = load_state
-        self.active_state = active_state
-        self.sub_state = sub_state
-        self.description = description
-
-        # Infer unit type from name
-        parts = name.split(".")
-        self.unit_type = parts[-1] if len(parts) > 1 else "unknown"
+    @property
+    def unit_type(self) -> str:
+        """Infer unit type from name."""
+        parts = self.name.split(".")
+        return parts[-1] if len(parts) > 1 else "unknown"
 
     @classmethod
     def from_dict(cls, data: Dict[str, str]) -> "SystemdUnit":
@@ -50,22 +37,25 @@ class SystemdUnit:
         Returns:
             SystemdUnit: Created unit instance.
         """
-        return cls(
-            name=data.get("unit", ""),
-            load_state=data.get("load", ""),
-            active_state=data.get("active", ""),
-            sub_state=data.get("sub", ""),
-            description=data.get("description", ""),
+        return cls.model_validate(
+            {
+                "name": data.get("unit", ""),
+                "load_state": data.get("load", ""),
+                "active_state": data.get("active", ""),
+                "sub_state": data.get("sub", ""),
+                "description": data.get("description", ""),
+            }
         )
 
     def to_dict(self) -> Dict[str, str]:
         """Serialize the unit data to a dict."""
+        data = self.model_dump()
         return {
-            "unit": self.name,
-            "load": self.load_state,
-            "active": self.active_state,
-            "sub": self.sub_state,
-            "description": self.description,
+            "unit": data["name"],
+            "load": data["load_state"],
+            "active": data["active_state"],
+            "sub": data["sub_state"],
+            "description": data["description"],
             "unit_type": self.unit_type,
         }
 

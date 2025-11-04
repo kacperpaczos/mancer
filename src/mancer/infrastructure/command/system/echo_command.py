@@ -16,7 +16,7 @@ class EchoCommand(BaseCommand):
             name: Command name (default: "echo").
             message: Optional text to print.
         """
-        super().__init__(name)
+        super().__init__(name=name)
         if message:
             # Bezpośrednio dodaj do _args zamiast używać add_arg (które wywołuje clone)
             self._args.append(message)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -11,10 +13,10 @@ class DfCommand(BaseCommand):
     """Command implementation for the 'df' command to show disk space usage"""
 
     # Define tool name
-    tool_name = "df"
+    tool_name: ClassVar[str] = "df"
 
     # Version adapters mapping
-    version_adapters = {
+    version_adapters: ClassVar[Dict[str, str]] = {
         "2.x": "_parse_output_v2",
         "8.x": "_parse_output_v8",
         "9.x": "_parse_output_v9",
@@ -26,7 +28,7 @@ class DfCommand(BaseCommand):
         Args:
             name: Command name (default: "df").
         """
-        super().__init__(name)
+        super().__init__(name=name)
         self.preferred_data_format = DataFormat.TABLE
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:

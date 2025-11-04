@@ -3,51 +3,24 @@ import os
 from typing import Any, Dict, List, Optional
 
 from cryptography.fernet import Fernet
+from pydantic import BaseModel
 
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
-class ConnectionProfile:
+class ConnectionProfile(BaseModel):
     """Model profilu połączenia."""
 
-    def __init__(
-        self,
-        name: str,
-        hostname: str,
-        username: str,
-        port: int = 22,
-        password: Optional[str] = None,
-        key_filename: Optional[str] = None,
-        passphrase: Optional[str] = None,
-        group: Optional[str] = None,
-        description: Optional[str] = None,
-        ssh_options: Optional[Dict[str, str]] = None,
-    ):
-        """
-        Inicjalizuje profil połączenia.
-
-        Args:
-            name: Unikalna nazwa profilu
-            hostname: Nazwa hosta lub adres IP
-            username: Nazwa użytkownika
-            port: Port SSH
-            password: Hasło (opcjonalnie)
-            key_filename: Ścieżka do klucza prywatnego (opcjonalnie)
-            passphrase: Hasło do klucza (opcjonalnie)
-            group: Grupa serwerów (opcjonalnie)
-            description: Opis profilu (opcjonalnie)
-            ssh_options: Dodatkowe opcje SSH (opcjonalnie)
-        """
-        self.name = name
-        self.hostname = hostname
-        self.username = username
-        self.port = port
-        self.password = password
-        self.key_filename = key_filename
-        self.passphrase = passphrase
-        self.group = group
-        self.description = description
-        self.ssh_options = ssh_options or {}
+    name: str
+    hostname: str
+    username: str
+    port: int = 22
+    password: Optional[str] = None
+    key_filename: Optional[str] = None
+    passphrase: Optional[str] = None
+    group: Optional[str] = None
+    description: Optional[str] = None
+    ssh_options: Dict[str, str] = {}
 
     def to_dict(self, include_secrets: bool = False) -> Dict[str, Any]:
         """
@@ -59,20 +32,13 @@ class ConnectionProfile:
         Returns:
             Dict[str, Any]: Słownik z danymi profilu
         """
-        result = {
-            "name": self.name,
-            "hostname": self.hostname,
-            "username": self.username,
-            "port": self.port,
-            "group": self.group,
-            "description": self.description,
-            "ssh_options": self.ssh_options,
-        }
+        result = self.model_dump()
 
-        if include_secrets:
-            result["password"] = self.password
-            result["key_filename"] = self.key_filename
-            result["passphrase"] = self.passphrase
+        if not include_secrets:
+            # Usuń wrażliwe dane jeśli nie są wymagane
+            result.pop("password", None)
+            result.pop("key_filename", None)
+            result.pop("passphrase", None)
 
         return result
 
@@ -87,18 +53,7 @@ class ConnectionProfile:
         Returns:
             ConnectionProfile: Utworzony profil
         """
-        return cls(
-            name=data.get("name", ""),
-            hostname=data.get("hostname", ""),
-            username=data.get("username", ""),
-            port=data.get("port", 22),
-            password=data.get("password"),
-            key_filename=data.get("key_filename"),
-            passphrase=data.get("passphrase"),
-            group=data.get("group"),
-            description=data.get("description"),
-            ssh_options=data.get("ssh_options", {}),
-        )
+        return cls.model_validate(data)
 
     def create_ssh_connection(self) -> SSHConnecticer:
         """
@@ -304,7 +259,7 @@ class ProfileProducer:
         profile_path = os.path.join(self.storage_dir, f"{profile.name}.json")
 
         try:
-            data = profile.to_dict(include_secrets=True)
+            data = profile.model_dump()
 
             # Szyfrowanie wrażliwych danych
             if self.encrypt_sensitive_data:
@@ -341,7 +296,7 @@ class ProfileProducer:
                 if data.get("passphrase"):
                     data["passphrase"] = self._decrypt_value(data["passphrase"])
 
-            return ConnectionProfile.from_dict(data)
+            return ConnectionProfile.model_validate(data)
         except Exception:
             return None
 

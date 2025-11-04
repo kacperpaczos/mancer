@@ -10,7 +10,7 @@ class HeadCommand(BaseCommand):
     """Komenda head - wyświetla początkowe linie pliku"""
 
     def __init__(self):
-        super().__init__("head")
+        super().__init__(name="head")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę head"""

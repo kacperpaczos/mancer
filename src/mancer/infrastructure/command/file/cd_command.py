@@ -11,7 +11,7 @@ class CdCommand(BaseCommand):
     """Komenda cd - zmienia aktualny katalog"""
 
     def __init__(self):
-        super().__init__("cd")
+        super().__init__(name="cd")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cd - zmienia katalog w kontekście"""

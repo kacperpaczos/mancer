@@ -173,7 +173,7 @@ def main():
 
     print("\n=== Example 4: Execution History Visualization ===")
     print("Execution history as JSON:")
-    history_dict = result.get_history().to_dict()
+    history_dict = result.get_history().model_dump()
     print(json.dumps(history_dict, indent=2)[:500] + "...")  # Show first 500 chars
 
 

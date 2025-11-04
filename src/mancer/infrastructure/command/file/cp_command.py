@@ -10,7 +10,7 @@ class CpCommand(BaseCommand):
     """Komenda cp - kopiuje pliki i katalogi"""
 
     def __init__(self):
-        super().__init__("cp")
+        super().__init__(name="cp")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cp"""

@@ -10,7 +10,7 @@ class CatCommand(BaseCommand):
     """Komenda cat - wyświetla zawartość plików"""
 
     def __init__(self):
-        super().__init__("cat")
+        super().__init__(name="cat")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cat"""

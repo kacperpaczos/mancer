@@ -5,7 +5,7 @@ Kompleksowe testy dla BaseCommand - zwiększenie pokrycia do 85%+
 from unittest.mock import Mock, patch
 
 from mancer.application.commands.base_command import BaseCommand
-from mancer.domain.model.command_context import CommandContext
+from mancer.domain.model.command_context import CommandContext, ExecutionMode
 from mancer.domain.model.command_result import CommandResult
 
 
@@ -187,8 +187,8 @@ class TestBaseCommandComprehensive:
         mock_backend_instance.execute_command.return_value = self.sample_result
         mock_bash_backend.return_value = mock_backend_instance
 
-        # Mock context methods
-        self.context.is_remote = Mock(return_value=False)
+        # Mock context methods - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.LOCAL
         self.context.add_to_history = Mock()
 
         result = self.command.execute(self.context)
@@ -205,8 +205,8 @@ class TestBaseCommandComprehensive:
         mock_backend_instance.execute_command.return_value = self.sample_result
         mock_ssh_backend.return_value = mock_backend_instance
 
-        # Mock context dla remote
-        self.context.is_remote = Mock(return_value=True)
+        # Mock context dla remote - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.REMOTE
         self.context.add_to_history = Mock()
 
         # Mock remote host
@@ -243,8 +243,8 @@ class TestBaseCommandComprehensive:
         mock_backend_instance.execute_command.return_value = self.sample_result
         mock_bash_backend.return_value = mock_backend_instance
 
-        # Mock context
-        self.context.is_remote = Mock(return_value=False)
+        # Mock context - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.LOCAL
         self.context.add_to_history = Mock()
 
         # Input result

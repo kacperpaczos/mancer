@@ -1,13 +1,13 @@
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 from ..service.data_converter_service import DataFormatConverter
 from .data_format import DataFormat
 from .execution_history import ExecutionHistory
 
 
-@dataclass
-class CommandResult:
+class CommandResult(BaseModel):
     """Represents the result of a command execution.
 
     Attributes:
@@ -28,7 +28,8 @@ class CommandResult:
     error_message: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     data_format: DataFormat = DataFormat.LIST
-    history: ExecutionHistory = field(default_factory=ExecutionHistory)
+    history: ExecutionHistory = Field(default_factory=ExecutionHistory)
+    command_name: Optional[str] = None  # Optional field for logging purposes
 
     def __str__(self) -> str:
         return self.raw_output

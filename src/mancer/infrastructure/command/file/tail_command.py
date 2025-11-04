@@ -10,7 +10,7 @@ class TailCommand(BaseCommand):
     """Komenda tail - wyświetla końcowe linie pliku"""
 
     def __init__(self):
-        super().__init__("tail")
+        super().__init__(name="tail")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę tail"""

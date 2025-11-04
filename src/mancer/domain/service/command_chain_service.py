@@ -131,7 +131,7 @@ class CommandChain:
         if result and hasattr(result, "metadata"):
             if result.metadata is None:
                 result.metadata = {}
-            result.metadata["execution_history"] = self.history.to_dict()
+            result.metadata["execution_history"] = self.history.model_dump()
 
             # Dodajemy także informację o całym łańcuchu
             result.metadata["command_chain"] = {
