@@ -42,7 +42,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     requires_sudo: bool = False  # Whether the command requires sudo
     preferred_data_format: DataFormat = DataFormat.POLARS  # Preferred data format
 
-    _args: PrivateAttr[List[str]] = PrivateAttr(default_factory=list)  # Additional arguments (private)
+    _args: PrivateAttr = PrivateAttr(default_factory=list)  # Additional arguments (private)
 
     def with_option(self, option: str) -> "BaseCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""

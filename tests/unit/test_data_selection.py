@@ -9,6 +9,7 @@ from mancer.domain.model.command_context import CommandContext
 from mancer.domain.model.command_result import CommandResult
 from mancer.domain.model.data_format import DataFormat
 from mancer.domain.model.execution_history import ExecutionHistory
+from mancer.domain.service.command_chain_service import CommandChain
 from mancer.infrastructure.command.system.ls_command import LsCommand
 
 
@@ -176,8 +177,7 @@ class TestCommandChainDataSelection(TestDataSelectionMethods):
     def test_chain_column_operations(self):
         """Test operacji na kolumnach w łańcuchu"""
         chain = (
-            LsCommand()
-            .with_option("-la")
+            CommandChain(LsCommand().with_option("-la"))
             .select_columns(["filename", "size"])
             .drop_columns("size")
             .rename_columns({"filename": "name"})
@@ -189,7 +189,7 @@ class TestCommandChainDataSelection(TestDataSelectionMethods):
 
     def test_chain_row_operations(self):
         """Test operacji na wierszach w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_even_rows().head(2)
+        chain = CommandChain(LsCommand().with_option("-la")).filter_even_rows().head(2)
 
         result = chain.execute(CommandContext())
         assert result.success
@@ -791,67 +791,67 @@ class TestCommandChainOperations(TestDataSelectionMethods):
 
     def test_chain_filter(self):
         """Test filtrowania w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter(pl.col("size") > 100)
+        chain = CommandChain(LsCommand().with_option("-la")).filter(pl.col("size") > 100)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_select(self):
         """Test wyboru kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").select(["filename", "size"])
+        chain = CommandChain(LsCommand().with_option("-la")).select(["filename", "size"])
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[1] == 2
 
     def test_chain_sort(self):
         """Test sortowania w łańcuchu"""
-        chain = LsCommand().with_option("-la").sort("filename", descending=True)
+        chain = CommandChain(LsCommand().with_option("-la")).sort("filename", descending=True)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_head(self):
         """Test head w łańcuchu"""
-        chain = LsCommand().with_option("-la").head(3)
+        chain = CommandChain(LsCommand().with_option("-la")).head(3)
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[0] == 3
 
     def test_chain_tail(self):
         """Test tail w łańcuchu"""
-        chain = LsCommand().with_option("-la").tail(2)
+        chain = CommandChain(LsCommand().with_option("-la")).tail(2)
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[0] == 2
 
     def test_chain_group_by(self):
         """Test grupowania w łańcuchu"""
-        chain = LsCommand().with_option("-la").group_by("is_directory")
+        chain = CommandChain(LsCommand().with_option("-la")).group_by("is_directory")
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_limit(self):
         """Test limit w łańcuchu"""
-        chain = LsCommand().with_option("-la").limit(3)
+        chain = CommandChain(LsCommand().with_option("-la")).limit(3)
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[0] == 3
 
     def test_chain_select_columns(self):
         """Test wyboru kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").select_columns(["filename", "size"])
+        chain = CommandChain(LsCommand().with_option("-la")).select_columns(["filename", "size"])
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[1] == 2
 
     def test_chain_drop_columns(self):
         """Test usuwania kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").drop_columns(["permissions"])
+        chain = CommandChain(LsCommand().with_option("-la")).drop_columns(["permissions"])
         result = chain.execute(CommandContext())
         assert result.success
         assert "permissions" not in result.structured_output.columns
 
     def test_chain_rename_columns(self):
         """Test zmiany nazw kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").rename_columns({"filename": "name"})
+        chain = CommandChain(LsCommand().with_option("-la")).rename_columns({"filename": "name"})
         result = chain.execute(CommandContext())
         assert result.success
         assert "name" in result.structured_output.columns
@@ -859,165 +859,166 @@ class TestCommandChainOperations(TestDataSelectionMethods):
 
     def test_chain_filter_by_value(self):
         """Test filtrowania po wartości w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_by_value("is_directory", True)
+        chain = CommandChain(LsCommand().with_option("-la")).filter_by_value("is_directory", True)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_not_value(self):
         """Test filtrowania bez wartości w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_not_value("is_directory", True)
+        chain = CommandChain(LsCommand().with_option("-la")).filter_not_value("is_directory", True)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_even_rows(self):
         """Test filtrowania parzystych wierszy w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_even_rows()
+        chain = CommandChain(LsCommand().with_option("-la")).filter_even_rows()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_odd_rows(self):
         """Test filtrowania nieparzystych wierszy w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_odd_rows()
+        chain = CommandChain(LsCommand().with_option("-la")).filter_odd_rows()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_every_nth(self):
         """Test filtrowania co N-tego wiersza w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_every_nth(2)
+        chain = CommandChain(LsCommand().with_option("-la")).filter_every_nth(2)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_where(self):
         """Test warunkowego filtrowania w łańcuchu"""
-        chain = LsCommand().with_option("-la").where(pl.col("size") > 0)
+        chain = CommandChain(LsCommand().with_option("-la")).where(pl.col("size") > 0)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_sample(self):
         """Test próbkowania w łańcuchu"""
-        chain = LsCommand().with_option("-la").sample(3)
+        chain = CommandChain(LsCommand().with_option("-la")).sample(3)
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[0] == 3
 
     def test_chain_add_columns(self):
         """Test dodawania kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").add_columns("size", "size", "double_size")
+        chain = CommandChain(LsCommand().with_option("-la")).add_columns("size", "size", "double_size")
         result = chain.execute(CommandContext())
         assert result.success
         assert "double_size" in result.structured_output.columns
 
     def test_chain_divide_columns(self):
         """Test dzielenia kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").divide_columns("size", "size", "ratio")
+        chain = CommandChain(LsCommand().with_option("-la")).divide_columns("size", "size", "ratio")
         result = chain.execute(CommandContext())
         assert result.success
         assert "ratio" in result.structured_output.columns
 
     def test_chain_multiply_columns(self):
         """Test mnożenia kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").multiply_columns("size", "size", "squared")
+        chain = CommandChain(LsCommand().with_option("-la")).multiply_columns("size", "size", "squared")
         result = chain.execute(CommandContext())
         assert result.success
         assert "squared" in result.structured_output.columns
 
     def test_chain_subtract_columns(self):
         """Test odejmowania kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").subtract_columns("size", "size", "zero")
+        chain = CommandChain(LsCommand().with_option("-la")).subtract_columns("size", "size", "zero")
         result = chain.execute(CommandContext())
         assert result.success
         assert "zero" in result.structured_output.columns
 
     def test_chain_slice_rows(self):
         """Test cięcia wierszy w łańcuchu"""
-        chain = LsCommand().with_option("-la").slice_rows(0, 3)
+        chain = CommandChain(LsCommand().with_option("-la")).slice_rows(0, 3)
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[0] == 3
 
     def test_chain_slice_columns(self):
         """Test cięcia kolumn w łańcuchu"""
-        chain = LsCommand().with_option("-la").slice_columns(["filename", "size"])
+        chain = CommandChain(LsCommand().with_option("-la")).slice_columns(["filename", "size"])
         result = chain.execute(CommandContext())
         assert result.success
         assert result.structured_output.shape[1] == 2
 
     def test_chain_transpose_matrix(self):
         """Test transpozycji macierzy w łańcuchu"""
-        chain = LsCommand().with_option("-la").transpose_matrix()
+        chain = CommandChain(LsCommand().with_option("-la")).transpose_matrix()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_reshape_matrix(self):
         """Test zmiany kształtu macierzy w łańcuchu"""
-        chain = LsCommand().with_option("-la").reshape_matrix((10, 1))
+        chain = CommandChain(LsCommand().with_option("-la")).reshape_matrix((10, 1))
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_numeric_range(self):
         """Test filtrowania zakresu liczbowego w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_numeric_range("size", 100, 1000)
+        chain = CommandChain(LsCommand().with_option("-la")).filter_numeric_range("size", 100, 1000)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_filter_string_pattern(self):
         """Test filtrowania wzorca string w łańcuchu"""
-        chain = LsCommand().with_option("-la").filter_string_pattern("filename", "file")
+        chain = CommandChain(LsCommand().with_option("-la")).filter_string_pattern("filename", "file")
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_drop_duplicates(self):
         """Test usuwania duplikatów w łańcuchu"""
-        chain = LsCommand().with_option("-la").drop_duplicates()
+        chain = CommandChain(LsCommand().with_option("-la")).drop_duplicates()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_fill_nulls(self):
         """Test wypełniania nulli w łańcuchu"""
-        chain = LsCommand().with_option("-la").fill_nulls(0)
+        chain = CommandChain(LsCommand().with_option("-la")).fill_nulls(0)
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_drop_nulls(self):
         """Test usuwania nulli w łańcuchu"""
-        chain = LsCommand().with_option("-la").drop_nulls()
+        chain = CommandChain(LsCommand().with_option("-la")).drop_nulls()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_describe(self):
         """Test opisu statystycznego w łańcuchu"""
-        chain = LsCommand().with_option("-la").describe()
+        chain = CommandChain(LsCommand().with_option("-la")).describe()
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_value_counts(self):
         """Test zliczania wartości w łańcuchu"""
-        chain = LsCommand().with_option("-la").value_counts("is_directory")
+        chain = CommandChain(LsCommand().with_option("-la")).value_counts("is_directory")
         result = chain.execute(CommandContext())
         assert result.success
         assert "count" in result.structured_output.columns
 
     def test_chain_str_upper(self):
         """Test zamiany na wielkie litery w łańcuchu"""
-        chain = LsCommand().with_option("-la").str_upper("filename")
+        chain = CommandChain(LsCommand().with_option("-la")).str_upper("filename")
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_str_lower(self):
         """Test zamiany na małe litery w łańcuchu"""
-        chain = LsCommand().with_option("-la").str_lower("filename")
+        chain = CommandChain(LsCommand().with_option("-la")).str_lower("filename")
         result = chain.execute(CommandContext())
         assert result.success
 
     def test_chain_str_contains(self):
         """Test sprawdzania zawierania string w łańcuchu"""
-        chain = LsCommand().with_option("-la").str_contains("filename", "file", "has_file")
+        chain = CommandChain(LsCommand().with_option("-la")).str_contains("filename", "file", "has_file")
         result = chain.execute(CommandContext())
         assert result.success
         assert "has_file" in result.structured_output.columns
 
     def test_chain_get_history(self):
         """Test pobierania historii w łańcuchu"""
-        chain = LsCommand().with_option("-la")
-        history = chain.get_history()
+        chain = CommandChain(LsCommand().with_option("-la"))
+        result = chain.execute(CommandContext())
+        history = result.history
         assert isinstance(history, ExecutionHistory)
