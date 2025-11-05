@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+import polars as pl
+
 from ...domain.model.command_context import CommandContext
 from ...domain.model.command_result import CommandResult
 from ..logging.mancer_logger import MancerLogger
@@ -12,6 +14,20 @@ class LoggableCommandMixin:
     Automatycznie loguje rozpoczęcie i zakończenie wykonania komendy,
     a także zapisuje wyniki w historii komend.
     """
+
+    def _create_data_preview(self, data: Any, max_rows: int = 10) -> Any:
+        """Create a preview of data for logging purposes."""
+        if isinstance(data, pl.DataFrame):
+            if len(data) > max_rows:
+                return data.head(max_rows).to_dicts()
+            elif len(data) > 0:
+                return data.to_dicts()
+            else:
+                return []
+        elif isinstance(data, list):
+            return data[:max_rows]
+        else:
+            return data
 
     def _get_logger(self) -> MancerLogger:
         """Pobiera instancję MancerLogger."""
@@ -79,7 +95,8 @@ class LoggableCommandMixin:
 
         # Loguj dane wejściowe i wyjściowe dla pipeline'ów
         if hasattr(result, "command_name") and result.command_name and result.structured_output:
-            self._get_logger().log_command_output(command_name=result.command_name, data=result.structured_output)
+            preview_data = self._create_data_preview(result.structured_output)
+            self._get_logger().log_command_output(command_name=result.command_name, data=preview_data)
 
     def execute_with_logging(
         self,
@@ -110,7 +127,8 @@ class LoggableCommandMixin:
             if hasattr(self, "name"):
                 command_name = str(getattr(self, "name"))
 
-            self._get_logger().log_command_input(command_name=command_name, data=input_result.structured_output)
+            preview_data = self._create_data_preview(input_result.structured_output)
+            self._get_logger().log_command_input(command_name=command_name, data=preview_data)
 
             # Dodaj nazwę komendy dla logowania danych wyjściowych
             if not hasattr(input_result, "command_name"):

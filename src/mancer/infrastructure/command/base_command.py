@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
+import polars as pl
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from ...domain.interface.command_interface import CommandInterface
@@ -39,7 +40,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     backend: Any = Field(default_factory=BashBackend, exclude=True)  # Backend instance (not serializable)
     pipeline: Optional[str] = None  # Optional pipeline (e.g., | grep)
     requires_sudo: bool = False  # Whether the command requires sudo
-    preferred_data_format: DataFormat = DataFormat.LIST  # Preferred data format
+    preferred_data_format: DataFormat = DataFormat.POLARS  # Preferred data format
 
     _args: PrivateAttr[List[str]] = PrivateAttr(default_factory=list)  # Additional arguments (private)
 
@@ -179,11 +180,11 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         """
         return self._args
 
-    def _parse_output(self, raw_output: str) -> List[Any]:
+    def _parse_output(self, raw_output: str) -> Union[pl.DataFrame, Any]:
         """Parse raw command output to a structured representation.
         Override in subclasses.
         """
-        return [raw_output]
+        return pl.DataFrame([{"raw_line": raw_output}])
 
     def _prepare_result(
         self,
@@ -209,14 +210,21 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         )
 
         # Dodaj krok do historii
+        structured_sample = None
+        if isinstance(structured_output, pl.DataFrame):
+            if len(structured_output) > 0:
+                structured_sample = structured_output.head(5).to_dicts()
+        else:
+            structured_sample = structured_output[:5] if structured_output else None
+
         result.add_to_history(
             command_string=self.build_command(),
             command_type=self.__class__.__name__,
-            structured_sample=structured_output[:5] if structured_output else None,
+            structured_sample=structured_sample,
         )
 
-        # Jeśli format danych jest inny niż LIST, dokonaj konwersji
-        if self.preferred_data_format != DataFormat.LIST:
+        # Jeśli format danych jest inny niż POLARS, dokonaj konwersji
+        if self.preferred_data_format != DataFormat.POLARS:
             return result.to_format(self.preferred_data_format)
 
         return result

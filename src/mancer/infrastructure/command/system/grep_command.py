@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import ClassVar, Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -59,16 +61,16 @@ class GrepCommand(BaseCommand):
             metadata=metadata,
         )
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parse grep command output into structured format"""
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parse grep command output into polars DataFrame"""
         lines = raw_output.strip().split("\n")
-        results = []
+        records = []
 
         for line in lines:
             if not line.strip():
                 continue
 
             # Basic parsing - each line is a match
-            results.append({"line": line, "text": line})  # For compatibility with other commands
+            records.append({"raw_line": line, "line": line, "text": line})  # For compatibility with other commands
 
-        return results
+        return pl.DataFrame(records)

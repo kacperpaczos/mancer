@@ -3,6 +3,8 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+import polars as pl
+
 from ..domain.model.command_result import CommandResult
 
 
@@ -203,12 +205,17 @@ class CommandCache:
             if include_results:
                 export["results"] = {}
                 for cmd_id, (result, ts, meta) in self._cache.items():
+                    # Convert DataFrame to list of dicts for JSON serialization
+                    structured_output = result.structured_output
+                    if isinstance(structured_output, pl.DataFrame):
+                        structured_output = structured_output.to_dicts() if len(structured_output) > 0 else []
+
                     export["results"][cmd_id] = {
                         "timestamp": ts.isoformat(),
                         "success": result.is_success(),
                         "exit_code": result.exit_code,
                         "raw_output": result.raw_output,
-                        "structured_output": result.structured_output,
+                        "structured_output": structured_output,
                         "error_message": result.error_message,
                         "metadata": meta,
                     }

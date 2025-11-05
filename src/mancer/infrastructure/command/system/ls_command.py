@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import ClassVar, Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -55,10 +57,10 @@ class LsCommand(BaseCommand):
             metadata=metadata,
         )
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parse ls command output into structured format"""
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parse ls command output into polars DataFrame"""
         lines = raw_output.strip().split("\n")
-        results = []
+        records = []
 
         for line in lines:
             if not line.strip():
@@ -85,8 +87,9 @@ class LsCommand(BaseCommand):
             # if filename in ['.', '..']:
             #     continue
 
-            results.append(
+            records.append(
                 {
+                    "raw_line": line,  # Preserve original line for rendering
                     "permissions": permissions,
                     "links": links,
                     "owner": owner,
@@ -102,4 +105,4 @@ class LsCommand(BaseCommand):
                 }
             )
 
-        return results
+        return pl.DataFrame(records)
