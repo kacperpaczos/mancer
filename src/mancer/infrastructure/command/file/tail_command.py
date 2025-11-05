@@ -113,7 +113,7 @@ class TailCommand(BaseCommand):
     def add_arg(self, arg: str) -> "TailCommand":
         """Return a new instance with an added positional argument."""
         new_instance: TailCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "TailCommand":
@@ -138,7 +138,7 @@ class TailCommand(BaseCommand):
 
     def files(self, file_paths: List[str]) -> "TailCommand":
         """Ustawia wiele plików do wyświetlenia"""
-        return self.add_args(file_paths)  # type: ignore
+        return self.add_args(file_paths)
 
     def lines(self, num_lines: int) -> "TailCommand":
         """Opcja -n - określa liczbę linii do wyświetlenia"""
@@ -162,5 +162,5 @@ class TailCommand(BaseCommand):
 
     def clone(self) -> "TailCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: TailCommand = super().clone()  # type: ignore
+        new_instance: TailCommand = super().clone()
         return new_instance

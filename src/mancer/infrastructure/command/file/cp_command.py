@@ -46,37 +46,37 @@ class CpCommand(BaseCommand):
 
     def with_option(self, option: str) -> "CpCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: CpCommand = self.clone()  # type: ignore
+        new_instance = self.clone()
         new_instance.options.append(option)
         return new_instance
 
     def with_param(self, name: str, value) -> "CpCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: CpCommand = self.clone()  # type: ignore
+        new_instance = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "CpCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: CpCommand = self.clone()  # type: ignore
+        new_instance = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "CpCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: CpCommand = self.clone()  # type: ignore
+        new_instance = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "CpCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: CpCommand = self.clone()  # type: ignore
-        new_instance._args.append(arg)
+        new_instance = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "CpCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: CpCommand = self.clone()  # type: ignore
+        new_instance: CpCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 

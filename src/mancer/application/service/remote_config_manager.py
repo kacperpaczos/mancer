@@ -473,7 +473,7 @@ class RemoteConfigManager:
             template_content=content,
             format_type=format_type,
             description=description,
-            variables=variables,
+            variables=variables or {},
         )
 
         return self.config_balancer.add_template(template)

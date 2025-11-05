@@ -62,7 +62,15 @@ class CommandResult(BaseModel):
         return value
 
     def __str__(self) -> str:
-        return self.raw_output
+        """Return string representation of CommandResult."""
+        if self.raw_output:
+            return self.raw_output
+        # Fallback to formatted representation
+        if isinstance(self.structured_output, pl.DataFrame) and len(self.structured_output) > 0:
+            rows = len(self.structured_output)
+            cols = len(self.structured_output.columns)
+            return f"CommandResult(success={self.success}, rows={rows}, columns={cols})"
+        return f"CommandResult(success={self.success}, data_format={self.data_format})"
 
     def is_success(self) -> bool:
         return self.success
@@ -116,7 +124,11 @@ class CommandResult(BaseModel):
 
     def select(self, columns: Any, renderer: Optional[str] = None) -> "CommandResult":
         """Select columns from DataFrame. Returns new CommandResult."""
-        df = self.as_polars().select(columns)
+        df = self.as_polars()
+        try:
+            df = df.select(columns)
+        except pl.exceptions.ColumnNotFoundError as e:
+            raise ValueError(f"Column not found: {e}")
         return CommandResult(
             raw_output="",
             success=self.success,
@@ -180,7 +192,8 @@ class CommandResult(BaseModel):
         if agg is not None:
             df = df.group_by(by).agg(agg)
         else:
-            df = df.group_by(by)
+            # When no aggregation, just return first row of each group
+            df = df.group_by(by).first()
         return CommandResult(
             raw_output="",
             success=self.success,
@@ -214,10 +227,13 @@ class CommandResult(BaseModel):
     def select_columns(self, columns: Union[str, List[str]], renderer: Optional[str] = None) -> "CommandResult":
         """Select columns by name(s). Returns new CommandResult."""
         df = self.as_polars()
-        if isinstance(columns, str):
-            df = df.select(columns)
-        else:
-            df = df.select(columns)
+        try:
+            if isinstance(columns, str):
+                df = df.select([columns])
+            else:
+                df = df.select(columns)
+        except pl.exceptions.ColumnNotFoundError as e:
+            raise ValueError(f"Column not found: {e}")
         return CommandResult(
             raw_output="",
             success=self.success,
@@ -392,8 +408,12 @@ class CommandResult(BaseModel):
         """Get multiple rows by indices. Returns new CommandResult."""
         df = self.as_polars()
         try:
+            # Check if any index is out of bounds
+            if any(idx >= len(df) or idx < 0 for idx in indices):
+                raise IndexError(f"Index out of bounds: {indices}")
+            # Use indexing for better error handling
             selected_rows = df[indices]
-        except IndexError as e:
+        except (IndexError, pl.exceptions.OutOfBoundsError) as e:
             raise IndexError(f"Invalid row indices: {e}")
         return CommandResult(
             raw_output="",
@@ -489,8 +509,24 @@ class CommandResult(BaseModel):
         if percentiles is None:
             percentiles = [0.25, 0.5, 0.75]
 
-        # Get numeric columns
-        numeric_cols = [col for col in df.columns if df[col].dtype in [pl.Float64, pl.Int64]]
+        # Get numeric columns - check for all numeric types
+        numeric_cols = [
+            col
+            for col in df.columns
+            if df[col].dtype
+            in [
+                pl.Float64,
+                pl.Float32,
+                pl.Int64,
+                pl.Int32,
+                pl.Int16,
+                pl.Int8,
+                pl.UInt64,
+                pl.UInt32,
+                pl.UInt16,
+                pl.UInt8,
+            ]
+        ]
 
         if not numeric_cols:
             # Return empty DataFrame if no numeric columns
@@ -587,7 +623,7 @@ class CommandResult(BaseModel):
         if column not in df.columns:
             raise ValueError(f"Column '{column}' not found")
 
-        df = df.with_columns(pl.col(column).str.contains(pattern).alias(new_column))
+        df = df.with_columns(pl.col(column).str.contains(pattern, literal=False).alias(new_column))
 
         return CommandResult(
             raw_output="",
@@ -722,7 +758,13 @@ class CommandResult(BaseModel):
     ) -> "CommandResult":
         """Slice rows like array[start:end:step]. Returns new CommandResult."""
         df = self.as_polars()
-        df = df.slice(start, end if end is not None else df.height, step)
+        if step == 1:
+            length = (end - start) if end is not None else (df.height - start)
+            df = df.slice(start, length)
+        else:
+            # For step != 1, use Python slicing on indices
+            indices = list(range(start, end if end is not None else df.height, step))
+            df = df[indices]
         return CommandResult(
             raw_output="",
             success=self.success,

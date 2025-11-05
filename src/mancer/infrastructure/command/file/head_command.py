@@ -113,7 +113,7 @@ class HeadCommand(BaseCommand):
     def add_arg(self, arg: str) -> "HeadCommand":
         """Return a new instance with an added positional argument."""
         new_instance: HeadCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "HeadCommand":
@@ -136,7 +136,7 @@ class HeadCommand(BaseCommand):
 
     def files(self, file_paths: List[str]) -> "HeadCommand":
         """Ustawia wiele plików do wyświetlenia"""
-        return self.add_args(file_paths)  # type: ignore
+        return self.add_args(file_paths)
 
     def lines(self, num_lines: int) -> "HeadCommand":
         """Opcja -n - określa liczbę linii do wyświetlenia"""
@@ -156,5 +156,5 @@ class HeadCommand(BaseCommand):
 
     def clone(self) -> "HeadCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: HeadCommand = super().clone()  # type: ignore
+        new_instance: HeadCommand = super().clone()
         return new_instance

@@ -93,37 +93,37 @@ class SystemctlCommand(BaseCommand):
 
     def with_option(self, option: str) -> "SystemctlCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
+        new_instance: SystemctlCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
     def with_param(self, name: str, value: Any) -> "SystemctlCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
+        new_instance: SystemctlCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "SystemctlCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
+        new_instance: SystemctlCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "SystemctlCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
+        new_instance: SystemctlCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "SystemctlCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
-        new_instance._args.append(arg)
+        new_instance: SystemctlCommand = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "SystemctlCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: SystemctlCommand = self.clone()  # type: ignore
+        new_instance: SystemctlCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 

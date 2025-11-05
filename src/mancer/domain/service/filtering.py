@@ -124,7 +124,7 @@ class MatrixOps:
 
     @staticmethod
     def slice_2d(
-        matrix: List[List[Any]], row_slice: slice = slice(None), col_slice: slice = slice(None)
+        matrix: Union[List[List[Any]], pl.DataFrame], row_slice: slice = slice(None), col_slice: slice = slice(None)
     ) -> List[List[Any]]:
         """Slice 2D matrix like matrix[row_slice, col_slice]."""
         try:
@@ -144,7 +144,7 @@ class MatrixOps:
             raise FilteringError(f"Matrix slicing failed: {e}")
 
     @staticmethod
-    def transpose_2d(matrix: List[List[Any]]) -> List[List[Any]]:
+    def transpose_2d(matrix: Union[List[List[Any]], pl.DataFrame]) -> List[List[Any]]:
         """Transpose 2D matrix."""
         try:
             if isinstance(matrix, pl.DataFrame):
@@ -293,7 +293,13 @@ class FilterLanguage:
         def slice_func(df: pl.DataFrame) -> pl.DataFrame:
             try:
                 # Row slicing
-                df = df.slice(row_start, row_end if row_end is not None else df.height, row_step)
+                if row_step == 1:
+                    length = (row_end - row_start) if row_end is not None else (df.height - row_start)
+                    df = df.slice(row_start, length)
+                else:
+                    # For step != 1, use Python slicing on indices
+                    indices = list(range(row_start, row_end if row_end is not None else df.height, row_step))
+                    df = df[indices]
 
                 # Column slicing - select every nth column
                 if col_step > 1 or col_start > 0 or col_end is not None:

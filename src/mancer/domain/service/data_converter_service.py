@@ -72,7 +72,7 @@ class DataFormatConverter:
         # All DataFormat enum values are handled above
 
     @staticmethod
-    def _from_polars(data: pl.DataFrame, target_format: DataFormat) -> Optional[str]:
+    def _from_polars(data: pl.DataFrame, target_format: DataFormat) -> Union[pl.DataFrame, Optional[str]]:
         """Convert polars DataFrame to target format."""
         if target_format == DataFormat.POLARS:
             return data

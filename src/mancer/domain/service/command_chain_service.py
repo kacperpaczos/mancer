@@ -95,10 +95,17 @@ class CommandChain:
 
     def group_by(self, by: Any, agg: Any = None, renderer: Optional[str] = None) -> "CommandChain":
         """Add group_by transformation to the chain."""
-        if agg is not None:
-            return self.map_df(lambda df: df.group_by(by).agg(agg), renderer)
-        else:
-            return self.map_df(lambda df: df.group_by(by), renderer)
+
+        def group_func(df):
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            if agg is not None:
+                return df.group_by(by).agg(agg)
+            else:
+                # When no aggregation, return first row of each group
+                return df.group_by(by).first()
+
+        return self.map_df(group_func, renderer)
 
     def limit(self, n: int, renderer: Optional[str] = None) -> "CommandChain":
         """Add limit transformation to the chain (alias for head)."""
@@ -107,15 +114,33 @@ class CommandChain:
     # Advanced column selection methods for chains
     def select_columns(self, columns: Union[str, List[str]], renderer: Optional[str] = None) -> "CommandChain":
         """Add column selection to the chain."""
-        return self.map_df(lambda df: df.select(columns) if isinstance(columns, list) else df.select(columns), renderer)
+
+        def select_func(df):
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            return df.select(columns)
+
+        return self.map_df(select_func, renderer)
 
     def drop_columns(self, columns: Union[str, List[str]], renderer: Optional[str] = None) -> "CommandChain":
         """Add column dropping to the chain."""
-        return self.map_df(lambda df: df.drop(columns), renderer)
+
+        def drop_func(df):
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            return df.drop(columns)
+
+        return self.map_df(drop_func, renderer)
 
     def rename_columns(self, mapping: Dict[str, str], renderer: Optional[str] = None) -> "CommandChain":
         """Add column renaming to the chain."""
-        return self.map_df(lambda df: df.rename(mapping), renderer)
+
+        def rename_func(df):
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            return df.rename(mapping)
+
+        return self.map_df(rename_func, renderer)
 
     # Advanced row selection methods for chains
     def filter_by_value(self, column: str, value: Any, renderer: Optional[str] = None) -> "CommandChain":
@@ -158,16 +183,22 @@ class CommandChain:
 
         def add_func(df):
             try:
-                return (
-                    df.with_columns(
-                        [
-                            pl.col(col1).cast(pl.Float64).alias(f"__{col1}_num"),
-                            pl.col(col2).cast(pl.Float64).alias(f"__{col2}_num"),
-                        ]
-                    )
-                    .with_columns((pl.col(f"__{col1}_num") + pl.col(f"__{col2}_num")).alias(new_col))
-                    .drop([f"__{col1}_num", f"__{col2}_num"])
+                # Ensure df is a DataFrame, not LazyFrame
+                if isinstance(df, pl.LazyFrame):
+                    df = df.collect()
+                # Work with DataFrame directly, not LazyFrame chain
+                # Use unique aliases to avoid duplicates when col1 == col2
+                alias1 = f"__{col1}_num_1"
+                alias2 = f"__{col2}_num_2"
+                df = df.with_columns(
+                    [
+                        pl.col(col1).cast(pl.Float64, strict=False).alias(alias1),
+                        pl.col(col2).cast(pl.Float64, strict=False).alias(alias2),
+                    ]
                 )
+                df = df.with_columns((pl.col(alias1) + pl.col(alias2)).alias(new_col))
+                df = df.drop([alias1, alias2])
+                return df
             except Exception as e:
                 raise ValueError(f"Addition failed: {e}")
 
@@ -178,21 +209,23 @@ class CommandChain:
 
         def divide_func(df):
             try:
-                return (
-                    df.with_columns(
-                        [
-                            pl.col(col1).cast(pl.Float64).alias(f"__{col1}_num"),
-                            pl.col(col2).cast(pl.Float64).alias(f"__{col2}_num"),
-                        ]
-                    )
-                    .with_columns(
-                        pl.when(pl.col(f"__{col2}_num") != 0)
-                        .then(pl.col(f"__{col1}_num") / pl.col(f"__{col2}_num"))
-                        .otherwise(None)
-                        .alias(new_col)
-                    )
-                    .drop([f"__{col1}_num", f"__{col2}_num"])
+                # Ensure df is a DataFrame, not LazyFrame
+                if isinstance(df, pl.LazyFrame):
+                    df = df.collect()
+                # Use unique aliases to avoid duplicates when col1 == col2
+                alias1 = f"__{col1}_num_1"
+                alias2 = f"__{col2}_num_2"
+                df = df.with_columns(
+                    [
+                        pl.col(col1).cast(pl.Float64, strict=False).alias(alias1),
+                        pl.col(col2).cast(pl.Float64, strict=False).alias(alias2),
+                    ]
                 )
+                df = df.with_columns(
+                    pl.when(pl.col(alias2) != 0).then(pl.col(alias1) / pl.col(alias2)).otherwise(None).alias(new_col)
+                )
+                df = df.drop([alias1, alias2])
+                return df
             except Exception as e:
                 raise ValueError(f"Division failed: {e}")
 
@@ -203,16 +236,21 @@ class CommandChain:
 
         def multiply_func(df):
             try:
-                return (
-                    df.with_columns(
-                        [
-                            pl.col(col1).cast(pl.Float64).alias(f"__{col1}_num"),
-                            pl.col(col2).cast(pl.Float64).alias(f"__{col2}_num"),
-                        ]
-                    )
-                    .with_columns((pl.col(f"__{col1}_num") * pl.col(f"__{col2}_num")).alias(new_col))
-                    .drop([f"__{col1}_num", f"__{col2}_num"])
+                # Ensure df is a DataFrame, not LazyFrame
+                if isinstance(df, pl.LazyFrame):
+                    df = df.collect()
+                # Use unique aliases to avoid duplicates when col1 == col2
+                alias1 = f"__{col1}_num_1"
+                alias2 = f"__{col2}_num_2"
+                df = df.with_columns(
+                    [
+                        pl.col(col1).cast(pl.Float64, strict=False).alias(alias1),
+                        pl.col(col2).cast(pl.Float64, strict=False).alias(alias2),
+                    ]
                 )
+                df = df.with_columns((pl.col(alias1) * pl.col(alias2)).alias(new_col))
+                df = df.drop([alias1, alias2])
+                return df
             except Exception as e:
                 raise ValueError(f"Multiplication failed: {e}")
 
@@ -223,16 +261,21 @@ class CommandChain:
 
         def subtract_func(df):
             try:
-                return (
-                    df.with_columns(
-                        [
-                            pl.col(col1).cast(pl.Float64).alias(f"__{col1}_num"),
-                            pl.col(col2).cast(pl.Float64).alias(f"__{col2}_num"),
-                        ]
-                    )
-                    .with_columns((pl.col(f"__{col1}_num") - pl.col(f"__{col2}_num")).alias(new_col))
-                    .drop([f"__{col1}_num", f"__{col2}_num"])
+                # Ensure df is a DataFrame, not LazyFrame
+                if isinstance(df, pl.LazyFrame):
+                    df = df.collect()
+                # Use unique aliases to avoid duplicates when col1 == col2
+                alias1 = f"__{col1}_num_1"
+                alias2 = f"__{col2}_num_2"
+                df = df.with_columns(
+                    [
+                        pl.col(col1).cast(pl.Float64, strict=False).alias(alias1),
+                        pl.col(col2).cast(pl.Float64, strict=False).alias(alias2),
+                    ]
                 )
+                df = df.with_columns((pl.col(alias1) - pl.col(alias2)).alias(new_col))
+                df = df.drop([alias1, alias2])
+                return df
             except Exception as e:
                 raise ValueError(f"Subtraction failed: {e}")
 
@@ -243,7 +286,19 @@ class CommandChain:
         self, start: int = 0, end: Optional[int] = None, step: int = 1, renderer: Optional[str] = None
     ) -> "CommandChain":
         """Add row slicing to the chain."""
-        return self.map_df(lambda df: df.slice(start, end if end is not None else df.height, step), renderer)
+
+        def slice_func(df):
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            if step == 1:
+                length = (end - start) if end is not None else (df.height - start)
+                return df.slice(start, length)
+            else:
+                # For step != 1, use Python slicing on indices
+                indices = list(range(start, end if end is not None else df.height, step))
+                return df[indices]
+
+        return self.map_df(slice_func, renderer)
 
     def slice_columns(self, columns: List[str], renderer: Optional[str] = None) -> "CommandChain":
         """Add column slicing to the chain."""
@@ -253,8 +308,19 @@ class CommandChain:
         """Add matrix transpose to the chain."""
 
         def transpose(df):
+            # Ensure df is a DataFrame
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
+            # Convert to numpy, handling different types
+            # Convert bool and other types to numeric for transpose
             matrix = df.to_numpy()
+            # Convert object arrays (e.g., bool) to string or numeric
+            if matrix.dtype == object:
+                matrix = matrix.astype(str)
             transposed = matrix.T
+            # Handle 1D case
+            if len(transposed.shape) == 1:
+                transposed = transposed.reshape(-1, 1)
             new_columns = [f"col_{i}" for i in range(transposed.shape[1])]
             return pl.DataFrame(transposed, schema=new_columns)
 
@@ -264,8 +330,21 @@ class CommandChain:
         """Add matrix reshape to the chain."""
 
         def reshape(df):
+            # Ensure df is a DataFrame
+            if isinstance(df, pl.LazyFrame):
+                df = df.collect()
             matrix = df.to_numpy()
+            total_elements = matrix.size
+            expected_elements = new_shape[0] * (new_shape[1] if len(new_shape) > 1 else 1)
+
+            # If reshape is not possible, return original or error
+            if total_elements != expected_elements:
+                raise ValueError(f"cannot reshape array of size {total_elements} into shape {new_shape}")
+
             reshaped = matrix.reshape(new_shape)
+            # Convert object arrays (e.g., bool) to string or numeric for DataFrame creation
+            if reshaped.dtype == object:
+                reshaped = reshaped.astype(str)
             if len(reshaped.shape) > 1:
                 new_columns = [f"col_{i}" for i in range(reshaped.shape[1])]
             else:
@@ -448,6 +527,7 @@ class CommandChain:
 
         result = None
         current_context = context
+        transform_counter = 0  # Track transform index separately
 
         for i, command in enumerate(self.commands):
             # Pierwszy element nie ma poprzedniego wyniku
@@ -461,16 +541,27 @@ class CommandChain:
                     # Transformacja DataFrame
                     if result and hasattr(result, "as_polars"):
                         df = result.as_polars()
-                        transform_idx = len([c for c in self.commands[:i] if c is None]) - 1
-                        if hasattr(self, "transforms") and transform_idx < len(self.transforms):
-                            transform_fn = self.transforms[transform_idx]
-                            renderer = self.renderers[transform_idx] if hasattr(self, "renderers") else None
+                        # as_polars() always returns DataFrame, so no need to check for LazyFrame
+                        if hasattr(self, "transforms") and transform_counter < len(self.transforms):
+                            transform_fn = self.transforms[transform_counter]
+                            renderer = self.renderers[transform_counter] if hasattr(self, "renderers") else None
 
                             # Zastosuj transformację
                             transformed_df = transform_fn(df)
 
+                            # Ensure transformed_df is a DataFrame, not LazyFrame
+                            # Note: DataFrame and LazyFrame are mutually exclusive,
+                            # so this check is valid but mypy may not understand it
+                            if isinstance(transformed_df, pl.LazyFrame):
+                                transformed_df = transformed_df.collect()
+                            # Type narrowing: after collect(), it's definitely a DataFrame
+                            assert isinstance(transformed_df, pl.DataFrame)
+
                             # Zaktualizuj wynik
                             result.update_from_df(transformed_df, renderer)
+
+                            # Increment transform counter for next transform
+                            transform_counter += 1
 
                             # Dodaj do historii
                             result.add_to_history(
@@ -505,7 +596,7 @@ class CommandChain:
                 # Dodajemy krok do historii wykonania łańcucha
                 if hasattr(result, "get_history") and result.get_history():
                     # Kopiujemy historię z wyniku do historii łańcucha
-                    for step in result.get_history():
+                    for step in result.get_history().iter_steps():
                         self.history.add_step(step)
 
                 # Zakładamy, że cd aktualizuje current_directory w kontekście

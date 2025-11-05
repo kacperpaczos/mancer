@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
 import polars as pl
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext, ExecutionMode
@@ -42,7 +42,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     requires_sudo: bool = False  # Whether the command requires sudo
     preferred_data_format: DataFormat = DataFormat.POLARS  # Preferred data format
 
-    _args: PrivateAttr = PrivateAttr(default_factory=list)  # Additional arguments (private)
+    args: List[str] = Field(default_factory=list, exclude=True)  # Additional arguments (private, not serialized)
 
     def with_option(self, option: str) -> "BaseCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
@@ -71,13 +71,13 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     def add_arg(self, arg: str) -> "BaseCommand":
         """Return a new instance with an added positional argument."""
         new_instance: BaseCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def add_args(self, args: List[str]) -> "BaseCommand":
         """Return a new instance with extended positional arguments."""
         new_instance: BaseCommand = self.clone()
-        new_instance._args.extend(args)
+        new_instance.args.extend(args)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "BaseCommand":
@@ -86,14 +86,14 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         new_instance.preferred_data_format = format_type
         return new_instance
 
-    def clone(self) -> "BaseCommand":
+    def clone(self: T) -> T:
         """Create a copy of the command instance (immutable builder pattern)."""
         # Use model_copy for Pydantic models
         new_instance = self.model_copy(deep=True)
         # Ensure backend and private attributes are properly copied
         new_instance.backend = self.backend
-        new_instance._args = deepcopy(self._args)
-        return new_instance
+        new_instance.args = deepcopy(self.args)
+        return cast(T, new_instance)
 
     def build_command(self) -> str:
         """Build the command string for execution."""
@@ -117,7 +117,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         cmd_parts.extend([f"--{flag}" for flag in self.flags])
 
         # Additional positional arguments
-        cmd_parts.extend(self._get_additional_args())
+        cmd_parts.extend(self.args)
 
         # Pipeline if present
         if self.pipeline:
@@ -178,7 +178,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         Zwraca dodatkowe argumenty specyficzne dla podklasy.
         Do nadpisania w podklasach.
         """
-        return self._args
+        return self.args
 
     def _parse_output(self, raw_output: str) -> Union[pl.DataFrame, Any]:
         """Parse raw command output to a structured representation.

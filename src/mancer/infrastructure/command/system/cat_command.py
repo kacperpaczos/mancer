@@ -23,12 +23,12 @@ class CatCommand(BaseCommand):
         super().__init__(name=name)
 
         if file_path:
-            self._args.append(file_path)
+            self.args.append(file_path)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cat"""
         # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)  # type: ignore
+        super().execute(context, input_result)
 
         # Zbuduj string komendy
         command_str = self.build_command()

@@ -25,7 +25,7 @@ class GrepCommand(BaseCommand):
         super().__init__(name=name)
 
         if pattern:
-            self._args.append(pattern)
+            self.args.append(pattern)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the grep command"""

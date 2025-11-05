@@ -34,7 +34,7 @@ class DfCommand(BaseCommand):
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the df command"""
         # Call base method to check tool version
-        super().execute(context, input_result)  # type: ignore
+        super().execute(context, input_result)
 
         # Build the command string
         command_str = self.build_command()
@@ -68,37 +68,37 @@ class DfCommand(BaseCommand):
 
     def with_option(self, option: str) -> "DfCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance: DfCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
     def with_param(self, name: str, value) -> "DfCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance: DfCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "DfCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance: DfCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "DfCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance: DfCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "DfCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: DfCommand = self.clone()  # type: ignore
-        new_instance._args.append(arg)
+        new_instance: DfCommand = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "DfCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: DfCommand = self.clone()  # type: ignore
+        new_instance: DfCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 
@@ -317,7 +317,7 @@ class DfCommand(BaseCommand):
 
         # Build command with specific mount point
         original_command_builder = self.build_command
-        self.build_command = lambda: f"df -h {mount_point}"  # type: ignore
+        self.build_command = lambda: f"df -h {mount_point}"
 
         try:
             # Execute command
@@ -335,7 +335,7 @@ class DfCommand(BaseCommand):
                 return {}
         finally:
             # Restore original command builder
-            self.build_command = original_command_builder  # type: ignore
+            self.build_command = original_command_builder
 
     def show_filesystem(self, filesystem: str) -> "DfCommand":
         """

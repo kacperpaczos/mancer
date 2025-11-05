@@ -36,7 +36,7 @@ class ExecutionHistory(BaseModel):
             return True
         return all(step.success for step in self.steps)
 
-    def __iter__(self) -> Iterator[ExecutionStep]:
+    def iter_steps(self) -> Iterator[ExecutionStep]:
         """Iterate over steps in order."""
         return iter(self.steps)
 

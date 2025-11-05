@@ -24,6 +24,9 @@ class RawLineRenderer(TextRenderer):
         """Render using raw_line column."""
         if "raw_line" in df.columns and len(df) > 0:
             return "\n".join(df["raw_line"].to_list())
+        # Fallback to CSV if no raw_line column
+        if len(df) > 0:
+            return df.write_csv(separator="\t", include_header=True)
         return ""
 
 

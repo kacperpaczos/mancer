@@ -108,7 +108,7 @@ class GrepCommand(BaseCommand):
     def add_arg(self, arg: str) -> "GrepCommand":
         """Return a new instance with an added positional argument."""
         new_instance: GrepCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "GrepCommand":
@@ -124,7 +124,7 @@ class GrepCommand(BaseCommand):
         # Wzorzec musi być pierwszym argumentem
         new_instance = self.clone()
         # Usuwamy wszystkie argumenty i dodajemy wzorzec jako pierwszy
-        new_instance._args = []
+        new_instance.args = []
         return new_instance.add_arg(pattern)
 
     def file(self, file_path: str) -> "GrepCommand":
@@ -165,6 +165,7 @@ class GrepCommand(BaseCommand):
 
     def clone(self) -> "GrepCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: GrepCommand = super().clone()  # type: ignore
-        new_instance._args = self._args.copy()
+        new_instance = super().clone()
+        assert isinstance(new_instance, GrepCommand)
+        new_instance.args = self.args.copy()
         return new_instance

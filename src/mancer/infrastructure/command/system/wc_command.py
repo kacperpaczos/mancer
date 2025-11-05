@@ -18,7 +18,7 @@ class WcCommand(BaseCommand):
         """
         super().__init__(name=name)
         if file_path:
-            self._args.append(file_path)
+            self.args.append(file_path)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the wc command"""

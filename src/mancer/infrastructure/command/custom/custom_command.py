@@ -15,7 +15,7 @@ class CustomCommand(BaseCommand):
     """
 
     def __init__(self, command_name: str = ""):
-        super().__init__(command_name or "echo")
+        super().__init__(name=command_name or "echo")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the custom command"""

@@ -19,7 +19,7 @@ class EchoCommand(BaseCommand):
         super().__init__(name=name)
         if message:
             # Bezpośrednio dodaj do _args zamiast używać add_arg (które wywołuje clone)
-            self._args.append(message)
+            self.args.append(message)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the echo command."""
@@ -67,7 +67,7 @@ class EchoCommand(BaseCommand):
     def add_arg(self, arg: str) -> "EchoCommand":
         """Return a new instance with an added positional argument."""
         new_instance: EchoCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "EchoCommand":
@@ -111,5 +111,5 @@ class EchoCommand(BaseCommand):
 
     def clone(self) -> "EchoCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: EchoCommand = super().clone()  # type: ignore
+        new_instance: EchoCommand = super().clone()
         return new_instance
