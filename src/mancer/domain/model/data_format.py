@@ -5,16 +5,12 @@ from typing import Optional
 class DataFormat(Enum):
     """Data formats for CommandResult.structured_output.
 
-    - LIST: Standard list of dicts/objects
-    - DATAFRAME: pandas.DataFrame
-    - NDARRAY: numpy.ndarray
+    - POLARS: polars.DataFrame (canonical format)
     - JSON: JSON string
     - TABLE: Tabular format used by commands like df/ps
     """
 
-    LIST = auto()
-    DATAFRAME = auto()
-    NDARRAY = auto()
+    POLARS = auto()
     JSON = auto()
     TABLE = auto()
 
@@ -22,9 +18,7 @@ class DataFormat(Enum):
     def from_string(format_name: str) -> Optional["DataFormat"]:
         """Convert a string name to a DataFormat enum value."""
         format_map = {
-            "list": DataFormat.LIST,
-            "dataframe": DataFormat.DATAFRAME,
-            "ndarray": DataFormat.NDARRAY,
+            "polars": DataFormat.POLARS,
             "json": DataFormat.JSON,
             "table": DataFormat.TABLE,
         }
@@ -38,14 +32,12 @@ class DataFormat(Enum):
     def to_string(format_type: "DataFormat") -> str:
         """Convert a DataFormat enum value to its string name."""
         format_map = {
-            DataFormat.LIST: "list",
-            DataFormat.DATAFRAME: "dataframe",
-            DataFormat.NDARRAY: "ndarray",
+            DataFormat.POLARS: "polars",
             DataFormat.JSON: "json",
             DataFormat.TABLE: "table",
         }
 
-        return format_map.get(format_type, "list")
+        return format_map.get(format_type, "polars")
 
     @staticmethod
     def is_convertible(source_format: "DataFormat", target_format: "DataFormat") -> bool:

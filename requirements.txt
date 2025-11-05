@@ -1,5 +1,4 @@
-pandas>=1.5.0
-numpy>=1.22.0
+polars>=0.20.0
 python-dateutil>=2.8.2
 jsonschema>=4.17.0
 pyyaml>=6.0

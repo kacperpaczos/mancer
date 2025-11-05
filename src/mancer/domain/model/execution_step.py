@@ -12,7 +12,7 @@ class ExecutionStep(BaseModel):
     command_string: str  # Command string
     command_type: str  # Command class name
     timestamp: datetime = Field(default_factory=datetime.now)
-    data_format: DataFormat = DataFormat.LIST
+    data_format: DataFormat = DataFormat.POLARS
     success: bool = True
     exit_code: int = 0
     structured_sample: Any = None  # Structured data sample
@@ -35,10 +35,10 @@ class ExecutionStep(BaseModel):
             processed_data["timestamp"] = datetime.fromisoformat(processed_data["timestamp"])
 
         # Parsuj data_format
-        data_format_str = processed_data.get("data_format", "LIST")
+        data_format_str = processed_data.get("data_format", "POLARS")
         data_format = DataFormat.from_string(data_format_str)
         if data_format is None:
-            data_format = DataFormat.LIST
+            data_format = DataFormat.POLARS
         processed_data["data_format"] = data_format
 
         return cls.model_validate(processed_data)
