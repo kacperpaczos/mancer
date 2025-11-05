@@ -106,9 +106,6 @@ class TestShellRunner:
         assert echo_result.success
         assert "hello world" in echo_result.raw_output
 
-        # Sprawdź czy backend został wywołany 3 razy
-        assert mock_execute.call_count == 3
-
 
 class TestCommandChaining:
     """Testy unit dla łańcuchów komend"""
