@@ -25,7 +25,7 @@ class PsCommand(BaseCommand):
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the ps command and return a structured result."""
-        super().execute(context, input_result)
+        # BaseCommand.execute() is abstract, so we don't call super()
 
         command_str = self.build_command()
         backend = self._get_backend(context)

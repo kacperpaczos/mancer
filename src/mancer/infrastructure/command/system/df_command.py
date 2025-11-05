@@ -33,8 +33,7 @@ class DfCommand(BaseCommand):
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the df command"""
-        # Call base method to check tool version
-        super().execute(context, input_result)
+        # BaseCommand.execute() is abstract, so we don't call super()
 
         # Build the command string
         command_str = self.build_command()
@@ -315,27 +314,24 @@ class DfCommand(BaseCommand):
         # Create command context
         context = CommandContext()
 
-        # Build command with specific mount point
-        original_command_builder = self.build_command
-        self.build_command = lambda: f"df -h {mount_point}"
+        # Create a temporary command instance with the mount point
+        temp_command = self.clone()
+        temp_command.args = [mount_point]
+        temp_command.options = ["-h"]
 
-        try:
-            # Execute command
-            result = self.execute(context)
+        # Execute command
+        result = temp_command.execute(context)
 
-            # Extract information for the specific mount point
-            if result.success and result.structured_output:
-                for fs_info in result.structured_output:
-                    if fs_info.get("mount_point") == mount_point:
-                        return fs_info
+        # Extract information for the specific mount point
+        if result.success and result.structured_output:
+            for fs_info in result.structured_output:
+                if fs_info.get("mount_point") == mount_point:
+                    return fs_info
 
-                # If we didn't find an exact match, return the first entry
-                return result.structured_output[0]
-            else:
-                return {}
-        finally:
-            # Restore original command builder
-            self.build_command = original_command_builder
+            # If we didn't find an exact match, return the first entry
+            return result.structured_output[0]
+        else:
+            return {}
 
     def show_filesystem(self, filesystem: str) -> "DfCommand":
         """

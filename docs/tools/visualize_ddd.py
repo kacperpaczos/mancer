@@ -21,7 +21,6 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 # DDD Layer Definitions
 DDD_LAYERS = {
@@ -91,7 +90,6 @@ def install_dependencies():
     dependencies = ["graphviz"]
 
     try:
-        import pip
 
         # Special handling for tach
         try:

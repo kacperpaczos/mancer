@@ -11,15 +11,12 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
-from pprint import pprint
 
 # Add mancer module path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.mancer.domain.model.command_context import CommandContext
 from src.mancer.domain.model.data_format import DataFormat
-from src.mancer.domain.model.execution_history import ExecutionHistory
 from src.mancer.infrastructure.command.custom.custom_command import CustomCommand
 from src.mancer.infrastructure.command.system.find_command import FindCommand
 from src.mancer.infrastructure.command.system.grep_command import GrepCommand

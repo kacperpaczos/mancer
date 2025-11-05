@@ -4,7 +4,6 @@ Skrypt do automatycznego dodawania przepisanych metod buildera do wszystkich kla
 Naprawia błędy mypy związane z kowariantnością typów.
 """
 
-import os
 import re
 from pathlib import Path
 

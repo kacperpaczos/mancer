@@ -27,8 +27,7 @@ class CatCommand(BaseCommand):
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cat"""
-        # Wywołaj metodę bazową aby sprawdzić wersję narzędzia
-        super().execute(context, input_result)
+        # BaseCommand.execute() is abstract, so we don't call super()
 
         # Zbuduj string komendy
         command_str = self.build_command()

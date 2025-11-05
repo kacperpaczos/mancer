@@ -8,19 +8,14 @@ This example demonstrates:
 4. Tracking execution history
 """
 
-import json
 import os
 import sys
-from datetime import datetime
 
 # Add mancer module path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.mancer.domain.model.command_context import CommandContext
-from src.mancer.domain.model.command_result import CommandResult
-from src.mancer.domain.model.data_format import DataFormat
 from src.mancer.infrastructure.command.system.df_command import DfCommand
-from src.mancer.infrastructure.command.system.echo_command import EchoCommand
 from src.mancer.infrastructure.command.system.grep_command import GrepCommand
 from src.mancer.infrastructure.command.system.ls_command import LsCommand
 from src.mancer.infrastructure.command.system.ps_command import PsCommand
