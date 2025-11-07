@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, TypeVar, Union, cast
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import polars as pl
 from pydantic import BaseModel, ConfigDict, Field
@@ -68,15 +68,15 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         new_instance.requires_sudo = True
         return new_instance
 
-    def add_arg(self, arg: str) -> "BaseCommand":
+    def add_arg(self: T, arg: str) -> T:
         """Return a new instance with an added positional argument."""
-        new_instance: BaseCommand = self.clone()
+        new_instance = self.clone()
         new_instance.args.append(arg)
         return new_instance
 
-    def add_args(self, args: List[str]) -> "BaseCommand":
+    def add_args(self: T, args: List[str]) -> T:
         """Return a new instance with extended positional arguments."""
-        new_instance: BaseCommand = self.clone()
+        new_instance = self.clone()
         new_instance.args.extend(args)
         return new_instance
 
@@ -93,7 +93,8 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         # Ensure backend and private attributes are properly copied
         new_instance.backend = self.backend
         new_instance.args = deepcopy(self.args)
-        return cast(T, new_instance)
+        # model_copy preserves the type when self: T is used
+        return new_instance
 
     def build_command(self) -> str:
         """Build the command string for execution."""
