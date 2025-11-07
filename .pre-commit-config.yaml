@@ -74,8 +74,9 @@ repos:
         additional_dependencies: [types-PyYAML>=6.0.0, types-requests>=2.31.0, pandas-stubs]
         files: ^(src/|tests/).*\.py$
         exclude: ^prototypes/
-        args: ["--ignore-missing-imports"]
+        args: ["--ignore-missing-imports", "src/"]
         stages: [pre-push]
+        pass_filenames: false
 
   # Local hook for running tests
   - repo: local
