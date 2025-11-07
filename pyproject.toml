@@ -78,6 +78,7 @@ line-length = 120
 [tool.ruff.lint]
 select = [
   "E", "F", "I", # pycodestyle/pyflakes/isort
+  "RET",  # flake8-return - detect missing returns
 ]
 ignore = [
   "E722",  # Do not use bare except - ignoruję dla workflow CI
@@ -107,6 +108,8 @@ python_version = "3.9"
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
+warn_return_any = true
+warn_no_return = true
 strict_optional = true
 check_untyped_defs = true
 disallow_any_generics = false

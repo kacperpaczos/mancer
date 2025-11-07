@@ -18,7 +18,13 @@ class DataFormatConverter:
         """Convert data from source_format to target_format using POLARS as intermediate if needed."""
         # Jeśli formaty są takie same, zwróć dane bez zmian
         if source_format == target_format:
-            return data
+            # Type check to ensure we return the correct type
+            if isinstance(data, pl.DataFrame):
+                return data
+            if isinstance(data, str):
+                return data
+            # If data is not a valid type, return None
+            return None
 
         # Najpierw konwertuj do formatu pośredniego (POLARS)
         if source_format != DataFormat.POLARS:
@@ -29,9 +35,15 @@ class DataFormatConverter:
 
         # Następnie konwertuj z POLARS do docelowego formatu
         if target_format != DataFormat.POLARS:
-            return DataFormatConverter._from_polars(data, target_format)
+            result = DataFormatConverter._from_polars(data, target_format)
+            if isinstance(result, str):
+                return result
+            return None
 
-        return data
+        # Return DataFrame if target is POLARS
+        if isinstance(data, pl.DataFrame):
+            return data
+        return None
 
     @staticmethod
     def _to_polars(data: Any, source_format: DataFormat) -> Optional[pl.DataFrame]:
@@ -39,18 +51,18 @@ class DataFormatConverter:
         if source_format == DataFormat.POLARS:
             return data if isinstance(data, pl.DataFrame) else None
 
-        elif source_format == DataFormat.JSON:
+        if source_format == DataFormat.JSON:
             if isinstance(data, str):
                 try:
                     records = json.loads(data)
                     return pl.DataFrame(records)
                 except Exception:
                     return None
-            elif isinstance(data, list):
+            if isinstance(data, list):
                 return pl.DataFrame(data)
             return None
 
-        elif source_format == DataFormat.TABLE:
+        if source_format == DataFormat.TABLE:
             # TABLE format is assumed to be string tabular representation
             if isinstance(data, str):
                 # Simple parsing - split by newlines and tabs/spaces
@@ -64,12 +76,14 @@ class DataFormatConverter:
 
                 if headers and rows:
                     return pl.DataFrame(rows, schema=headers)
-                elif rows:
+                if rows:
                     # No headers, use generic column names
                     return pl.DataFrame(rows)
                 return None
             return None
-        # All DataFormat enum values are handled above
+
+        # All DataFormat enum values are handled above, but mypy needs explicit return
+        return None  # type: ignore[unreachable]
 
     @staticmethod
     def _from_polars(data: pl.DataFrame, target_format: DataFormat) -> Union[pl.DataFrame, Optional[str]]:
@@ -77,17 +91,19 @@ class DataFormatConverter:
         if target_format == DataFormat.POLARS:
             return data
 
-        elif target_format == DataFormat.JSON:
+        if target_format == DataFormat.JSON:
             try:
                 records = data.to_dicts()
                 return json.dumps(records, ensure_ascii=False)
             except Exception:
                 return None
 
-        elif target_format == DataFormat.TABLE:
+        if target_format == DataFormat.TABLE:
             # Simple table representation - tab-separated values
             try:
                 return data.write_csv(separator="\t", include_header=True)
             except Exception:
                 return None
-        # All DataFormat enum values are handled above
+
+        # All DataFormat enum values are handled above, but mypy needs explicit return
+        return None  # type: ignore[unreachable]
