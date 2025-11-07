@@ -110,9 +110,13 @@ warn_redundant_casts = true
 warn_unreachable = true
 warn_return_any = true
 warn_no_return = true
+warn_unused_configs = true  # Warn about unused [mypy-<pattern>] config sections
+warn_incomplete_stub = true  # Warn about incomplete type stubs
 strict_optional = true
 check_untyped_defs = true
 disallow_any_generics = false
+disallow_incomplete_defs = true  # Disallow functions with incomplete type annotations
+disallow_untyped_decorators = true  # Disallow decorators without type annotations
 exclude = [
   "^prototypes/",
   "^development/",
