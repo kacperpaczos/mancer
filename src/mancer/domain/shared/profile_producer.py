@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from cryptography.fernet import Fernet
 from pydantic import BaseModel
@@ -40,7 +40,7 @@ class ConnectionProfile(BaseModel):
             result.pop("key_filename", None)
             result.pop("passphrase", None)
 
-        return result
+        return cast(Dict[str, Any], result)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConnectionProfile":
@@ -53,7 +53,7 @@ class ConnectionProfile(BaseModel):
         Returns:
             ConnectionProfile: Utworzony profil
         """
-        return cls.model_validate(data)
+        return cls(**data)
 
     def create_ssh_connection(self) -> SSHConnecticer:
         """
@@ -296,7 +296,7 @@ class ProfileProducer:
                 if data.get("passphrase"):
                     data["passphrase"] = self._decrypt_value(data["passphrase"])
 
-            return ConnectionProfile.model_validate(data)
+            return ConnectionProfile(**data)
         except Exception:
             return None
 
@@ -328,12 +328,13 @@ class ProfileProducer:
             # Odczytaj istniejący klucz
             try:
                 with open(key_path, "rb") as f:
-                    return f.read()
+                    key_data = f.read()
+                    return bytes(key_data)
             except Exception:
                 pass
 
         # Wygeneruj nowy klucz
-        key = Fernet.generate_key()
+        key = bytes(Fernet.generate_key())
 
         try:
             # Zapisz klucz do pliku z ograniczonymi uprawnieniami
@@ -358,7 +359,8 @@ class ProfileProducer:
             str: Zaszyfrowana wartość
         """
         f = Fernet(self._crypto_key)
-        return f.encrypt(value.encode()).decode()
+        encrypted = f.encrypt(value.encode())
+        return str(encrypted.decode())
 
     def _decrypt_value(self, encrypted_value: str) -> str:
         """
@@ -371,4 +373,5 @@ class ProfileProducer:
             str: Odszyfrowana wartość
         """
         f = Fernet(self._crypto_key)
-        return f.decrypt(encrypted_value.encode()).decode()
+        decrypted = f.decrypt(encrypted_value.encode())
+        return str(decrypted.decode())

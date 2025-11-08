@@ -4,9 +4,32 @@ Model profilu SSH - przechowuje konfigurację połączenia
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
+
+
+class SSHProfileDict(TypedDict, total=False):
+    """TypedDict representation of SSH profile for serialization."""
+
+    id: str
+    name: str
+    description: str
+    hostname: str
+    username: str
+    port: int
+    key_filename: Optional[str]
+    proxy_config: Optional[Dict[str, Any]]
+    ssh_options: Dict[str, str]
+    created_at: datetime
+    updated_at: datetime
+    last_used: Optional[datetime]
+    use_count: int
+    tags: List[str]
+    category: str
+    save_password: bool
+    password_hash: Optional[str]
 
 
 class SSHProfile(BaseModel):
@@ -36,71 +59,14 @@ class SSHProfile(BaseModel):
     save_password: bool = False  # Czy zapisywać hasło
     password_hash: Optional[str] = None  # Hash hasła (nie same hasło)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> SSHProfileDict:
         """Konwertuje profil do słownika"""
-        # Użyj model_dump() jako podstawy
-        data = self.model_dump()
-
-        # Bezpieczne konwersje dla proxy_config i ssh_options
-        safe_proxy_config = None
-        if self.proxy_config:
-            try:
-                # Konwertuj do prostych typów
-                safe_proxy_config = {}
-                for key, value in self.proxy_config.items():
-                    if isinstance(value, (str, int, float, bool, type(None))):
-                        safe_proxy_config[str(key)] = value
-                    else:
-                        safe_proxy_config[str(key)] = str(value)
-            except Exception:
-                safe_proxy_config = {"error": "Nie można skonwertować proxy_config"}
-
-        # Konwersja ssh_options do bezpiecznych typów bez zagnieżdżonych try/except
-        safe_ssh_options = {
-            str(key): (value if isinstance(value, (str, int, float, bool, type(None))) else str(value))
-            for key, value in (self.ssh_options or {}).items()
-        }
-
-        # Zaktualizuj dane bezpiecznymi wersjami
-        data.update(
-            {
-                "proxy_config": safe_proxy_config,
-                "ssh_options": safe_ssh_options,
-                "created_at": self.created_at.isoformat(),
-                "updated_at": self.updated_at.isoformat(),
-                "last_used": self.last_used.isoformat() if self.last_used else None,
-            }
-        )
-
-        return data
+        return cast(SSHProfileDict, self.model_dump())
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SSHProfile":
+    def from_dict(cls, data: SSHProfileDict) -> "SSHProfile":
         """Tworzy profil ze słownika"""
-        # Przygotuj dane dla model_validate
-        processed_data = data.copy()
-
-        # Parsuj daty
-        if "created_at" in processed_data and isinstance(processed_data["created_at"], str):
-            processed_data["created_at"] = datetime.fromisoformat(processed_data["created_at"])
-        if "updated_at" in processed_data and isinstance(processed_data["updated_at"], str):
-            processed_data["updated_at"] = datetime.fromisoformat(processed_data["updated_at"])
-        if (
-            "last_used" in processed_data
-            and processed_data["last_used"]
-            and isinstance(processed_data["last_used"], str)
-        ):
-            processed_data["last_used"] = datetime.fromisoformat(processed_data["last_used"])
-
-        # Ustaw domyślne wartości jeśli brak
-        if "id" not in processed_data:
-            processed_data["id"] = str(uuid.uuid4())
-        if "ssh_options" not in processed_data:
-            processed_data["ssh_options"] = {}
-        if "tags" not in processed_data:
-            processed_data["tags"] = []
-
-        return cls.model_validate(processed_data)
+        return cls(**data)
 
     def update_usage(self) -> None:
         """Aktualizuje statystyki użycia"""

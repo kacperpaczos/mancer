@@ -5,7 +5,7 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional, Union, cast
 
 # Importuję interfejs backendu logowania
-from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
+from ...domain.service.log_backend_interface import LogBackendInterface, LogData, LogLevel
 
 # Próbujemy importować icecream, ale jeśli nie jest dostępny, definiujemy fallback
 try:
@@ -60,7 +60,20 @@ class IcecreamBackend(LogBackendInterface):
         if ICECREAM_AVAILABLE:
             ic.configureOutput(prefix="[Mancer] ", includeContext=True)
 
-    def initialize(self, **kwargs: Any) -> None:
+    def initialize(
+        self,
+        log_level: Optional[Union[int, str, LogLevel]] = None,
+        log_format: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        log_file: Optional[str] = None,
+        console_enabled: bool = True,
+        file_enabled: bool = False,
+        use_utc: bool = False,
+        force_standard: bool = False,
+        ic_prefix: Optional[str] = None,
+        ic_include_context: bool = True,
+        **kwargs: Any,
+    ) -> None:
         """
         Inicjalizuje backend loggera Icecream.
 
@@ -197,7 +210,7 @@ class IcecreamBackend(LogBackendInterface):
         """Loguje błąd krytyczny."""
         self.log(LogLevel.CRITICAL, message, context)
 
-    def log_input(self, command_name: str, data: Any) -> None:
+    def log_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -208,7 +221,7 @@ class IcecreamBackend(LogBackendInterface):
         ic(f"➡️ INPUT [{command_name}]", data)
         self._console_logger.debug(f"Command input [{command_name}]: {pformat(data)}")
 
-    def log_output(self, command_name: str, data: Any) -> None:
+    def log_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 

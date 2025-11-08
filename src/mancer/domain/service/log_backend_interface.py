@@ -2,6 +2,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, TypedDict, Union
 
+import polars as pl
+from typing_extensions import TypeAlias
+
+# Type for log data
+LogData: TypeAlias = Union[str, pl.DataFrame, Dict[str, object], List[object], None]
+
 
 class LogLevel(Enum):
     """Poziomy logowania obsługiwane przez system."""
@@ -112,7 +118,7 @@ class LogBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def log_input(self, command_name: str, data: Any) -> None:
+    def log_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -123,7 +129,7 @@ class LogBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def log_output(self, command_name: str, data: Any) -> None:
+    def log_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 

@@ -1,10 +1,17 @@
+import pathlib
 from typing import Any, Dict, List, Optional, TypeVar, Union, cast
+
+from typing_extensions import TypeAlias
 
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext
 from ...domain.model.command_result import CommandResult
+from ...infrastructure.backend.ssh_backend import SshBackendFactory
 
 T = TypeVar("T", bound="BaseCommand")
+
+# Type for command parameter values
+ParamValue: TypeAlias = Union[str, int, float, bool, pathlib.Path, List[str], None]
 
 
 class BaseCommand(CommandInterface[T]):
@@ -21,7 +28,7 @@ class BaseCommand(CommandInterface[T]):
         self._params: Dict[str, Any] = {}
         self._options: List[str] = []
 
-    def with_param(self, name: str, value: Any) -> T:
+    def with_param(self, name: str, value: ParamValue) -> T:
         """
         Dodaje parametr do komendy.
 
@@ -116,7 +123,7 @@ class BaseCommand(CommandInterface[T]):
             if context.remote_host is None:
                 backend = BashBackend()
             else:
-                backend = SshBackend(
+                backend = SshBackendFactory.create_backend(
                     hostname=context.remote_host.host,
                     username=context.remote_host.user,
                     port=context.remote_host.port,

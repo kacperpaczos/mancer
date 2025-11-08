@@ -3,12 +3,73 @@ import subprocess
 import threading
 import time
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
 
 from pydantic import BaseModel, Field
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
+
+
+class SshBackendProtocol(Protocol):
+    """Protocol defining the interface for SSH backend implementations."""
+
+    def execute_command(
+        self,
+        command: str,
+        working_dir: Optional[str] = None,
+        env_vars: Optional[Dict[str, str]] = None,
+    ) -> CommandResult:
+        """Execute a command on the SSH backend."""
+        ...
+
+    def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
+        """Parse command output into standard format."""
+        ...
+
+    def execute(
+        self,
+        command: str,
+        input_data: Optional[str] = None,
+        working_dir: Optional[str] = None,
+        timeout: Optional[int] = 10,
+    ) -> Tuple[int, str, str]:
+        """Execute command and return (exit_code, stdout, stderr)."""
+        ...
+
+    def build_command_string(
+        self,
+        command_name: str,
+        options: List[str],
+        params: Dict[str, Any],
+        flags: List[str],
+    ) -> str:
+        """Build command string compatible with this backend."""
+        ...
+
+    def create_session(self, session_id: str, **kwargs: "SSHSessionConfigDict") -> "SSHSession":
+        """Create a new SSH session."""
+        ...
+
+    def close_session(self, session_id: str) -> None:
+        """Close an SSH session."""
+        ...
+
+    def transfer_file(self, local_path: str, remote_path: str, direction: str = "put") -> "SCPTransfer":
+        """Transfer file via SCP."""
+        ...
+
+    def set_fingerprint_callback(self, callback: Any) -> None:
+        """Set fingerprint callback."""
+        ...
+
+    def check_host_key(self) -> Tuple[bool, str, str]:
+        """Check host key."""
+        ...
+
+    def test_connection(self) -> bool:
+        """Test connection."""
+        ...
 
 
 class SSHSessionConfigDict(TypedDict, total=False):
@@ -143,17 +204,24 @@ class SshBackend(BackendInterface):
         except Exception:
             self.logger = None
 
-    def create_session(self, session_id: str, **kwargs: SSHSessionConfigDict) -> SSHSession:
+    def create_session(
+        self,
+        session_id: str,
+        hostname: Optional[str] = None,
+        username: Optional[str] = None,
+        port: Optional[int] = None,
+        **kwargs: Any,
+    ) -> SSHSession:
         """Tworzy nową sesję SSH"""
         with self.session_lock:
             # Usuń fingerprint_callback z kwargs żeby nie trafiło do SSHSession
             if "fingerprint_callback" in kwargs:
                 del kwargs["fingerprint_callback"]
 
-            # Wyciągnij podstawowe parametry z kwargs
-            hostname = kwargs.pop("hostname", self.hostname)
-            username = kwargs.pop("username", self.username)
-            port = kwargs.pop("port", self.port)
+            # Użyj podanych parametrów lub wartości domyślnych
+            hostname = hostname or self.hostname
+            username = username or self.username
+            port = port or self.port
 
             session = SSHSession(id=session_id, hostname=hostname, username=username, port=port)
             self.sessions[session_id] = session
@@ -237,6 +305,17 @@ class SshBackend(BackendInterface):
             self.active_session = session_id
             return True
         return False
+
+    def execute(
+        self,
+        command: str,
+        input_data: Optional[str] = None,
+        working_dir: Optional[str] = None,
+        timeout: Optional[int] = 10,
+    ) -> Tuple[int, str, str]:
+        """Execute the command and return (exit_code, stdout, stderr)."""
+        result = self.execute_command(command, working_dir, env_vars=None)
+        return (result.exit_code, result.raw_output, result.error_message or "")
 
     def execute_command(
         self,
@@ -1029,3 +1108,76 @@ class SshBackend(BackendInterface):
         except Exception:
             pass
         self.shells.pop(session_id, None)
+
+
+class SshBackendFactory:
+    """Factory for creating SSH backend instances."""
+
+    @staticmethod
+    def create_backend(
+        hostname: str = "",
+        username: Optional[str] = None,
+        port: int = 22,
+        key_filename: Optional[str] = None,
+        password: Optional[str] = None,
+        passphrase: Optional[str] = None,
+        allow_agent: bool = True,
+        look_for_keys: bool = True,
+        compress: bool = False,
+        timeout: Optional[int] = None,
+        gssapi_auth: bool = False,
+        gssapi_kex: bool = False,
+        gssapi_delegate_creds: bool = False,
+        ssh_options: Optional[Dict[str, str]] = None,
+        proxy_config: Optional[Dict[str, Any]] = None,
+    ) -> "SshBackend":
+        """Create a concrete SSH backend instance.
+
+        Returns:
+            SshBackendProtocol: A concrete implementation of the SSH backend.
+        """
+        return SshBackend(
+            hostname=hostname,
+            username=username,
+            port=port,
+            key_filename=key_filename,
+            password=password,
+            passphrase=passphrase,
+            allow_agent=allow_agent,
+            look_for_keys=look_for_keys,
+            compress=compress,
+            timeout=timeout,
+            gssapi_auth=gssapi_auth,
+            gssapi_kex=gssapi_kex,
+            gssapi_delegate_creds=gssapi_delegate_creds,
+            ssh_options=ssh_options,
+            proxy_config=proxy_config,
+        )
+
+    @staticmethod
+    def create_from_config(config: SSHSessionConfigDict) -> "SshBackend":
+        """Create SSH backend from configuration dictionary.
+
+        Args:
+            config: SSH session configuration.
+
+        Returns:
+            SshBackendProtocol: Configured SSH backend instance.
+        """
+        return SshBackendFactory.create_backend(
+            hostname=config.get("hostname", ""),
+            username=config.get("username"),
+            port=config.get("port", 22),
+            key_filename=config.get("key_filename"),
+            password=config.get("password"),
+            passphrase=config.get("passphrase"),
+            allow_agent=config.get("allow_agent", True),
+            look_for_keys=config.get("look_for_keys", True),
+            compress=config.get("compress", False),
+            timeout=config.get("timeout"),
+            gssapi_auth=config.get("gssapi_auth", False),
+            gssapi_kex=config.get("gssapi_kex", False),
+            gssapi_delegate_creds=config.get("gssapi_delegate_creds", False),
+            ssh_options=config.get("ssh_options"),
+            proxy_config=config.get("proxy_config"),
+        )

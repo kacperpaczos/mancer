@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
 from ....domain.model.data_format import DataFormat
-from ..base_command import BaseCommand
+from ..base_command import BaseCommand, ParamValue
 
 
 class CpCommand(BaseCommand):
@@ -40,7 +40,6 @@ class CpCommand(BaseCommand):
         # Wykonujemy komendę
         return backend.execute_command(cmd_str, working_dir=context.current_directory)
 
-
     # Przepisane metody buildera dla poprawnego typu zwracanego
 
     def with_option(self, option: str) -> "CpCommand":
@@ -49,7 +48,7 @@ class CpCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "CpCommand":
+    def with_param(self, name: str, value: ParamValue) -> "CpCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance = self.clone()
         new_instance.parameters[name] = value

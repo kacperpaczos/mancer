@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
 from ....domain.model.data_format import DataFormat
-from ..base_command import BaseCommand
+from ..base_command import BaseCommand, ParamValue
 
 
 class NetstatCommand(BaseCommand):
@@ -37,7 +37,7 @@ class NetstatCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "NetstatCommand":
+    def with_param(self, name: str, value: ParamValue) -> "NetstatCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: NetstatCommand = self.clone()
         new_instance.parameters[name] = value

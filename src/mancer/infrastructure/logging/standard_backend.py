@@ -5,7 +5,7 @@ import time
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Union
 
-from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
+from ...domain.service.log_backend_interface import LogBackendInterface, LogData, LogLevel
 
 
 class StandardBackend(LogBackendInterface):
@@ -27,7 +27,20 @@ class StandardBackend(LogBackendInterface):
         self._file_enabled = False
         self._use_utc = True
 
-    def initialize(self, **kwargs: Any) -> None:
+    def initialize(
+        self,
+        log_level: Optional[Union[int, str, LogLevel]] = None,
+        log_format: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        log_file: Optional[str] = None,
+        console_enabled: bool = True,
+        file_enabled: bool = False,
+        use_utc: bool = False,
+        force_standard: bool = False,
+        ic_prefix: Optional[str] = None,
+        ic_include_context: bool = True,
+        **kwargs: Any,
+    ) -> None:
         """
         Inicjalizuje backend loggera.
 
@@ -53,9 +66,9 @@ class StandardBackend(LogBackendInterface):
 
         # Zastosuj konfigurację
         self._log_level = log_level if isinstance(log_level, LogLevel) else LogLevel.INFO
-        self._log_format = log_format
-        self._log_dir = log_dir
-        self._log_file = log_file
+        self._log_format = log_format or self._log_format
+        self._log_dir = log_dir or self._log_dir
+        self._log_file = log_file or self._log_file
         self._console_enabled = console_enabled
         self._file_enabled = file_enabled
         self._use_utc = use_utc
@@ -154,7 +167,7 @@ class StandardBackend(LogBackendInterface):
         """Loguje błąd krytyczny."""
         self.log(LogLevel.CRITICAL, message, context)
 
-    def log_input(self, command_name: str, data: Any) -> None:
+    def log_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -165,7 +178,7 @@ class StandardBackend(LogBackendInterface):
         formatted_data = pformat(data, indent=2, width=100)
         self._logger.debug(f"► INPUT [{command_name}]:\n{formatted_data}")
 
-    def log_output(self, command_name: str, data: Any) -> None:
+    def log_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 

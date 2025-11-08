@@ -1,9 +1,23 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from .data_format import DataFormat
+
+
+class ExecutionStepDict(TypedDict, total=False):
+    """TypedDict representation of execution step for serialization."""
+
+    command_string: str
+    command_type: str
+    timestamp: datetime
+    data_format: DataFormat
+    success: bool
+    exit_code: int
+    structured_sample: Any
+    metadata: Dict[str, Any]
 
 
 class ExecutionStep(BaseModel):
@@ -18,27 +32,11 @@ class ExecutionStep(BaseModel):
     structured_sample: Any = None  # Structured data sample
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize execution step to a dictionary."""
-        data = self.model_dump()
-        data["timestamp"] = self.timestamp.isoformat()
-        data["data_format"] = DataFormat.to_string(self.data_format)
-        return data
+    def to_dict(self) -> ExecutionStepDict:
+        """Convert execution step to a dictionary."""
+        return cast(ExecutionStepDict, self.model_dump())
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ExecutionStep":
+    def from_dict(cls, data: ExecutionStepDict) -> "ExecutionStep":
         """Create an execution step from a dictionary."""
-        processed_data = data.copy()
-
-        # Parsuj datę
-        if isinstance(processed_data.get("timestamp"), str):
-            processed_data["timestamp"] = datetime.fromisoformat(processed_data["timestamp"])
-
-        # Parsuj data_format
-        data_format_str = processed_data.get("data_format", "POLARS")
-        data_format = DataFormat.from_string(data_format_str)
-        if data_format is None:
-            data_format = DataFormat.POLARS
-        processed_data["data_format"] = data_format
-
-        return cls.model_validate(processed_data)
+        return cls(**data)

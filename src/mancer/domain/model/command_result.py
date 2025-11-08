@@ -1,12 +1,24 @@
-from typing import Any, Callable, Dict, List, Optional, TypedDict, Union
+from typing import Any, Callable, Dict, List, Optional, TypedDict, Union, cast
 
 import polars as pl
 from pydantic import BaseModel, ConfigDict, Field, SerializationInfo, ValidationInfo, field_serializer, field_validator
+from typing_extensions import ParamSpec, TypeAlias, TypeVar
 
 from ..service.data_converter_service import DataFormatConverter
 from ..service.text_renderer import TextRendererFactory
 from .data_format import DataFormat
 from .execution_history import ExecutionHistory
+
+# Type variables for generic decorators
+P = ParamSpec("P")
+R = TypeVar("R")
+
+# Type aliases for Polars expressions and columns
+ExprLike: TypeAlias = Union[pl.Expr, str]
+ColumnsLike: TypeAlias = Union[str, List[str], pl.Series, pl.Expr, List[pl.Expr]]
+SortByLike: TypeAlias = Union[str, List[str], pl.Expr, List[pl.Expr]]
+GroupByLike: TypeAlias = Union[str, List[str], pl.Expr, List[pl.Expr]]
+AggLike: TypeAlias = Union[pl.Expr, List[pl.Expr], Dict[str, pl.Expr]]
 
 
 class HistoryMetadataDict(TypedDict, total=False):
@@ -41,8 +53,10 @@ class CommandResult(BaseModel):
     history: ExecutionHistory = Field(default_factory=ExecutionHistory)
     command_name: Optional[str] = None  # Optional field for logging purposes
 
-    @field_serializer("structured_output")
-    def serialize_structured_output(self, value: Any, _info: SerializationInfo) -> Any:
+    @field_serializer("structured_output")  # type: ignore[misc]
+    def serialize_structured_output(
+        self, value: Union[pl.DataFrame, Any], _info: SerializationInfo
+    ) -> Union[List[Dict[str, Any]], Any]:
         """Serialize structured_output for JSON/dict serialization."""
         if isinstance(value, pl.DataFrame):
             # Convert DataFrame to list of dicts for serialization
@@ -51,9 +65,11 @@ class CommandResult(BaseModel):
             return []
         return value
 
-    @field_validator("structured_output", mode="before")
+    @field_validator("structured_output", mode="before")  # type: ignore[misc]
     @classmethod
-    def validate_structured_output(cls, value: Any, info: ValidationInfo) -> Any:
+    def validate_structured_output(
+        cls, value: Union[List[Dict[str, Any]], Any], info: ValidationInfo
+    ) -> Union[pl.DataFrame, Any]:
         """Convert list of dicts back to DataFrame if data_format is POLARS."""
         # Only convert if we're in POLARS format context
         # Check if data_format is POLARS (from info.data if available)
@@ -111,7 +127,7 @@ class CommandResult(BaseModel):
         return self
 
     # Fluent DataFrame transformation methods
-    def filter(self, predicate: Any, renderer: Optional[str] = None) -> "CommandResult":
+    def filter(self, predicate: ExprLike, renderer: Optional[str] = None) -> "CommandResult":
         """Filter DataFrame rows. Returns new CommandResult."""
         df = self.as_polars().filter(predicate)
         return CommandResult(
@@ -126,7 +142,7 @@ class CommandResult(BaseModel):
             command_name=self.command_name,
         ).update_from_df(df, renderer)
 
-    def select(self, columns: Any, renderer: Optional[str] = None) -> "CommandResult":
+    def select(self, columns: ColumnsLike, renderer: Optional[str] = None) -> "CommandResult":
         """Select columns from DataFrame. Returns new CommandResult."""
         df = self.as_polars()
         try:
@@ -145,7 +161,7 @@ class CommandResult(BaseModel):
             command_name=self.command_name,
         ).update_from_df(df, renderer)
 
-    def sort(self, by: Any, descending: bool = False, renderer: Optional[str] = None) -> "CommandResult":
+    def sort(self, by: SortByLike, descending: bool = False, renderer: Optional[str] = None) -> "CommandResult":
         """Sort DataFrame. Returns new CommandResult."""
         df = self.as_polars().sort(by, descending=descending)
         return CommandResult(
@@ -190,7 +206,9 @@ class CommandResult(BaseModel):
             command_name=self.command_name,
         ).update_from_df(df, renderer)
 
-    def group_by(self, by: Any, agg: Any = None, renderer: Optional[str] = None) -> "CommandResult":
+    def group_by(
+        self, by: GroupByLike, agg: Optional[AggLike] = None, renderer: Optional[str] = None
+    ) -> "CommandResult":
         """Group DataFrame and optionally aggregate. Returns new CommandResult."""
         df = self.as_polars()
         if agg is not None:
@@ -401,12 +419,12 @@ class CommandResult(BaseModel):
         ).update_from_df(df, renderer)
 
     # Row extraction and manipulation methods
-    def get_row(self, index: int, renderer: Optional[str] = None) -> dict:
+    def get_row(self, index: int, renderer: Optional[str] = None) -> Dict[str, object]:
         """Get a single row by index as dictionary."""
         df = self.as_polars()
         if index >= len(df) or index < 0:
             raise IndexError(f"Row index {index} out of bounds for DataFrame with {len(df)} rows")
-        return df.row(index, named=True)
+        return cast(Dict[str, object], df.row(index, named=True))
 
     def get_rows(self, indices: List[int], renderer: Optional[str] = None) -> "CommandResult":
         """Get multiple rows by indices. Returns new CommandResult."""
@@ -433,7 +451,7 @@ class CommandResult(BaseModel):
 
     def get_headers(self) -> List[str]:
         """Get column headers/names."""
-        return self.as_polars().columns
+        return list(self.as_polars().columns)
 
     def get_column_names(self) -> List[str]:
         """Alias for get_headers()."""
@@ -927,11 +945,11 @@ class CommandResult(BaseModel):
         self.history.add_step(step)
 
     # Metoda do łatwej ekstrakcji konkretnych pól z strukturalnych wyników
-    def extract_field(self, field_name: str) -> List[Any]:
+    def extract_field(self, field_name: str) -> List[object]:
         """Extract a column by name from structured_output."""
         if isinstance(self.structured_output, pl.DataFrame):
             if field_name in self.structured_output.columns:
-                return self.structured_output[field_name].to_list()
+                return cast(List[object], self.structured_output[field_name].to_list())
             return []
         if (
             isinstance(self.structured_output, list)

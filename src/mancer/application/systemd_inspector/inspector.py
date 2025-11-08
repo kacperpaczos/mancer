@@ -49,7 +49,8 @@ class SystemdInspector:
         """
         try:
             f = Fernet(self.get_encryption_key())
-            return f.encrypt(password.encode()).decode()
+            encrypted = f.encrypt(password.encode())
+            return str(encrypted.decode())
         except Exception as e:
             print(f"Błąd szyfrowania hasła: {str(e)}")
             return None
@@ -66,7 +67,8 @@ class SystemdInspector:
         """
         try:
             f = Fernet(self.get_encryption_key())
-            return f.decrypt(encrypted_password.encode()).decode()
+            decrypted = f.decrypt(encrypted_password.encode())
+            return str(decrypted.decode())
         except Exception as e:
             print(f"Błąd deszyfrowania hasła: {str(e)}")
             return None

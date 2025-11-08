@@ -3,7 +3,7 @@ import threading
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union, cast
 
-from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
+from ...domain.service.log_backend_interface import LogBackendInterface, LogData, LogLevel
 from .icecream_backend import ICECREAM_AVAILABLE, IcecreamBackend
 from .standard_backend import StandardBackend
 
@@ -53,7 +53,20 @@ class MancerLogger:
             return IcecreamBackend()
         return StandardBackend()
 
-    def initialize(self, **kwargs: Any) -> None:
+    def initialize(
+        self,
+        log_level: Optional[Union[int, str, LogLevel]] = None,
+        log_format: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        log_file: Optional[str] = None,
+        console_enabled: bool = True,
+        file_enabled: bool = False,
+        use_utc: bool = False,
+        force_standard: bool = False,
+        ic_prefix: Optional[str] = None,
+        ic_include_context: bool = True,
+        **kwargs: Any,
+    ) -> None:
         """
         Inicjalizuje system logowania z podanymi parametrami.
 
@@ -84,8 +97,10 @@ class MancerLogger:
                     "critical": LogLevel.CRITICAL,
                 }
                 converted_log_level = level_map.get(log_level.lower(), LogLevel.INFO)
-            else:
+            elif isinstance(log_level, LogLevel):
                 converted_log_level = log_level
+            else:
+                converted_log_level = LogLevel.INFO
 
             # Inicjalizuj backend
             self._backend.initialize(
@@ -264,7 +279,7 @@ class MancerLogger:
                     }
                     break
 
-    def log_command_input(self, command_name: str, data: Any) -> None:
+    def log_command_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -281,7 +296,7 @@ class MancerLogger:
                 self._pipeline_data[command_name] = {}
             self._pipeline_data[command_name]["input"] = data
 
-    def log_command_output(self, command_name: str, data: Any) -> None:
+    def log_command_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 

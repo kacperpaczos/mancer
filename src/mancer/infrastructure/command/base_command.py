@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import pathlib
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
 import polars as pl
 from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import TypeAlias
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.interface.command_interface import CommandInterface
@@ -14,10 +16,12 @@ from ...domain.model.command_result import CommandResult
 from ...domain.model.data_format import DataFormat
 from ...domain.service.command_chain_service import CommandChain
 from ..backend.bash_backend import BashBackend
-from ..backend.ssh_backend import SshBackend
 from .loggable_command_mixin import LoggableCommandMixin
 
 T = TypeVar("T", bound="BaseCommand")
+
+# Type for command parameter values
+ParamValue: TypeAlias = Union[str, int, float, bool, pathlib.Path, List[str], None]
 
 
 class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
@@ -51,7 +55,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value: Any) -> "BaseCommand":
+    def with_param(self, name: str, value: ParamValue) -> "BaseCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: BaseCommand = self.clone()
         new_instance.parameters[name] = value
@@ -95,7 +99,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         new_instance.backend = self.backend
         new_instance.args = deepcopy(self.args)
         # model_copy preserves the type when self: T is used
-        return new_instance
+        return cast(T, new_instance)
 
     def build_command(self) -> str:
         """Build the command string for execution."""
@@ -131,22 +135,27 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         """Select an execution backend based on context (SSH for remote, otherwise default)."""
         if context.execution_mode == ExecutionMode.REMOTE and context.remote_host is not None:
             remote_host = context.remote_host
-            return SshBackend(
-                hostname=remote_host.host,
-                username=remote_host.user,
-                password=remote_host.password,
-                port=remote_host.port,
-                key_filename=remote_host.key_file,
-                allow_agent=remote_host.use_agent,
-                look_for_keys=True,
-                compress=False,
-                timeout=None,
-                gssapi_auth=remote_host.gssapi_auth,
-                gssapi_kex=remote_host.gssapi_keyex,
-                gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
-                ssh_options=remote_host.ssh_options,
+            from ..backend.ssh_backend import SshBackendFactory
+
+            return cast(
+                BackendInterface,
+                SshBackendFactory.create_backend(
+                    hostname=remote_host.host,
+                    username=remote_host.user,
+                    password=remote_host.password,
+                    port=remote_host.port,
+                    key_filename=remote_host.key_file,
+                    allow_agent=remote_host.use_agent,
+                    look_for_keys=True,
+                    compress=False,
+                    timeout=None,
+                    gssapi_auth=remote_host.gssapi_auth,
+                    gssapi_kex=remote_host.gssapi_keyex,
+                    gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
+                    ssh_options=remote_host.ssh_options,
+                ),
             )
-        return self.backend
+        return cast(BackendInterface, self.backend)
 
     @abstractmethod
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
@@ -168,7 +177,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         """
         return self.execute_with_logging(self.execute, context, input_result)
 
-    def _format_parameter(self, name: str, value: Any) -> str:
+    def _format_parameter(self, name: str, value: ParamValue) -> str:
         """Format a single command parameter.
         Override in subclasses for special formatting.
         """

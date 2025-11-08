@@ -1,11 +1,13 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
 import yaml
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 
 class ConfigManager:
@@ -265,12 +267,12 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"Error saving tool versions configuration: {str(e)}")
 
-    def get_setting(self, key: str, default: Any = None) -> Any:
+    def get_setting(self, key: str, default: Optional[T] = None) -> Optional[T]:
         """
         Returns a setting value
 
         Args:
-            key: Setting key
+            key: Setting key (supports nested keys with dots, e.g., "logging.level")
             default: Default value if the setting doesn't exist
 
         Returns:
@@ -279,14 +281,18 @@ class ConfigManager:
         try:
             # Handling nested keys (e.g., "logging.level")
             keys = key.split(".")
-            value = self._config["settings"]
+            current: Union[Dict[str, object], object] = self._config["settings"]
 
             for k in keys:
-                value = value.get(k)
-                if value is None:
+                if isinstance(current, dict):
+                    current = current.get(k)
+                else:
                     return default
 
-            return value
+                if current is None:
+                    return default
+
+            return cast(Optional[T], current)
         except Exception:
             return default
 

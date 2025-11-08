@@ -122,7 +122,6 @@ class FileTracer:
         # Zapisz do docelowego pliku
         return self._set_file_content(destination_path, content, is_destination_remote)
 
-
     def calculate_file_hash(self, file_path: str, is_remote: bool = False) -> str:
         """
         Oblicza hash SHA-256 zawartości pliku.

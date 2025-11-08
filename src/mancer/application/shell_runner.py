@@ -6,7 +6,7 @@ from ..domain.model.command_context import CommandContext, ExecutionMode
 from ..domain.model.command_result import CommandResult
 from ..domain.service.command_chain_service import CommandChain
 from ..infrastructure.backend.bash_backend import BashBackend
-from ..infrastructure.backend.ssh_backend import SshBackend
+from ..infrastructure.backend.ssh_backend import SshBackendFactory
 from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.logging.mancer_logger import MancerLogger
 from .command_cache import CommandCache
@@ -332,7 +332,7 @@ class ShellRunner:
             rh = self._context.remote_host
             if rh is None:
                 raise ValueError("Remote host not configured")
-            return SshBackend(
+            return SshBackendFactory.create_backend(
                 hostname=rh.host,
                 username=rh.user,
                 password=rh.password,
@@ -469,7 +469,7 @@ class ShellRunner:
         from ..infrastructure.command.system.echo_command import EchoCommand
 
         echo = EchoCommand()
-        echo.command_str = command_str  # type: ignore
+        echo.command_str = command_str
 
         def _build_command():
             return command_str

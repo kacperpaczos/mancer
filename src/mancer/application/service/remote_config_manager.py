@@ -29,7 +29,7 @@ class ConfigSyncTask(BaseModel):
         data = self.model_dump()
         data["created_at"] = self.created_at.isoformat()
         data["last_run"] = self.last_run.isoformat() if self.last_run is not None else None
-        return data
+        return dict(data)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConfigSyncTask":
@@ -46,7 +46,7 @@ class ConfigSyncTask(BaseModel):
             processed_data["created_at"] = datetime.datetime.fromisoformat(processed_data["created_at"])
         if processed_data.get("last_run") and isinstance(processed_data["last_run"], str):
             processed_data["last_run"] = datetime.datetime.fromisoformat(processed_data["last_run"])
-        return cls.model_validate(processed_data)
+        return cls(**processed_data)
 
 
 class SyncResult(BaseModel):
@@ -63,7 +63,7 @@ class SyncResult(BaseModel):
         """Serialize the synchronization result to a dictionary."""
         data = self.model_dump()
         data["timestamp"] = self.timestamp.isoformat()
-        return data
+        return dict(data)
 
 
 class RemoteConfigManager:

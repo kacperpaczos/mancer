@@ -37,14 +37,12 @@ class SystemdUnit(BaseModel):
         Returns:
             SystemdUnit: Created unit instance.
         """
-        return cls.model_validate(
-            {
-                "name": data.get("unit", ""),
-                "load_state": data.get("load", ""),
-                "active_state": data.get("active", ""),
-                "sub_state": data.get("sub", ""),
-                "description": data.get("description", ""),
-            }
+        return cls(
+            name=data.get("unit", ""),
+            load_state=data.get("load", ""),
+            active_state=data.get("active", ""),
+            sub_state=data.get("sub", ""),
+            description=data.get("description", ""),
         )
 
     def to_dict(self) -> Dict[str, str]:

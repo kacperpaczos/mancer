@@ -26,7 +26,7 @@ class RawLineRenderer(TextRenderer):
             return "\n".join(df["raw_line"].to_list())
         # Fallback to CSV if no raw_line column
         if len(df) > 0:
-            return df.write_csv(separator="\t", include_header=True)
+            return str(df.write_csv(separator="\t", include_header=True))
         return ""
 
 
@@ -40,7 +40,7 @@ class CsvRenderer(TextRenderer):
         """Render DataFrame as CSV."""
         if len(df) == 0:
             return ""
-        return df.write_csv(separator=self.separator, include_header=True)
+        return str(df.write_csv(separator=self.separator, include_header=True))
 
 
 class LineRenderer(TextRenderer):
