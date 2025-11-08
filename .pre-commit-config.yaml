@@ -83,7 +83,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest (pre-push)
-        entry: bash -c 'PYTHONPATH=src python3 -m pytest tests/unit/ -q || PYTHONPATH=src python -m pytest tests/unit/ -q'
+        entry: bash -c 'cd "$(git rev-parse --show-toplevel)" && PYTHONPATH=src python3 -m pytest tests/unit/ -q'
         language: system
         pass_filenames: false
         always_run: true
