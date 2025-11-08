@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from cryptography.fernet import Fernet
 from pydantic import BaseModel
@@ -32,7 +32,7 @@ class ConnectionProfile(BaseModel):
         Returns:
             Dict[str, Any]: Słownik z danymi profilu
         """
-        result = self.model_dump()
+        result: Dict[str, Any] = self.model_dump()
 
         if not include_secrets:
             # Usuń wrażliwe dane jeśli nie są wymagane
@@ -40,7 +40,7 @@ class ConnectionProfile(BaseModel):
             result.pop("key_filename", None)
             result.pop("passphrase", None)
 
-        return cast(Dict[str, Any], result)
+        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConnectionProfile":

@@ -219,11 +219,11 @@ class SshBackend(BackendInterface):
                 del kwargs["fingerprint_callback"]
 
             # Użyj podanych parametrów lub wartości domyślnych
-            hostname = hostname or self.hostname
-            username = username or self.username
-            port = port or self.port
+            host_str = hostname or self.hostname or ""
+            user_str = username or self.username or ""
+            port_int = int(port or self.port or 22)
 
-            session = SSHSession(id=session_id, hostname=hostname, username=username, port=port)
+            session = SSHSession(id=session_id, hostname=host_str, username=user_str, port=port_int)
             self.sessions[session_id] = session
             return session
 

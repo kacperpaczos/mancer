@@ -99,7 +99,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
         new_instance.backend = self.backend
         new_instance.args = deepcopy(self.args)
         # model_copy preserves the type when self: T is used
-        return cast(T, new_instance)
+        return new_instance  # type: ignore[no-any-return]
 
     def build_command(self) -> str:
         """Build the command string for execution."""

@@ -9,6 +9,8 @@ from ..base_command import BaseCommand, ParamValue
 class EchoCommand(BaseCommand):
     """Command implementation for 'echo' to print text to stdout."""
 
+    command_str: Optional[str] = None
+
     def __init__(self, name: str = "echo", message: str = ""):
         """Initialize echo command.
 
