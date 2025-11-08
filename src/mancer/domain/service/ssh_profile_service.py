@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from ..model.credential_store import CredentialStore
 from ..model.ssh_profile import SSHProfile
@@ -231,7 +231,7 @@ class SSHProfileService:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
 
         profile = self.profiles[profile_id]
-        export_data = profile.model_dump()
+        export_data = cast(Dict[str, Any], profile.model_dump())
 
         # Dodaj poświadczenia jeśli wymagane
         if include_credentials:
@@ -253,7 +253,7 @@ class SSHProfileService:
                 self.delete_profile(existing_profile.id)
 
         # Stwórz profil
-        profile = SSHProfile.model_validate(profile_data)
+        profile = cast(SSHProfile, SSHProfile.model_validate(profile_data))
 
         # Zapisz profil
         self.profiles[profile.id] = profile
