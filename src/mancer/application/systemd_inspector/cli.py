@@ -160,9 +160,8 @@ def command_profile_add(inspector: SystemdInspector, args: argparse.Namespace) -
     if inspector.save_profile(args.name, hostname, username, password):
         print(f"Profil '{args.name}' został zapisany")
         return 0
-    else:
-        print("Błąd: Nie można zapisać profilu")
-        return 1
+    print("Błąd: Nie można zapisać profilu")
+    return 1
 
 
 def command_profile_list(inspector: SystemdInspector, args: argparse.Namespace) -> int:
@@ -204,9 +203,8 @@ def command_profile_remove(inspector: SystemdInspector, args: argparse.Namespace
     if inspector.delete_profile(args.name):
         print(f"Profil '{args.name}' został usunięty")
         return 0
-    else:
-        print(f"Błąd: Profil '{args.name}' nie istnieje lub nie może zostać usunięty")
-        return 1
+    print(f"Błąd: Profil '{args.name}' nie istnieje lub nie może zostać usunięty")
+    return 1
 
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -229,21 +227,19 @@ def main(args: Optional[List[str]] = None) -> int:
         return command_inspect(inspector, parsed_args)
 
     # Obsługa poleceń profile
-    elif parsed_args.command == "profile":
+    if parsed_args.command == "profile":
         if parsed_args.profile_command == "add":
             return command_profile_add(inspector, parsed_args)
-        elif parsed_args.profile_command == "list":
+        if parsed_args.profile_command == "list":
             return command_profile_list(inspector, parsed_args)
-        elif parsed_args.profile_command == "remove":
+        if parsed_args.profile_command == "remove":
             return command_profile_remove(inspector, parsed_args)
-        else:
-            parser.print_help()
-            return 1
-
-    # Jeśli nie podano polecenia, wyświetl pomoc
-    else:
         parser.print_help()
         return 1
+
+    # Jeśli nie podano polecenia, wyświetl pomoc
+    parser.print_help()
+    return 1
 
 
 if __name__ == "__main__":

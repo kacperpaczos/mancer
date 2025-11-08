@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 
 import polars as pl
 
@@ -20,14 +20,12 @@ class LoggableCommandMixin:
         if isinstance(data, pl.DataFrame):
             if len(data) > max_rows:
                 return data.head(max_rows).to_dicts()
-            elif len(data) > 0:
+            if len(data) > 0:
                 return data.to_dicts()
-            else:
-                return []
-        elif isinstance(data, list):
+            return []
+        if isinstance(data, list):
             return data[:max_rows]
-        else:
-            return data
+        return data
 
     def _get_logger(self) -> MancerLogger:
         """Pobiera instancję MancerLogger."""
@@ -100,7 +98,7 @@ class LoggableCommandMixin:
 
     def execute_with_logging(
         self,
-        original_execute,
+        original_execute: Callable,
         context: CommandContext,
         input_result: Optional[CommandResult] = None,
     ) -> CommandResult:
@@ -148,7 +146,7 @@ class LoggableCommandMixin:
             # Logujemy zakończenie
             self._log_command_end(command_info, result)
 
-            return result
+            return cast(CommandResult, result)
         except Exception as e:
             # W przypadku wyjątku logujemy błąd
             error_result = CommandResult(

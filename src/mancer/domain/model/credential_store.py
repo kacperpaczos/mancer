@@ -54,7 +54,7 @@ class CredentialStore:
         # Załaduj istniejące poświadczenia
         self._load_credentials()
 
-    def set_master_key(self, master_key: str):
+    def set_master_key(self, master_key: str) -> None:
         """Ustawia klucz główny do szyfrowania"""
         self.master_key = master_key
 
@@ -84,8 +84,7 @@ class CredentialStore:
         key = self._derive_key(self.master_key, salt)
         encrypted = base64.b64decode(encrypted_value.encode()).decode("utf-8")
         # Proste deszyfrowanie XOR
-        decrypted = "".join(chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(encrypted))
-        return decrypted
+        return "".join(chr(ord(c) ^ key[i % len(key)]) for i, c in enumerate(encrypted))
 
     def store_password(self, profile_id: str, password: str, expires_in_days: Optional[int] = None) -> str:
         """Zapisuje hasło dla profilu"""

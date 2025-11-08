@@ -345,9 +345,8 @@ class ShellRunner:
                 gssapi_delegate_creds=rh.gssapi_delegate_creds,
                 ssh_options=rh.ssh_options,
             )
-        else:
-            # Use local bash backend
-            return BashBackend()
+        # Use local bash backend
+        return BashBackend()
 
     def enable_cache(self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5) -> None:
         """
@@ -387,17 +386,16 @@ class ShellRunner:
             stats = self._command_cache.get_statistics()
             stats["enabled"] = True
             return stats
-        else:
-            return {
-                "enabled": False,
-                "total_commands": 0,
-                "success_count": 0,
-                "error_count": 0,
-                "cache_size": 0,
-                "max_size": 0,
-                "auto_refresh": False,
-                "refresh_interval": 0,
-            }
+        return {
+            "enabled": False,
+            "total_commands": 0,
+            "success_count": 0,
+            "error_count": 0,
+            "cache_size": 0,
+            "max_size": 0,
+            "auto_refresh": False,
+            "refresh_interval": 0,
+        }
 
     def get_command_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Any]:
         """

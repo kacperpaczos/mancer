@@ -153,17 +153,16 @@ class BaseCommand(CommandInterface[T]):
                 context.parameters,
                 stdin,
             )
-        else:
-            # SshBackend.execute_command nie przyjmuje parameters ani stdin w tej formie
-            # Musimy utworzyć sesję najpierw
-            # TODO: Implement proper SSH session handling
-            return CommandResult(
-                success=False,
-                raw_output="",
-                structured_output=[],
-                exit_code=1,
-                error_message="SSH execution not fully implemented in this context",
-            )
+        # SshBackend.execute_command nie przyjmuje parameters ani stdin w tej formie
+        # Musimy utworzyć sesję najpierw
+        # TODO: Implement proper SSH session handling
+        return CommandResult(
+            success=False,
+            raw_output="",
+            structured_output=[],
+            exit_code=1,
+            error_message="SSH execution not fully implemented in this context",
+        )
 
     def clone(self) -> T:
         """

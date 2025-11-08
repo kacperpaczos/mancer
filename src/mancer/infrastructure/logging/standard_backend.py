@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from pprint import pformat
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
 
@@ -27,30 +27,32 @@ class StandardBackend(LogBackendInterface):
         self._file_enabled = False
         self._use_utc = True
 
-    def initialize(self, **kwargs) -> None:
+    def initialize(self, **kwargs: Any) -> None:
         """
         Inicjalizuje backend loggera.
 
         Args:
-            **kwargs: Parametry konfiguracji logowania
                 log_level: Poziom logowania
                 log_format: Format wiadomości logowania
                 log_dir: Katalog dla plików logów
                 log_file: Nazwa pliku logu
                 console_enabled: Czy logować do konsoli
                 file_enabled: Czy logować do pliku
+            use_utc: Czy używać UTC
+            force_standard: (ignorowane przez ten backend)
+            ic_prefix: (ignorowane przez ten backend)
+            ic_include_context: (ignorowane przez ten backend)
         """
         # Parametry konfiguracyjne
-        log_level = kwargs.get("log_level", LogLevel.INFO)
-        log_format = kwargs.get("log_format", self._log_format)
-        log_dir = kwargs.get("log_dir", self._log_dir)
-        log_file = kwargs.get("log_file", self._log_file)
-        console_enabled = kwargs.get("console_enabled", True)
-        file_enabled = kwargs.get("file_enabled", False)
-        use_utc = kwargs.get("use_utc", True)
+        if log_format == "":
+            log_format = self._log_format
+        if log_dir == "":
+            log_dir = self._log_dir
+        if log_file == "":
+            log_file = self._log_file
 
         # Zastosuj konfigurację
-        self._log_level = log_level
+        self._log_level = log_level if isinstance(log_level, LogLevel) else LogLevel.INFO
         self._log_format = log_format
         self._log_dir = log_dir
         self._log_file = log_file

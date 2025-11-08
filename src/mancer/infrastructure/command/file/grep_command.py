@@ -87,7 +87,7 @@ class GrepCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "GrepCommand":
+    def with_param(self, name: str, value: Any) -> "GrepCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: GrepCommand = self.clone()
         new_instance.parameters[name] = value

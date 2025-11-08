@@ -94,7 +94,7 @@ class LsCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "LsCommand":
+    def with_param(self, name: str, value: Any) -> "LsCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: LsCommand = self.clone()
         new_instance.parameters[name] = value

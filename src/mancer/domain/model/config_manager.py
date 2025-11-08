@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import yaml
 
@@ -202,7 +202,7 @@ class ConfigManager:
             List of allowed versions or empty list if the tool is not configured
         """
         try:
-            return self._config["tool_versions"]["tools"].get(tool_name, [])
+            return cast(List[str], self._config["tool_versions"]["tools"].get(tool_name, []))
         except Exception:
             return []
 

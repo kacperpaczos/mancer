@@ -15,7 +15,7 @@ class GrepCommand(BaseCommand):
     # Zdefiniuj nazwę narzędzia
     tool_name: ClassVar[str] = "grep"
 
-    def __init__(self, name: str = "grep", pattern=None):
+    def __init__(self, name: str = "grep", pattern: Optional[str] = None):
         """Initialize grep command.
 
         Args:
@@ -36,7 +36,7 @@ class GrepCommand(BaseCommand):
         # Handle pipeline input
         if input_result and input_result.raw_output:
             backend = self._get_backend(context)
-            exit_code, output, error = backend.execute_with_input(command_str, input_result.raw_output)
+            exit_code, output, error = backend.execute(command_str, input_data=input_result.raw_output)
         else:
             # Execute the command with the appropriate backend
             backend = self._get_backend(context)

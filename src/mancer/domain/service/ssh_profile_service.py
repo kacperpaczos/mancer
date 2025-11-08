@@ -71,7 +71,7 @@ class SSHProfileService:
         logger.info(f"Utworzono profil SSH: {name} ({hostname}:{port})")
         return profile
 
-    def update_profile(self, profile_id: str, **kwargs) -> SSHProfile:
+    def update_profile(self, profile_id: str, **kwargs: Any) -> SSHProfile:
         """Aktualizuje profil SSH"""
         if profile_id not in self.profiles:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
@@ -193,7 +193,7 @@ class SSHProfileService:
         """Usuwa poświadczenia dla profilu"""
         return self.credential_store.remove_profile_credentials(profile_id)
 
-    def update_profile_usage(self, profile_id: str):
+    def update_profile_usage(self, profile_id: str) -> None:
         """Aktualizuje statystyki użycia profilu"""
         if profile_id in self.profiles:
             self.profiles[profile_id].update_usage()
@@ -248,7 +248,7 @@ class SSHProfileService:
             existing_profile = self.get_profile_by_name(profile_data["name"])
             if existing_profile and not overwrite:
                 raise ValueError(f"Profil o nazwie '{profile_data['name']}' już istnieje")
-            elif existing_profile and overwrite:
+            if existing_profile and overwrite:
                 # Usuń istniejący profil
                 self.delete_profile(existing_profile.id)
 

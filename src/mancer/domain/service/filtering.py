@@ -4,7 +4,7 @@ Provides safe mathematical operations and matrix manipulations.
 """
 
 import re
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, cast
 
 import polars as pl
 
@@ -148,7 +148,7 @@ class MatrixOps:
         """Transpose 2D matrix."""
         try:
             if isinstance(matrix, pl.DataFrame):
-                return matrix.to_numpy().T.tolist()
+                return cast(List[List[Any]], matrix.to_numpy().T.tolist())
 
             if not matrix or not matrix[0]:
                 return []
@@ -230,7 +230,7 @@ class FilterLanguage:
                         .drop([f"__{col1}_num", f"__{col2}_num"])
                     )
 
-                elif operation == "subtract":
+                if operation == "subtract":
                     return (
                         df.with_columns(
                             [
@@ -242,7 +242,7 @@ class FilterLanguage:
                         .drop([f"__{col1}_num", f"__{col2}_num"])
                     )
 
-                elif operation == "multiply":
+                if operation == "multiply":
                     return (
                         df.with_columns(
                             [
@@ -254,7 +254,7 @@ class FilterLanguage:
                         .drop([f"__{col1}_num", f"__{col2}_num"])
                     )
 
-                elif operation == "divide":
+                if operation == "divide":
                     return (
                         df.with_columns(
                             [
@@ -271,8 +271,7 @@ class FilterLanguage:
                         .drop([f"__{col1}_num", f"__{col2}_num"])
                     )
 
-                else:
-                    raise FilteringError(f"Unknown operation: {operation}")
+                raise FilteringError(f"Unknown operation: {operation}")
 
             except Exception as e:
                 raise FilteringError(f"Safe math operation '{operation}' failed: {e}")

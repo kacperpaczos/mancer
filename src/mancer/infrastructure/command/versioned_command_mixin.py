@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Callable, ClassVar, Dict, Optional
+from typing import Any, Callable, ClassVar, Dict, Optional, cast
 
 from ...domain.model.command_context import CommandContext
 from ...domain.model.tool_version import ToolVersion
@@ -88,11 +88,11 @@ class VersionedCommandMixin:
             regex_pattern = pattern.replace(".x", r"\..*").replace("x", r".*")
             if re.match(regex_pattern, version.version):
                 if hasattr(self, method_name):
-                    return getattr(self, method_name)
+                    return cast(Optional[Callable[..., Any]], getattr(self, method_name))
 
         return None
 
-    def adapt_to_version(self, version: Optional[ToolVersion], method_base_name: str, *args, **kwargs) -> Any:
+    def adapt_to_version(self, version: Optional[ToolVersion], method_base_name: str, *args: Any, **kwargs: Any) -> Any:
         """
         Adapts behavior based on the detected version
 

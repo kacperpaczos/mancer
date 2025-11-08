@@ -38,9 +38,8 @@ class CpCommand(BaseCommand):
         backend = self._get_backend(context)
 
         # Wykonujemy komendę
-        result = backend.execute_command(cmd_str, working_dir=context.current_directory)
+        return backend.execute_command(cmd_str, working_dir=context.current_directory)
 
-        return result
 
     # Przepisane metody buildera dla poprawnego typu zwracanego
 

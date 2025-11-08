@@ -76,15 +76,15 @@ class FindCommand(BaseCommand):
         """Specjalne formatowanie dla find"""
         if name == "path":
             return ""  # Ścieżka jest obsługiwana przez execute
-        elif name == "name":
+        if name == "name":
             return f'-name "{value}"'
-        elif name == "type":
+        if name == "type":
             return f"-type {value}"
-        elif name == "size":
+        if name == "size":
             return f"-size {value}"
-        elif name == "mtime":
+        if name == "mtime":
             return f"-mtime {value}"
-        elif name == "exec":
+        if name == "exec":
             # Komenda exec musi być w formacie: -exec command {} \;
             return f"-exec {value} \\;"
         return super()._format_parameter(name, value)

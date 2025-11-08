@@ -3,12 +3,33 @@ import subprocess
 import threading
 import time
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict
 
 from pydantic import BaseModel, Field
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
+
+
+class SSHSessionConfigDict(TypedDict, total=False):
+    """TypedDict for SSH session configuration parameters."""
+
+    hostname: str
+    username: str
+    port: int
+    key_filename: Optional[str]
+    password: Optional[str]
+    passphrase: Optional[str]
+    allow_agent: bool
+    look_for_keys: bool
+    compress: bool
+    timeout: Optional[int]
+    gssapi_auth: bool
+    gssapi_kex: bool
+    gssapi_delegate_creds: bool
+    ssh_options: Optional[Dict[str, str]]
+    proxy_config: Optional[Dict[str, Any]]
+    fingerprint_callback: Optional[Callable]
 
 
 class SSHSession(BaseModel):
@@ -122,7 +143,7 @@ class SshBackend(BackendInterface):
         except Exception:
             self.logger = None
 
-    def create_session(self, session_id: str, **kwargs) -> SSHSession:
+    def create_session(self, session_id: str, **kwargs: SSHSessionConfigDict) -> SSHSession:
         """Tworzy nową sesję SSH"""
         with self.session_lock:
             # Usuń fingerprint_callback z kwargs żeby nie trafiło do SSHSession
@@ -161,9 +182,8 @@ class SshBackend(BackendInterface):
                     if hasattr(self, "logger") and self.logger:
                         self.logger.warning(f"Nie udało się uruchomić sesji interaktywnej: {_e}")
                 return True
-            else:
-                session.status = "error"
-                return False
+            session.status = "error"
+            return False
         except Exception:
             session.status = "error"
             return False
@@ -186,12 +206,12 @@ class SshBackend(BackendInterface):
 
         return True
 
-    def set_fingerprint_callback(self, callback: Callable):
+    def set_fingerprint_callback(self, callback: Callable) -> None:
         """Ustawia callback do obsługi fingerprint prompts"""
         with self.fingerprint_callback_lock:
             self.fingerprint_callback = callback
 
-    def set_output_callback(self, callback: Callable[[str, str], None]):
+    def set_output_callback(self, callback: Callable[[str, str], None]) -> None:
         """Ustawia callback dla wyjścia interaktywnej sesji SSH (session_id, chunk)."""
         self.output_callback = callback
 
@@ -307,36 +327,35 @@ class SshBackend(BackendInterface):
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
                 return self._execute_with_fingerprint_handling(ssh_command, working_dir, env_vars, fingerprint_callback)
-            else:
-                # Standardowe wykonanie SSH (dla jednorazowych komend).
-                # Jeśli interaktywna powłoka działa, wyślij komendę do niej i zwróć sukces
-                # natychmiast (output trafi przez callback terminala).
-                if session_id in self.shells and self.shells[session_id].get("alive"):
-                    sent = self.send_input(session_id, command + "\n")
-                    return CommandResult(
-                        success=sent,
-                        raw_output="",
-                        structured_output=[],
-                        exit_code=0 if sent else 1,
-                        error_message=None if sent else "Interactive shell not available",
-                    )
-                # Brak interaktywnej sesji – jednorazowe uruchomienie
-                result = subprocess.run(
-                    ssh_command,
-                    capture_output=True,
-                    text=True,
-                    timeout=self.timeout or 30,
-                    cwd=working_dir,
-                    env=env_vars,
-                )
-
+            # Standardowe wykonanie SSH (dla jednorazowych komend).
+            # Jeśli interaktywna powłoka działa, wyślij komendę do niej i zwróć sukces
+            # natychmiast (output trafi przez callback terminala).
+            if session_id in self.shells and self.shells[session_id].get("alive"):
+                sent = self.send_input(session_id, command + "\n")
                 return CommandResult(
-                    success=result.returncode == 0,
-                    raw_output=result.stdout,
-                    structured_output=result.stdout.split("\n") if result.stdout else [],
-                    exit_code=result.returncode,
-                    error_message=result.stderr if result.stderr else None,
+                    success=sent,
+                    raw_output="",
+                    structured_output=[],
+                    exit_code=0 if sent else 1,
+                    error_message=None if sent else "Interactive shell not available",
                 )
+            # Brak interaktywnej sesji – jednorazowe uruchomienie
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout or 30,
+                cwd=working_dir,
+                env=env_vars,
+            )
+
+            return CommandResult(
+                success=result.returncode == 0,
+                raw_output=result.stdout,
+                structured_output=result.stdout.split("\n") if result.stdout else [],
+                exit_code=result.returncode,
+                error_message=result.stderr if result.stderr else None,
+            )
 
         except subprocess.TimeoutExpired:
             return CommandResult(
@@ -688,7 +707,7 @@ class SshBackend(BackendInterface):
 
         return transfer
 
-    def _execute_scp_upload(self, transfer: SCPTransfer, session: SSHSession):
+    def _execute_scp_upload(self, transfer: SCPTransfer, session: SSHSession) -> None:
         """Wykonuje upload SCP"""
         transfer.status = "transferring"
 
@@ -721,7 +740,7 @@ class SshBackend(BackendInterface):
 
         transfer.end_time = datetime.now()
 
-    def _execute_scp_download(self, transfer: SCPTransfer, session: SSHSession):
+    def _execute_scp_download(self, transfer: SCPTransfer, session: SSHSession) -> None:
         """Wykonuje download SCP"""
         transfer.status = "transferring"
 
@@ -829,16 +848,15 @@ class SshBackend(BackendInterface):
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
                 return self._execute_with_fingerprint_handling(ssh_command, None, None, fingerprint_callback).success
-            else:
-                # Standardowy test
-                result = subprocess.run(
-                    ssh_command,
-                    capture_output=True,
-                    text=True,
-                    timeout=15,  # Krótki timeout dla testu
-                )
+            # Standardowy test
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=15,  # Krótki timeout dla testu
+            )
 
-                return result.returncode == 0
+            return result.returncode == 0
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:

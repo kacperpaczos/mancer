@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional, cast
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -71,7 +71,7 @@ class DfCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "DfCommand":
+    def with_param(self, name: str, value: Any) -> "DfCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: DfCommand = self.clone()
         new_instance.parameters[name] = value
@@ -326,12 +326,11 @@ class DfCommand(BaseCommand):
         if result.success and result.structured_output:
             for fs_info in result.structured_output:
                 if fs_info.get("mount_point") == mount_point:
-                    return fs_info
+                    return cast(Dict[str, Any], fs_info)
 
             # If we didn't find an exact match, return the first entry
-            return result.structured_output[0]
-        else:
-            return {}
+            return cast(Dict[str, Any], result.structured_output[0])
+        return {}
 
     def show_filesystem(self, filesystem: str) -> "DfCommand":
         """

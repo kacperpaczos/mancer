@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -81,7 +81,7 @@ class CdCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "CdCommand":
+    def with_param(self, name: str, value: Any) -> "CdCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: CdCommand = self.clone()
         new_instance.parameters[name] = value

@@ -8,7 +8,7 @@ import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from paramiko import AutoAddPolicy, SSHClient  # type: ignore[import-untyped,unused-ignore]
 
@@ -203,8 +203,7 @@ class SSHManager:
 
             if status == "active":
                 return True, None
-            else:
-                return False, f"Usługa {service_name} nie jest aktywna po restarcie"
+            return False, f"Usługa {service_name} nie jest aktywna po restarcie"
 
         except Exception as e:
             return False, str(e)
@@ -542,7 +541,7 @@ class RemoteConfigManager:
 
         try:
             with open(profile_path, "r") as f:
-                return json.load(f)
+                return cast(Optional[Dict[str, Any]], json.load(f))
         except json.JSONDecodeError:
             return None
 

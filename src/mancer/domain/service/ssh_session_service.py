@@ -2,7 +2,8 @@ import threading
 import uuid
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
-from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackend, SSHSession
+from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackend, SSHSession, SSHSessionConfigDict
+from ..model.command_result import CommandResult
 from ..model.config_manager import ConfigManager
 
 if TYPE_CHECKING:
@@ -47,7 +48,7 @@ class SSHSessionService:
         proxy_config: Optional[Dict[str, Any]] = None,
         request_password_callback: Optional[Callable] = None,
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: SSHSessionConfigDict,
     ) -> SSHSession:
         """Tworzy nową sesję SSH"""
         session_id = str(uuid.uuid4())
@@ -237,7 +238,7 @@ class SSHSessionService:
         key_filename: Optional[str] = None,
         proxy_config: Optional[Dict[str, Any]] = None,
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Tuple[bool, Optional[str], Optional[str]]:
         """Check SSH host fingerprint - simplified approach
 
@@ -347,7 +348,7 @@ class SSHSessionService:
         key_filename: Optional[str],
         proxy_config: Optional[Dict[str, Any]],
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: SSHSessionConfigDict,
     ) -> bool:
         """Testuje połączenie SSH przed utworzeniem sesji z obsługą fingerprinta"""
         try:
@@ -412,7 +413,7 @@ class SSHSessionService:
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
         fingerprint_callback: Optional[Callable] = None,
-    ):
+    ) -> Optional[CommandResult]:
         """Execute command on SSH session with optional fingerprint handling"""
         if session_id not in self.sessions:
             return None

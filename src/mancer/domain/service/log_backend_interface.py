@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 
 class LogLevel(Enum):
@@ -13,6 +13,21 @@ class LogLevel(Enum):
     CRITICAL = 50
 
 
+class LoggingConfigDict(TypedDict, total=False):
+    """TypedDict for logging backend configuration parameters."""
+
+    log_level: Union[LogLevel, str]
+    log_format: str
+    log_dir: str
+    log_file: str
+    console_enabled: bool
+    file_enabled: bool
+    use_utc: bool
+    force_standard: bool  # Only for MancerLogger
+    ic_prefix: str  # Only for IcecreamBackend
+    ic_include_context: bool  # Only for IcecreamBackend
+
+
 class LogBackendInterface(ABC):
     """
     Interfejs dla backendów logowania.
@@ -20,12 +35,12 @@ class LogBackendInterface(ABC):
     """
 
     @abstractmethod
-    def initialize(self, **kwargs) -> None:
+    def initialize(self, **kwargs: Any) -> None:
         """
         Inicjalizuje backend loggera.
 
         Args:
-            **kwargs: Parametry specyficzne dla danego backendu
+            **kwargs: Parametry konfiguracji logowania
         """
         pass
 

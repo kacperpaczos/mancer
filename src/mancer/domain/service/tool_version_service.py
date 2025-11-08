@@ -134,11 +134,10 @@ class ToolVersionService:
             warn_on_missing = self.config_manager.get_setting("version_checking.warn_on_missing", True)
             if warn_on_missing:
                 return False, f"Nie można wykryć wersji narzędzia {tool_name}"
-            else:
-                return (
-                    True,
-                    f"Nie można wykryć wersji narzędzia {tool_name}, ale ostrzeżenia są wyłączone",
-                )
+            return (
+                True,
+                f"Nie można wykryć wersji narzędzia {tool_name}, ale ostrzeżenia są wyłączone",
+            )
 
         # Sprawdź, czy wersja jest dozwolona
         is_allowed = self.registry.is_version_allowed(tool_name, tool_version.version)
@@ -149,23 +148,21 @@ class ToolVersionService:
                 True,
                 f"Wersja {tool_version.version} narzędzia {tool_name} jest dozwolona",
             )
-        else:
-            # Jeśli wersja nie jest dozwolona, sprawdź czy ostrzeżenia są włączone
-            warn_on_mismatch = self.config_manager.get_setting("version_checking.warn_on_mismatch", True)
-            if warn_on_mismatch:
-                allowed_versions = self.registry.allowed_versions.get(tool_name, set())
-                allowed_str = ", ".join(allowed_versions) if allowed_versions else "brak zdefiniowanych wersji"
-                return (
-                    False,
-                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona "
-                    f"(dozwolone wersje: {allowed_str})",
-                )
-            else:
-                return (
-                    True,
-                    f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona, "
-                    f"ale ostrzeżenia są wyłączone",
-                )
+        # Jeśli wersja nie jest dozwolona, sprawdź czy ostrzeżenia są włączone
+        warn_on_mismatch = self.config_manager.get_setting("version_checking.warn_on_mismatch", True)
+        if warn_on_mismatch:
+            allowed_versions = self.registry.allowed_versions.get(tool_name, set())
+            allowed_str = ", ".join(allowed_versions) if allowed_versions else "brak zdefiniowanych wersji"
+            return (
+                False,
+                f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona "
+                f"(dozwolone wersje: {allowed_str})",
+            )
+        return (
+            True,
+            f"Wersja {tool_version.version} narzędzia {tool_name} nie jest dozwolona, "
+            f"ale ostrzeżenia są wyłączone",
+        )
 
     def register_allowed_version(self, tool_name: str, version: str) -> None:
         """

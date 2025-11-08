@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, cast
 
 from ...domain.interface.command_interface import CommandInterface
 from ..command.file.cat_command import CatCommand
@@ -66,4 +66,4 @@ class CommandFactory:
             return None
 
         # Zwracamy kopię, aby uniknąć modyfikacji oryginalnej komendy
-        return self._configured_commands[alias].clone()
+        return cast(Optional[CommandInterface[Any]], self._configured_commands[alias].clone())

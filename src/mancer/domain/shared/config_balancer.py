@@ -83,14 +83,13 @@ class ConfigFormat:
 
         if ext in [".ini", ".conf", ".cfg"]:
             return ConfigFormat.INI
-        elif ext in [".json"]:
+        if ext in [".json"]:
             return ConfigFormat.JSON
-        elif ext in [".yaml", ".yml"]:
+        if ext in [".yaml", ".yml"]:
             return ConfigFormat.YAML
-        elif ext in [".xml"]:
+        if ext in [".xml"]:
             return ConfigFormat.XML
-        else:
-            return ConfigFormat.PLAIN
+        return ConfigFormat.PLAIN
 
 
 class ConfigTemplate(BaseModel):

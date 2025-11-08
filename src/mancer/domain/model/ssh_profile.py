@@ -102,7 +102,7 @@ class SSHProfile(BaseModel):
 
         return cls.model_validate(processed_data)
 
-    def update_usage(self):
+    def update_usage(self) -> None:
         """Aktualizuje statystyki użycia"""
         self.last_used = datetime.now()
         self.use_count += 1
@@ -130,7 +130,7 @@ class SSHProfile(BaseModel):
         """Bezpieczny hash"""
         return hash(self.id)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Bezpieczne porównanie"""
         if not isinstance(other, SSHProfile):
             return False

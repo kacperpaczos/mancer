@@ -13,7 +13,7 @@ class CatCommand(BaseCommand):
     # Zdefiniuj nazwę narzędzia
     tool_name: ClassVar[str] = "cat"
 
-    def __init__(self, name: str = "cat", file_path=None):
+    def __init__(self, name: str = "cat", file_path: Optional[str] = None):
         """Initialize cat command.
 
         Args:

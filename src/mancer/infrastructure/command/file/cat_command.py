@@ -64,7 +64,7 @@ class CatCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "CatCommand":
+    def with_param(self, name: str, value: Any) -> "CatCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: CatCommand = self.clone()
         new_instance.parameters[name] = value

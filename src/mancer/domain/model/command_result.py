@@ -1,12 +1,18 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, TypedDict, Union
 
 import polars as pl
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SerializationInfo, ValidationInfo, field_serializer, field_validator
 
 from ..service.data_converter_service import DataFormatConverter
 from ..service.text_renderer import TextRendererFactory
 from .data_format import DataFormat
 from .execution_history import ExecutionHistory
+
+
+class HistoryMetadataDict(TypedDict, total=False):
+    """TypedDict for history metadata parameters."""
+
+    # Any additional metadata that can be passed to history steps
 
 
 class CommandResult(BaseModel):
@@ -36,14 +42,13 @@ class CommandResult(BaseModel):
     command_name: Optional[str] = None  # Optional field for logging purposes
 
     @field_serializer("structured_output")
-    def serialize_structured_output(self, value: Any, _info) -> Any:
+    def serialize_structured_output(self, value: Any, _info: SerializationInfo) -> Any:
         """Serialize structured_output for JSON/dict serialization."""
         if isinstance(value, pl.DataFrame):
             # Convert DataFrame to list of dicts for serialization
             if len(value) > 0:
                 return value.to_dicts()
-            else:
-                return []
+            return []
         return value
 
     @field_validator("structured_output", mode="before")
@@ -91,9 +96,8 @@ class CommandResult(BaseModel):
         """Return structured_output as a polars.DataFrame."""
         if isinstance(self.structured_output, pl.DataFrame):
             return self.structured_output
-        else:
-            # If not already a DataFrame, try to convert
-            return pl.DataFrame(self.structured_output)
+        # If not already a DataFrame, try to convert
+        return pl.DataFrame(self.structured_output)
 
     def update_from_df(self, df: pl.DataFrame, renderer: Optional[str] = None) -> "CommandResult":
         """Update structured_output and raw_output from a polars.DataFrame."""
@@ -905,7 +909,7 @@ class CommandResult(BaseModel):
         command_string: str,
         command_type: str,
         structured_sample: Any = None,
-        **kwargs,
+        **kwargs: HistoryMetadataDict,
     ) -> None:
         """Dodaje krok do historii wykonania"""
         from .execution_step import ExecutionStep
@@ -929,7 +933,7 @@ class CommandResult(BaseModel):
             if field_name in self.structured_output.columns:
                 return self.structured_output[field_name].to_list()
             return []
-        elif (
+        if (
             isinstance(self.structured_output, list)
             and self.structured_output
             and isinstance(self.structured_output[0], dict)

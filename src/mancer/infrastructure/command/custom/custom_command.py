@@ -67,7 +67,7 @@ class CustomCommand(BaseCommand):
                 if isinstance(json_data, list):
                     return pl.DataFrame(json_data)
                 # If JSON is an object, wrap it in a list and convert
-                elif isinstance(json_data, dict):
+                if isinstance(json_data, dict):
                     return pl.DataFrame([json_data])
         except json.JSONDecodeError:
             pass  # Not valid JSON, continue with line-based parsing

@@ -92,7 +92,7 @@ class TailCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "TailCommand":
+    def with_param(self, name: str, value: Any) -> "TailCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: TailCommand = self.clone()
         new_instance.parameters[name] = value

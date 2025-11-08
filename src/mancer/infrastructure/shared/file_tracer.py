@@ -120,9 +120,8 @@ class FileTracer:
             content = f.read()
 
         # Zapisz do docelowego pliku
-        success = self._set_file_content(destination_path, content, is_destination_remote)
+        return self._set_file_content(destination_path, content, is_destination_remote)
 
-        return success
 
     def calculate_file_hash(self, file_path: str, is_remote: bool = False) -> str:
         """
@@ -222,13 +221,12 @@ class FileTracer:
                 raise IOError(f"Failed to read remote file: {result.error_message}")
 
             return result.raw_output
-        else:
-            # Bezpośredni odczyt pliku lokalnego
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    return f.read()
-            except Exception as e:
-                raise IOError(f"Failed to read local file: {str(e)}")
+        # Bezpośredni odczyt pliku lokalnego
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            raise IOError(f"Failed to read local file: {str(e)}")
 
     def _set_file_content(self, file_path: str, content: str, is_remote: bool) -> bool:
         """
@@ -265,14 +263,13 @@ class FileTracer:
             os.unlink(temp_file)
 
             return result.success
-        else:
-            # Bezpośredni zapis do pliku lokalnego
-            try:
-                # Upewnij się, że katalog istnieje
-                os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+        # Bezpośredni zapis do pliku lokalnego
+        try:
+            # Upewnij się, że katalog istnieje
+            os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
 
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(content)
-                return True
-            except Exception:
-                return False
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return True
+        except Exception:
+            return False

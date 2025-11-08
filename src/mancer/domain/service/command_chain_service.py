@@ -101,9 +101,8 @@ class CommandChain:
                 df = df.collect()
             if agg is not None:
                 return df.group_by(by).agg(agg)
-            else:
-                # When no aggregation, return first row of each group
-                return df.group_by(by).first()
+            # When no aggregation, return first row of each group
+            return df.group_by(by).first()
 
         return self.map_df(group_func, renderer)
 
@@ -197,8 +196,7 @@ class CommandChain:
                     ]
                 )
                 df = df.with_columns((pl.col(alias1) + pl.col(alias2)).alias(new_col))
-                df = df.drop([alias1, alias2])
-                return df
+                return df.drop([alias1, alias2])
             except Exception as e:
                 raise ValueError(f"Addition failed: {e}")
 
@@ -224,8 +222,7 @@ class CommandChain:
                 df = df.with_columns(
                     pl.when(pl.col(alias2) != 0).then(pl.col(alias1) / pl.col(alias2)).otherwise(None).alias(new_col)
                 )
-                df = df.drop([alias1, alias2])
-                return df
+                return df.drop([alias1, alias2])
             except Exception as e:
                 raise ValueError(f"Division failed: {e}")
 
@@ -249,8 +246,7 @@ class CommandChain:
                     ]
                 )
                 df = df.with_columns((pl.col(alias1) * pl.col(alias2)).alias(new_col))
-                df = df.drop([alias1, alias2])
-                return df
+                return df.drop([alias1, alias2])
             except Exception as e:
                 raise ValueError(f"Multiplication failed: {e}")
 
@@ -274,8 +270,7 @@ class CommandChain:
                     ]
                 )
                 df = df.with_columns((pl.col(alias1) - pl.col(alias2)).alias(new_col))
-                df = df.drop([alias1, alias2])
-                return df
+                return df.drop([alias1, alias2])
             except Exception as e:
                 raise ValueError(f"Subtraction failed: {e}")
 
@@ -293,10 +288,9 @@ class CommandChain:
             if step == 1:
                 length = (end - start) if end is not None else (df.height - start)
                 return df.slice(start, length)
-            else:
-                # For step != 1, use Python slicing on indices
-                indices = list(range(start, end if end is not None else df.height, step))
-                return df[indices]
+            # For step != 1, use Python slicing on indices
+            indices = list(range(start, end if end is not None else df.height, step))
+            return df[indices]
 
         return self.map_df(slice_func, renderer)
 
@@ -406,11 +400,10 @@ class CommandChain:
         def fill_nulls_func(df):
             if columns is None:
                 return df.fill_null(value)
-            else:
-                for col in columns:
-                    if col in df.columns:
-                        df = df.with_columns(pl.col(col).fill_null(value))
-                return df
+            for col in columns:
+                if col in df.columns:
+                    df = df.with_columns(pl.col(col).fill_null(value))
+            return df
 
         return self.map_df(fill_nulls_func, renderer)
 

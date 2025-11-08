@@ -92,7 +92,7 @@ class HeadCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "HeadCommand":
+    def with_param(self, name: str, value: Any) -> "HeadCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: HeadCommand = self.clone()
         new_instance.parameters[name] = value

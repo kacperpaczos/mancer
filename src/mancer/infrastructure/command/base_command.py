@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 import polars as pl
 from pydantic import BaseModel, ConfigDict, Field
 
+from ...domain.interface.backend_interface import BackendInterface
 from ...domain.interface.command_interface import CommandInterface
 from ...domain.model.command_context import CommandContext, ExecutionMode
 from ...domain.model.command_result import CommandResult
@@ -126,7 +127,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
 
         return " ".join(cmd_parts)
 
-    def _get_backend(self, context: CommandContext):
+    def _get_backend(self, context: CommandContext) -> BackendInterface:
         """Select an execution backend based on context (SSH for remote, otherwise default)."""
         if context.execution_mode == ExecutionMode.REMOTE and context.remote_host is not None:
             remote_host = context.remote_host
@@ -145,8 +146,7 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
                 gssapi_delegate_creds=remote_host.gssapi_delegate_creds,
                 ssh_options=remote_host.ssh_options,
             )
-        else:
-            return self.backend
+        return self.backend
 
     @abstractmethod
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
