@@ -94,12 +94,13 @@ class BaseCommand(BaseModel, CommandInterface, LoggableCommandMixin):
     def clone(self: T) -> T:
         """Create a copy of the command instance (immutable builder pattern)."""
         # Use model_copy for Pydantic models
-        new_instance = self.model_copy(deep=True)
+        base_copy: "BaseCommand" = self.model_copy(deep=True)
+        new_instance = cast(T, base_copy)
         # Ensure backend and private attributes are properly copied
         new_instance.backend = self.backend
         new_instance.args = deepcopy(self.args)
         # model_copy preserves the type when self: T is used
-        return new_instance  # type: ignore[no-any-return]
+        return new_instance
 
     def build_command(self) -> str:
         """Build the command string for execution."""

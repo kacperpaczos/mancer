@@ -12,6 +12,29 @@ from .execution_history import ExecutionHistory
 # Type variables for generic decorators
 P = ParamSpec("P")
 R = TypeVar("R")
+SerializerFunc = TypeVar("SerializerFunc", bound=Callable[..., Any])
+ValidatorFunc = TypeVar("ValidatorFunc", bound=Callable[..., Any])
+
+
+def typed_field_serializer(*args: Any, **kwargs: Any) -> Callable[[SerializerFunc], SerializerFunc]:
+    """Typed wrapper over pydantic.field_serializer to satisfy mypy without plugin."""
+    decorator = field_serializer(*args, **kwargs)
+
+    def _wrapper(func: SerializerFunc) -> SerializerFunc:
+        return cast(SerializerFunc, decorator(func))
+
+    return _wrapper
+
+
+def typed_field_validator(*args: Any, **kwargs: Any) -> Callable[[ValidatorFunc], ValidatorFunc]:
+    """Typed wrapper over pydantic.field_validator to satisfy mypy without plugin."""
+    decorator = field_validator(*args, **kwargs)
+
+    def _wrapper(func: ValidatorFunc) -> ValidatorFunc:
+        return cast(ValidatorFunc, decorator(func))
+
+    return _wrapper
+
 
 # Type aliases for Polars expressions and columns
 ExprLike: TypeAlias = Union[pl.Expr, str]
@@ -53,7 +76,7 @@ class CommandResult(BaseModel):
     history: ExecutionHistory = Field(default_factory=ExecutionHistory)
     command_name: Optional[str] = None  # Optional field for logging purposes
 
-    @field_serializer("structured_output")  # type: ignore[misc]
+    @typed_field_serializer("structured_output")
     def serialize_structured_output(
         self, value: Union[pl.DataFrame, Any], _info: SerializationInfo
     ) -> Union[List[Dict[str, Any]], Any]:
@@ -65,7 +88,7 @@ class CommandResult(BaseModel):
             return []
         return value
 
-    @field_validator("structured_output", mode="before")  # type: ignore[misc]
+    @typed_field_validator("structured_output", mode="before")
     @classmethod
     def validate_structured_output(
         cls, value: Union[List[Dict[str, Any]], Any], info: ValidationInfo
