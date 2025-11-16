@@ -1,4 +1,8 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import ClassVar, Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -9,19 +13,19 @@ class GrepCommand(BaseCommand):
     """Command implementation for the 'grep' command"""
 
     # Zdefiniuj nazwę narzędzia
-    tool_name = "grep"
+    tool_name: ClassVar[str] = "grep"
 
-    def __init__(self, name: str = "grep", pattern=None):
+    def __init__(self, name: str = "grep", pattern: Optional[str] = None):
         """Initialize grep command.
 
         Args:
             name: Command name (default: "grep").
             pattern: Optional pattern to search for.
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
         if pattern:
-            self._args.append(pattern)
+            self.args.append(pattern)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the grep command"""
@@ -32,7 +36,7 @@ class GrepCommand(BaseCommand):
         # Handle pipeline input
         if input_result and input_result.raw_output:
             backend = self._get_backend(context)
-            exit_code, output, error = backend.execute_with_input(command_str, input_result.raw_output)
+            exit_code, output, error = backend.execute(command_str, input_data=input_result.raw_output)
         else:
             # Execute the command with the appropriate backend
             backend = self._get_backend(context)
@@ -57,16 +61,16 @@ class GrepCommand(BaseCommand):
             metadata=metadata,
         )
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parse grep command output into structured format"""
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parse grep command output into polars DataFrame"""
         lines = raw_output.strip().split("\n")
-        results = []
+        records = []
 
         for line in lines:
             if not line.strip():
                 continue
 
             # Basic parsing - each line is a match
-            results.append({"line": line, "text": line})  # For compatibility with other commands
+            records.append({"raw_line": line, "line": line, "text": line})  # For compatibility with other commands
 
-        return results
+        return pl.DataFrame(records)

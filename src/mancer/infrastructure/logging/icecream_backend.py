@@ -2,10 +2,10 @@ import logging
 import os
 import sys
 from pprint import pformat
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 # Importuję interfejs backendu logowania
-from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
+from ...domain.service.log_backend_interface import LogBackendInterface, LogData, LogLevel
 
 # Próbujemy importować icecream, ale jeśli nie jest dostępny, definiujemy fallback
 try:
@@ -19,7 +19,7 @@ except ImportError:
     def _ic_fallback(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         """Fallback dla icecream, który po prostu wypisuje argumenty."""
         if not args and not kwargs:
-            return
+            return None
 
         output_parts = []
         for arg in args:
@@ -60,34 +60,47 @@ class IcecreamBackend(LogBackendInterface):
         if ICECREAM_AVAILABLE:
             ic.configureOutput(prefix="[Mancer] ", includeContext=True)
 
-    def initialize(self, **kwargs) -> None:
+    def initialize(
+        self,
+        log_level: Optional[Union[int, str, LogLevel]] = None,
+        log_format: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        log_file: Optional[str] = None,
+        console_enabled: bool = True,
+        file_enabled: bool = False,
+        use_utc: bool = False,
+        force_standard: bool = False,
+        ic_prefix: Optional[str] = None,
+        ic_include_context: bool = True,
+        **kwargs: Any,
+    ) -> None:
         """
         Inicjalizuje backend loggera Icecream.
 
         Args:
-            **kwargs: Parametry konfiguracji logowania
                 log_level: Poziom logowania
-                log_format: Format wiadomości logowania
-                log_dir: Katalog dla plików logów
-                log_file: Nazwa pliku logu
+            log_format: (ignorowane przez ten backend)
+            log_dir: (ignorowane przez ten backend)
+            log_file: (ignorowane przez ten backend)
                 console_enabled: Czy logować do konsoli
-                file_enabled: Czy logować do pliku
+            file_enabled: (ignorowane przez ten backend)
+            use_utc: (ignorowane przez ten backend)
+            force_standard: (ignorowane przez ten backend)
+            ic_prefix: Prefiks dla Icecream
+            ic_include_context: Czy włączyć kontekst w Icecream
         """
         # Parametry konfiguracyjne
-        log_level = kwargs.get("log_level", LogLevel.INFO)
-        log_format = kwargs.get("log_format", self._log_format)
-        log_dir = kwargs.get("log_dir", self._log_dir)
-        log_file = kwargs.get("log_file", self._log_file)
-        console_enabled = kwargs.get("console_enabled", True)
-        file_enabled = kwargs.get("file_enabled", False)
-
-        # Zastosuj konfigurację
-        self._log_level = log_level
-        self._log_format = log_format
-        self._log_dir = log_dir
-        self._log_file = log_file
+        self._log_level = log_level if isinstance(log_level, LogLevel) else LogLevel.INFO
+        self._log_format = log_format or self._log_format
+        self._log_dir = log_dir or self._log_dir
+        self._log_file = log_file or self._log_file
         self._console_enabled = console_enabled
         self._file_enabled = file_enabled
+
+        # Możemy skonfigurować wygląd icecream, jeśli jest dostępny
+        if ICECREAM_AVAILABLE:
+            prefix = ic_prefix or "[Mancer] "
+            ic.configureOutput(prefix=prefix, includeContext=ic_include_context)
 
         # Utwórz directory dla logów, jeśli nie istnieje
         if self._file_enabled and not os.path.exists(self._log_dir):
@@ -98,9 +111,8 @@ class IcecreamBackend(LogBackendInterface):
 
         # Jeśli Icecream jest dostępny, możemy skonfigurować dodatkowe opcje
         if ICECREAM_AVAILABLE:
-            output_prefix = kwargs.get("ic_prefix", "[Mancer] ")
-            include_context = kwargs.get("ic_include_context", True)
-            ic.configureOutput(prefix=output_prefix, includeContext=include_context)
+            output_prefix = ic_prefix or "[Mancer] "
+            ic.configureOutput(prefix=output_prefix, includeContext=ic_include_context)
 
     def _configure_loggers(self) -> None:
         """Konfiguruje loggery dla konsoli i pliku."""
@@ -198,7 +210,7 @@ class IcecreamBackend(LogBackendInterface):
         """Loguje błąd krytyczny."""
         self.log(LogLevel.CRITICAL, message, context)
 
-    def log_input(self, command_name: str, data: Any) -> None:
+    def log_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -209,7 +221,7 @@ class IcecreamBackend(LogBackendInterface):
         ic(f"➡️ INPUT [{command_name}]", data)
         self._console_logger.debug(f"Command input [{command_name}]: {pformat(data)}")
 
-    def log_output(self, command_name: str, data: Any) -> None:
+    def log_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 

@@ -104,7 +104,7 @@ class MancerFlask:
         path: str,
         methods: Optional[List[str]] = None,
         auth_required: bool = False,
-    ):
+    ) -> Callable:
         """
         Decorator for adding API routes
 

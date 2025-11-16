@@ -5,7 +5,7 @@ Kompleksowe testy dla BaseCommand - zwiększenie pokrycia do 85%+
 from unittest.mock import Mock, patch
 
 from mancer.application.commands.base_command import BaseCommand
-from mancer.domain.model.command_context import CommandContext
+from mancer.domain.model.command_context import CommandContext, ExecutionMode
 from mancer.domain.model.command_result import CommandResult
 
 
@@ -187,8 +187,8 @@ class TestBaseCommandComprehensive:
         mock_backend_instance.execute_command.return_value = self.sample_result
         mock_bash_backend.return_value = mock_backend_instance
 
-        # Mock context methods
-        self.context.is_remote = Mock(return_value=False)
+        # Mock context methods - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.LOCAL
         self.context.add_to_history = Mock()
 
         result = self.command.execute(self.context)
@@ -197,16 +197,16 @@ class TestBaseCommandComprehensive:
         self.context.add_to_history.assert_called_once_with("test_cmd")
         mock_backend_instance.execute_command.assert_called_once()
 
-    @patch("mancer.infrastructure.backend.ssh_backend.SshBackend")
-    def test_execute_remote_command(self, mock_ssh_backend):
+    @patch("mancer.infrastructure.backend.ssh_backend.SshBackendFactory.create_backend")
+    def test_execute_remote_command(self, mock_create_backend):
         """Test wykonania komendy zdalnie"""
         # Mock backend
         mock_backend_instance = Mock()
         mock_backend_instance.execute_command.return_value = self.sample_result
-        mock_ssh_backend.return_value = mock_backend_instance
+        mock_create_backend.return_value = mock_backend_instance
 
-        # Mock context dla remote
-        self.context.is_remote = Mock(return_value=True)
+        # Mock context dla remote - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.REMOTE
         self.context.add_to_history = Mock()
 
         # Mock remote host
@@ -225,9 +225,9 @@ class TestBaseCommandComprehensive:
         assert result == self.sample_result
         self.context.add_to_history.assert_called_once_with("test_cmd")
 
-        # Sprawdź czy SSH backend został utworzony z odpowiednimi parametrami
+        # Sprawdź czy factory został wywołany z odpowiednimi parametrami
         # base_command używa: hostname, username, port, key_filename, password
-        mock_ssh_backend.assert_called_once_with(
+        mock_create_backend.assert_called_once_with(
             hostname="example.com",
             username="testuser",
             port=22,
@@ -243,8 +243,8 @@ class TestBaseCommandComprehensive:
         mock_backend_instance.execute_command.return_value = self.sample_result
         mock_bash_backend.return_value = mock_backend_instance
 
-        # Mock context
-        self.context.is_remote = Mock(return_value=False)
+        # Mock context - set execution_mode instead of mocking is_remote
+        self.context.execution_mode = ExecutionMode.LOCAL
         self.context.add_to_history = Mock()
 
         # Input result

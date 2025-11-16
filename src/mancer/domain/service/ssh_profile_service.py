@@ -71,7 +71,7 @@ class SSHProfileService:
         logger.info(f"Utworzono profil SSH: {name} ({hostname}:{port})")
         return profile
 
-    def update_profile(self, profile_id: str, **kwargs) -> SSHProfile:
+    def update_profile(self, profile_id: str, **kwargs: Any) -> SSHProfile:
         """Aktualizuje profil SSH"""
         if profile_id not in self.profiles:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
@@ -193,7 +193,7 @@ class SSHProfileService:
         """Usuwa poświadczenia dla profilu"""
         return self.credential_store.remove_profile_credentials(profile_id)
 
-    def update_profile_usage(self, profile_id: str):
+    def update_profile_usage(self, profile_id: str) -> None:
         """Aktualizuje statystyki użycia profilu"""
         if profile_id in self.profiles:
             self.profiles[profile_id].update_usage()
@@ -231,7 +231,7 @@ class SSHProfileService:
             raise ValueError(f"Profil o ID {profile_id} nie istnieje")
 
         profile = self.profiles[profile_id]
-        export_data = profile.to_dict()
+        export_data: Dict[str, Any] = profile.model_dump()
 
         # Dodaj poświadczenia jeśli wymagane
         if include_credentials:
@@ -248,12 +248,12 @@ class SSHProfileService:
             existing_profile = self.get_profile_by_name(profile_data["name"])
             if existing_profile and not overwrite:
                 raise ValueError(f"Profil o nazwie '{profile_data['name']}' już istnieje")
-            elif existing_profile and overwrite:
+            if existing_profile and overwrite:
                 # Usuń istniejący profil
                 self.delete_profile(existing_profile.id)
 
         # Stwórz profil
-        profile = SSHProfile.from_dict(profile_data)
+        profile: SSHProfile = SSHProfile.model_validate(profile_data)
 
         # Zapisz profil
         self.profiles[profile.id] = profile
@@ -276,7 +276,7 @@ class SSHProfileService:
             profiles_file = os.path.join(self.storage_path, "ssh_profiles.json")
 
             # Konwertuj profile do słowników
-            data = {profile_id: profile.to_dict() for profile_id, profile in self.profiles.items()}
+            data = {profile_id: profile.model_dump() for profile_id, profile in self.profiles.items()}
 
             # Zapisz do pliku
             with open(profiles_file, "w") as f:
@@ -299,7 +299,7 @@ class SSHProfileService:
             # Konwertuj ze słowników z zabezpieczeniem
             for profile_id, profile_data in data.items():
                 try:
-                    profile = SSHProfile.from_dict(profile_data)
+                    profile = SSHProfile.model_validate(profile_data)
                     self.profiles[profile_id] = profile
                 except Exception as e:
                     logger.warning(f"Pominięto problematyczny profil {profile_id}: {e}")

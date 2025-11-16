@@ -10,7 +10,7 @@ class CatCommand(BaseCommand):
     """Komenda cat - wyświetla zawartość plików"""
 
     def __init__(self):
-        super().__init__("cat")
+        super().__init__(name="cat")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę cat"""
@@ -64,7 +64,7 @@ class CatCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "CatCommand":
+    def with_param(self, name: str, value: Any) -> "CatCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: CatCommand = self.clone()
         new_instance.parameters[name] = value
@@ -85,7 +85,7 @@ class CatCommand(BaseCommand):
     def add_arg(self, arg: str) -> "CatCommand":
         """Return a new instance with an added positional argument."""
         new_instance: CatCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "CatCommand":
@@ -102,7 +102,7 @@ class CatCommand(BaseCommand):
 
     def files(self, file_paths: List[str]) -> "CatCommand":
         """Ustawia wiele plików do wyświetlenia"""
-        return self.add_args(file_paths)  # type: ignore
+        return self.add_args(file_paths)
 
     def show_line_numbers(self) -> "CatCommand":
         """Opcja -n - pokazuje numery linii"""
@@ -142,5 +142,5 @@ class CatCommand(BaseCommand):
 
     def clone(self) -> "CatCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: CatCommand = super().clone()  # type: ignore
+        new_instance: CatCommand = super().clone()
         return new_instance

@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 # Importuj nowy MancerLogger, ale obsłuż przypadki gdy nie jest dostępny (np. stary kod)
 try:
@@ -131,6 +131,10 @@ class CommandLoggerService:
                     log_file=self._log_file,
                     console_enabled=self._console_enabled,
                     file_enabled=self._file_enabled,
+                    use_utc=True,
+                    force_standard=False,
+                    ic_prefix="",
+                    ic_include_context=True,
                 )
 
             # Ustaw flagę inicjalizacji
@@ -148,7 +152,7 @@ class CommandLoggerService:
         """
         with self._lock:
             if name in self._loggers:
-                return self._loggers[name]
+                return cast(logging.Logger, self._loggers[name])
 
             # Stwórz nowy logger
             logger = logging.getLogger(f"mancer.command.{name}")

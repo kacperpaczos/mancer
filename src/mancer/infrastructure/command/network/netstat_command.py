@@ -3,14 +3,14 @@ from typing import Dict, List, Optional
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
 from ....domain.model.data_format import DataFormat
-from ..base_command import BaseCommand
+from ..base_command import BaseCommand, ParamValue
 
 
 class NetstatCommand(BaseCommand):
     """Komenda netstat - wyświetla połączenia sieciowe"""
 
     def __init__(self):
-        super().__init__("netstat")
+        super().__init__(name="netstat")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę netstat"""
@@ -33,37 +33,37 @@ class NetstatCommand(BaseCommand):
 
     def with_option(self, option: str) -> "NetstatCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
+        new_instance: NetstatCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "NetstatCommand":
+    def with_param(self, name: str, value: ParamValue) -> "NetstatCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
+        new_instance: NetstatCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "NetstatCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
+        new_instance: NetstatCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "NetstatCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
+        new_instance: NetstatCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "NetstatCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
-        new_instance._args.append(arg)
+        new_instance: NetstatCommand = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "NetstatCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: NetstatCommand = self.clone()  # type: ignore
+        new_instance: NetstatCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..model.command_result import CommandResult
 
@@ -20,6 +20,20 @@ class BackendInterface(ABC):
     @abstractmethod
     def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
         """Parsuje wyjście komendy do standardowego formatu"""
+        pass
+
+    @abstractmethod
+    def execute(
+        self,
+        command: str,
+        input_data: Optional[str] = None,
+        working_dir: Optional[str] = None,
+        timeout: Optional[int] = 10,
+    ) -> Tuple[int, str, str]:
+        """Execute the command and return (exit_code, stdout, stderr).
+
+        Used by Command classes.
+        """
         pass
 
     @abstractmethod

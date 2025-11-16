@@ -2,16 +2,98 @@ import shlex
 import subprocess
 import threading
 import time
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
+
+from pydantic import BaseModel, Field
 
 from ...domain.interface.backend_interface import BackendInterface
 from ...domain.model.command_result import CommandResult
 
 
-@dataclass
-class SSHSession:
+class SshBackendProtocol(Protocol):
+    """Protocol defining the interface for SSH backend implementations."""
+
+    def execute_command(
+        self,
+        command: str,
+        working_dir: Optional[str] = None,
+        env_vars: Optional[Dict[str, str]] = None,
+    ) -> CommandResult:
+        """Execute a command on the SSH backend."""
+        ...
+
+    def parse_output(self, command: str, raw_output: str, exit_code: int, error_output: str = "") -> CommandResult:
+        """Parse command output into standard format."""
+        ...
+
+    def execute(
+        self,
+        command: str,
+        input_data: Optional[str] = None,
+        working_dir: Optional[str] = None,
+        timeout: Optional[int] = 10,
+    ) -> Tuple[int, str, str]:
+        """Execute command and return (exit_code, stdout, stderr)."""
+        ...
+
+    def build_command_string(
+        self,
+        command_name: str,
+        options: List[str],
+        params: Dict[str, Any],
+        flags: List[str],
+    ) -> str:
+        """Build command string compatible with this backend."""
+        ...
+
+    def create_session(self, session_id: str, **kwargs: "SSHSessionConfigDict") -> "SSHSession":
+        """Create a new SSH session."""
+        ...
+
+    def close_session(self, session_id: str) -> None:
+        """Close an SSH session."""
+        ...
+
+    def transfer_file(self, local_path: str, remote_path: str, direction: str = "put") -> "SCPTransfer":
+        """Transfer file via SCP."""
+        ...
+
+    def set_fingerprint_callback(self, callback: Any) -> None:
+        """Set fingerprint callback."""
+        ...
+
+    def check_host_key(self) -> Tuple[bool, str, str]:
+        """Check host key."""
+        ...
+
+    def test_connection(self) -> bool:
+        """Test connection."""
+        ...
+
+
+class SSHSessionConfigDict(TypedDict, total=False):
+    """TypedDict for SSH session configuration parameters."""
+
+    hostname: str
+    username: str
+    port: int
+    key_filename: Optional[str]
+    password: Optional[str]
+    passphrase: Optional[str]
+    allow_agent: bool
+    look_for_keys: bool
+    compress: bool
+    timeout: Optional[int]
+    gssapi_auth: bool
+    gssapi_kex: bool
+    gssapi_delegate_creds: bool
+    ssh_options: Optional[Dict[str, str]]
+    proxy_config: Optional[Dict[str, Any]]
+    fingerprint_callback: Optional[Callable]
+
+
+class SSHSession(BaseModel):
     """Reprezentuje sesję SSH"""
 
     id: str
@@ -19,13 +101,12 @@ class SSHSession:
     username: str
     port: int
     status: str = "disconnected"  # connected, disconnected, connecting, error
-    created_at: datetime = field(default_factory=datetime.now)
-    last_activity: datetime = field(default_factory=datetime.now)
-    connection_info: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = Field(default_factory=datetime.now)
+    last_activity: datetime = Field(default_factory=datetime.now)
+    connection_info: Dict[str, Any] = Field(default_factory=dict)
 
 
-@dataclass
-class SCPTransfer:
+class SCPTransfer(BaseModel):
     """Reprezentuje transfer pliku przez SCP"""
 
     id: str
@@ -36,7 +117,7 @@ class SCPTransfer:
     progress: float = 0.0
     bytes_transferred: int = 0
     total_bytes: int = 0
-    start_time: datetime = field(default_factory=datetime.now)
+    start_time: datetime = Field(default_factory=datetime.now)
     end_time: Optional[datetime] = None
 
 
@@ -123,19 +204,26 @@ class SshBackend(BackendInterface):
         except Exception:
             self.logger = None
 
-    def create_session(self, session_id: str, **kwargs) -> SSHSession:
+    def create_session(
+        self,
+        session_id: str,
+        hostname: Optional[str] = None,
+        username: Optional[str] = None,
+        port: Optional[int] = None,
+        **kwargs: Any,
+    ) -> SSHSession:
         """Tworzy nową sesję SSH"""
         with self.session_lock:
             # Usuń fingerprint_callback z kwargs żeby nie trafiło do SSHSession
             if "fingerprint_callback" in kwargs:
                 del kwargs["fingerprint_callback"]
 
-            # Wyciągnij podstawowe parametry z kwargs
-            hostname = kwargs.pop("hostname", self.hostname)
-            username = kwargs.pop("username", self.username)
-            port = kwargs.pop("port", self.port)
+            # Użyj podanych parametrów lub wartości domyślnych
+            host_str = hostname or self.hostname or ""
+            user_str = username or self.username or ""
+            port_int = int(port or self.port or 22)
 
-            session = SSHSession(id=session_id, hostname=hostname, username=username, port=port)
+            session = SSHSession(id=session_id, hostname=host_str, username=user_str, port=port_int)
             self.sessions[session_id] = session
             return session
 
@@ -162,9 +250,8 @@ class SshBackend(BackendInterface):
                     if hasattr(self, "logger") and self.logger:
                         self.logger.warning(f"Nie udało się uruchomić sesji interaktywnej: {_e}")
                 return True
-            else:
-                session.status = "error"
-                return False
+            session.status = "error"
+            return False
         except Exception:
             session.status = "error"
             return False
@@ -187,12 +274,12 @@ class SshBackend(BackendInterface):
 
         return True
 
-    def set_fingerprint_callback(self, callback: Callable):
+    def set_fingerprint_callback(self, callback: Callable) -> None:
         """Ustawia callback do obsługi fingerprint prompts"""
         with self.fingerprint_callback_lock:
             self.fingerprint_callback = callback
 
-    def set_output_callback(self, callback: Callable[[str, str], None]):
+    def set_output_callback(self, callback: Callable[[str, str], None]) -> None:
         """Ustawia callback dla wyjścia interaktywnej sesji SSH (session_id, chunk)."""
         self.output_callback = callback
 
@@ -218,6 +305,17 @@ class SshBackend(BackendInterface):
             self.active_session = session_id
             return True
         return False
+
+    def execute(
+        self,
+        command: str,
+        input_data: Optional[str] = None,
+        working_dir: Optional[str] = None,
+        timeout: Optional[int] = 10,
+    ) -> Tuple[int, str, str]:
+        """Execute the command and return (exit_code, stdout, stderr)."""
+        result = self.execute_command(command, working_dir, env_vars=None)
+        return (result.exit_code, result.raw_output, result.error_message or "")
 
     def execute_command(
         self,
@@ -308,36 +406,35 @@ class SshBackend(BackendInterface):
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
                 return self._execute_with_fingerprint_handling(ssh_command, working_dir, env_vars, fingerprint_callback)
-            else:
-                # Standardowe wykonanie SSH (dla jednorazowych komend).
-                # Jeśli interaktywna powłoka działa, wyślij komendę do niej i zwróć sukces
-                # natychmiast (output trafi przez callback terminala).
-                if session_id in self.shells and self.shells[session_id].get("alive"):
-                    sent = self.send_input(session_id, command + "\n")
-                    return CommandResult(
-                        success=sent,
-                        raw_output="",
-                        structured_output=[],
-                        exit_code=0 if sent else 1,
-                        error_message=None if sent else "Interactive shell not available",
-                    )
-                # Brak interaktywnej sesji – jednorazowe uruchomienie
-                result = subprocess.run(
-                    ssh_command,
-                    capture_output=True,
-                    text=True,
-                    timeout=self.timeout or 30,
-                    cwd=working_dir,
-                    env=env_vars,
-                )
-
+            # Standardowe wykonanie SSH (dla jednorazowych komend).
+            # Jeśli interaktywna powłoka działa, wyślij komendę do niej i zwróć sukces
+            # natychmiast (output trafi przez callback terminala).
+            if session_id in self.shells and self.shells[session_id].get("alive"):
+                sent = self.send_input(session_id, command + "\n")
                 return CommandResult(
-                    success=result.returncode == 0,
-                    raw_output=result.stdout,
-                    structured_output=result.stdout.split("\n") if result.stdout else [],
-                    exit_code=result.returncode,
-                    error_message=result.stderr if result.stderr else None,
+                    success=sent,
+                    raw_output="",
+                    structured_output=[],
+                    exit_code=0 if sent else 1,
+                    error_message=None if sent else "Interactive shell not available",
                 )
+            # Brak interaktywnej sesji – jednorazowe uruchomienie
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout or 30,
+                cwd=working_dir,
+                env=env_vars,
+            )
+
+            return CommandResult(
+                success=result.returncode == 0,
+                raw_output=result.stdout,
+                structured_output=result.stdout.split("\n") if result.stdout else [],
+                exit_code=result.returncode,
+                error_message=result.stderr if result.stderr else None,
+            )
 
         except subprocess.TimeoutExpired:
             return CommandResult(
@@ -689,7 +786,7 @@ class SshBackend(BackendInterface):
 
         return transfer
 
-    def _execute_scp_upload(self, transfer: SCPTransfer, session: SSHSession):
+    def _execute_scp_upload(self, transfer: SCPTransfer, session: SSHSession) -> None:
         """Wykonuje upload SCP"""
         transfer.status = "transferring"
 
@@ -722,7 +819,7 @@ class SshBackend(BackendInterface):
 
         transfer.end_time = datetime.now()
 
-    def _execute_scp_download(self, transfer: SCPTransfer, session: SSHSession):
+    def _execute_scp_download(self, transfer: SCPTransfer, session: SSHSession) -> None:
         """Wykonuje download SCP"""
         transfer.status = "transferring"
 
@@ -830,16 +927,15 @@ class SshBackend(BackendInterface):
             if fingerprint_callback:
                 # Użyj interaktywnej obsługi fingerprinta
                 return self._execute_with_fingerprint_handling(ssh_command, None, None, fingerprint_callback).success
-            else:
-                # Standardowy test
-                result = subprocess.run(
-                    ssh_command,
-                    capture_output=True,
-                    text=True,
-                    timeout=15,  # Krótki timeout dla testu
-                )
+            # Standardowy test
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=15,  # Krótki timeout dla testu
+            )
 
-                return result.returncode == 0
+            return result.returncode == 0
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
@@ -1012,3 +1108,76 @@ class SshBackend(BackendInterface):
         except Exception:
             pass
         self.shells.pop(session_id, None)
+
+
+class SshBackendFactory:
+    """Factory for creating SSH backend instances."""
+
+    @staticmethod
+    def create_backend(
+        hostname: str = "",
+        username: Optional[str] = None,
+        port: int = 22,
+        key_filename: Optional[str] = None,
+        password: Optional[str] = None,
+        passphrase: Optional[str] = None,
+        allow_agent: bool = True,
+        look_for_keys: bool = True,
+        compress: bool = False,
+        timeout: Optional[int] = None,
+        gssapi_auth: bool = False,
+        gssapi_kex: bool = False,
+        gssapi_delegate_creds: bool = False,
+        ssh_options: Optional[Dict[str, str]] = None,
+        proxy_config: Optional[Dict[str, Any]] = None,
+    ) -> "SshBackend":
+        """Create a concrete SSH backend instance.
+
+        Returns:
+            SshBackendProtocol: A concrete implementation of the SSH backend.
+        """
+        return SshBackend(
+            hostname=hostname,
+            username=username,
+            port=port,
+            key_filename=key_filename,
+            password=password,
+            passphrase=passphrase,
+            allow_agent=allow_agent,
+            look_for_keys=look_for_keys,
+            compress=compress,
+            timeout=timeout,
+            gssapi_auth=gssapi_auth,
+            gssapi_kex=gssapi_kex,
+            gssapi_delegate_creds=gssapi_delegate_creds,
+            ssh_options=ssh_options,
+            proxy_config=proxy_config,
+        )
+
+    @staticmethod
+    def create_from_config(config: SSHSessionConfigDict) -> "SshBackend":
+        """Create SSH backend from configuration dictionary.
+
+        Args:
+            config: SSH session configuration.
+
+        Returns:
+            SshBackendProtocol: Configured SSH backend instance.
+        """
+        return SshBackendFactory.create_backend(
+            hostname=config.get("hostname", ""),
+            username=config.get("username"),
+            port=config.get("port", 22),
+            key_filename=config.get("key_filename"),
+            password=config.get("password"),
+            passphrase=config.get("passphrase"),
+            allow_agent=config.get("allow_agent", True),
+            look_for_keys=config.get("look_for_keys", True),
+            compress=config.get("compress", False),
+            timeout=config.get("timeout"),
+            gssapi_auth=config.get("gssapi_auth", False),
+            gssapi_kex=config.get("gssapi_kex", False),
+            gssapi_delegate_creds=config.get("gssapi_delegate_creds", False),
+            ssh_options=config.get("ssh_options"),
+            proxy_config=config.get("proxy_config"),
+        )

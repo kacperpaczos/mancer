@@ -1,13 +1,13 @@
 import logging
 import re
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
+
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ToolVersion:
+class ToolVersion(BaseModel):
     """Reprezentuje informacje o wersji narzędzia systemowego (komendy bash)"""
 
     name: str  # Nazwa narzędzia (np. 'ls', 'grep')
@@ -49,15 +49,14 @@ class ToolVersion:
         return cls(name=name, version=version, raw_version_output=version_output)
 
 
-@dataclass
-class ToolVersionRegistry:
+class ToolVersionRegistry(BaseModel):
     """Rejestr wersji narzędzi systemowych"""
 
     # Słownik mapujący nazwę narzędzia na dozwolone wersje
-    allowed_versions: Dict[str, Set[str]] = field(default_factory=dict)
+    allowed_versions: Dict[str, Set[str]] = Field(default_factory=dict)
 
     # Bufor wykrytych wersji narzędzi
-    detected_versions: Dict[str, ToolVersion] = field(default_factory=dict)
+    detected_versions: Dict[str, ToolVersion] = Field(default_factory=dict)
 
     def register_allowed_version(self, tool_name: str, version: str) -> None:
         """

@@ -2,12 +2,12 @@
 Moduł definiujący klasy konfiguracyjne dla RemoteConfigManager.
 """
 
-from dataclasses import dataclass
 from typing import List
 
+from pydantic import BaseModel
 
-@dataclass
-class ServerConfig:
+
+class ServerConfig(BaseModel):
     """
     Klasa przechowująca konfigurację serwera.
     """
@@ -20,8 +20,7 @@ class ServerConfig:
     services: List[str]
 
 
-@dataclass
-class AppConfig:
+class AppConfig(BaseModel):
     """
     Klasa przechowująca konfigurację aplikacji.
     """

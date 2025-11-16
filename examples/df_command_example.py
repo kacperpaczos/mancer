@@ -16,7 +16,6 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.mancer.domain.model.command_context import CommandContext
-from src.mancer.domain.model.tool_version import ToolVersion
 from src.mancer.domain.service.tool_version_service import ToolVersionService
 from src.mancer.infrastructure.command.system.df_command import DfCommand
 

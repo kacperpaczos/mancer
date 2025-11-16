@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -10,7 +12,7 @@ class PsCommand(BaseCommand):
     """Command implementation for 'ps' to display running processes."""
 
     # Tool name
-    tool_name = "ps"
+    tool_name: ClassVar[str] = "ps"
 
     def __init__(self, name: str = "ps"):
         """Initialize ps command.
@@ -18,12 +20,12 @@ class PsCommand(BaseCommand):
         Args:
             name: Command name (default: "ps").
         """
-        super().__init__(name)
+        super().__init__(name=name)
         self.preferred_data_format = DataFormat.TABLE
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the ps command and return a structured result."""
-        super().execute(context, input_result)  # type: ignore
+        # BaseCommand.execute() is abstract, so we don't call super()
 
         command_str = self.build_command()
         backend = self._get_backend(context)
@@ -101,37 +103,37 @@ class PsCommand(BaseCommand):
 
     def with_option(self, option: str) -> "PsCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "PsCommand":
+    def with_param(self, name: str, value: Any) -> "PsCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "PsCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "PsCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "PsCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
-        new_instance._args.append(arg)
+        new_instance: PsCommand = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "PsCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: PsCommand = self.clone()  # type: ignore  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 
@@ -155,7 +157,7 @@ class PsCommand(BaseCommand):
 
     def search(self, pattern: str) -> "PsCommand":
         """Pipe ps output through grep with the given pattern."""
-        new_instance: PsCommand = self.clone()  # type: ignore
+        new_instance: PsCommand = self.clone()
         new_instance.pipeline = f"grep {pattern}"
         return new_instance
 

@@ -6,7 +6,7 @@ from ..domain.model.command_context import CommandContext, ExecutionMode
 from ..domain.model.command_result import CommandResult
 from ..domain.service.command_chain_service import CommandChain
 from ..infrastructure.backend.bash_backend import BashBackend
-from ..infrastructure.backend.ssh_backend import SshBackend
+from ..infrastructure.backend.ssh_backend import SshBackendFactory
 from ..infrastructure.factory.command_factory import CommandFactory
 from ..infrastructure.logging.mancer_logger import MancerLogger
 from .command_cache import CommandCache
@@ -332,7 +332,7 @@ class ShellRunner:
             rh = self._context.remote_host
             if rh is None:
                 raise ValueError("Remote host not configured")
-            return SshBackend(
+            return SshBackendFactory.create_backend(
                 hostname=rh.host,
                 username=rh.user,
                 password=rh.password,
@@ -345,9 +345,8 @@ class ShellRunner:
                 gssapi_delegate_creds=rh.gssapi_delegate_creds,
                 ssh_options=rh.ssh_options,
             )
-        else:
-            # Use local bash backend
-            return BashBackend()
+        # Use local bash backend
+        return BashBackend()
 
     def enable_cache(self, max_size: int = 100, auto_refresh: bool = False, refresh_interval: int = 5) -> None:
         """
@@ -387,17 +386,16 @@ class ShellRunner:
             stats = self._command_cache.get_statistics()
             stats["enabled"] = True
             return stats
-        else:
-            return {
-                "enabled": False,
-                "total_commands": 0,
-                "success_count": 0,
-                "error_count": 0,
-                "cache_size": 0,
-                "max_size": 0,
-                "auto_refresh": False,
-                "refresh_interval": 0,
-            }
+        return {
+            "enabled": False,
+            "total_commands": 0,
+            "success_count": 0,
+            "error_count": 0,
+            "cache_size": 0,
+            "max_size": 0,
+            "auto_refresh": False,
+            "refresh_interval": 0,
+        }
 
     def get_command_history(self, limit: Optional[int] = None, success_only: bool = False) -> List[Any]:
         """
@@ -471,7 +469,7 @@ class ShellRunner:
         from ..infrastructure.command.system.echo_command import EchoCommand
 
         echo = EchoCommand()
-        echo.command_str = command_str  # type: ignore
+        echo.command_str = command_str
 
         def _build_command():
             return command_str

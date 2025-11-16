@@ -7,7 +7,7 @@ class SystemctlCommand(BaseCommand):
     """Klasa do obsługi komend systemctl"""
 
     def __init__(self):
-        super().__init__("systemctl")
+        super().__init__(command_name="systemctl")
 
     def with_sudo(self, password: Optional[str] = None) -> "SystemctlCommand":
         """

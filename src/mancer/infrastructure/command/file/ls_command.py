@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -15,7 +17,7 @@ class LsCommand(BaseCommand):
         Args:
             name: Command name (default: "ls").
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę ls"""
@@ -29,14 +31,20 @@ class LsCommand(BaseCommand):
         # Pobieramy odpowiedni backend
         backend = self._get_backend(context)
 
-        # Wykonujemy komendę
-        result = backend.execute_command(cmd_str, working_dir=context.current_directory)
+        # Wykonujemy komendę używając _prepare_result z BaseCommand
+        exit_code, output, error = backend.execute(cmd_str, input_data=None)
 
-        # Parsujemy surowy wynik do formatu strukturalnego
-        if result.success:
-            result.structured_output = self._parse_output(result.raw_output)
+        # Check if command was successful
+        success = exit_code == 0
+        error_message = error if error and not success else None
 
-        return result
+        # Use _prepare_result from BaseCommand which handles DataFrame conversion
+        return self._prepare_result(
+            raw_output=output,
+            success=success,
+            exit_code=exit_code,
+            error_message=error_message,
+        )
 
     def _format_parameter(self, name: str, value: Any) -> str:
         """Specjalne formatowanie dla ls"""
@@ -44,8 +52,8 @@ class LsCommand(BaseCommand):
             return str(value)
         return super()._format_parameter(name, value)
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parsuje wyjście ls do listy słowników z informacjami o plikach"""
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parsuje wyjście ls do DataFrame z informacjami o plikach"""
         result = []
         lines = raw_output.strip().split("\n")
 
@@ -76,43 +84,43 @@ class LsCommand(BaseCommand):
             elif len(parts) >= 1:  # Format krótkiego listingu
                 result.append({"name": parts[0]})
 
-        return result
+        return pl.DataFrame(result) if result else pl.DataFrame()
 
     # Przepisane metody buildera dla poprawnego typu zwracanego
 
     def with_option(self, option: str) -> "LsCommand":
         """Return a new instance with an added short/long option (e.g., -l)."""
-        new_instance: LsCommand = self.clone()  # type: ignore
+        new_instance: LsCommand = self.clone()
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "LsCommand":
+    def with_param(self, name: str, value: Any) -> "LsCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
-        new_instance: LsCommand = self.clone()  # type: ignore
+        new_instance: LsCommand = self.clone()
         new_instance.parameters[name] = value
         return new_instance
 
     def with_flag(self, flag: str) -> "LsCommand":
         """Return a new instance with a boolean flag (e.g., --recursive)."""
-        new_instance: LsCommand = self.clone()  # type: ignore
+        new_instance: LsCommand = self.clone()
         new_instance.flags.append(flag)
         return new_instance
 
     def with_sudo(self) -> "LsCommand":
         """Return a new instance marked to require sudo."""
-        new_instance: LsCommand = self.clone()  # type: ignore
+        new_instance: LsCommand = self.clone()
         new_instance.requires_sudo = True
         return new_instance
 
     def add_arg(self, arg: str) -> "LsCommand":
         """Return a new instance with an added positional argument."""
-        new_instance: LsCommand = self.clone()  # type: ignore
-        new_instance._args.append(arg)
+        new_instance: LsCommand = self.clone()
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "LsCommand":
         """Return a new instance with a preferred output data format."""
-        new_instance: LsCommand = self.clone()  # type: ignore
+        new_instance: LsCommand = self.clone()
         new_instance.preferred_data_format = format_type
         return new_instance
 

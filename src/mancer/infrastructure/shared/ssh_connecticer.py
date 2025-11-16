@@ -127,7 +127,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)  # type: ignore
+            result = super().execute(cmd)
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku
@@ -192,7 +192,7 @@ class SSHConnecticer(SshBackend):
                 cmd = f"sshpass -p '{self.password}' {cmd}"
 
             # Wykonujemy jako komendę lokalną
-            result = super().execute(cmd)  # type: ignore
+            result = super().execute(cmd)
             exit_code, stdout, stderr = result
 
             # Sprawdzenie wyniku

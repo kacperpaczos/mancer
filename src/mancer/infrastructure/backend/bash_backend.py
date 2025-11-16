@@ -119,25 +119,24 @@ class BashBackend(BackendInterface):
 
                 # Parsowanie wyniku
                 return self.parse_output(command, raw_output, exit_code, error_output)
-            else:
-                # Standardowe wykonanie bez live output
-                completed_process = subprocess.run(
-                    command,
-                    shell=True,
-                    text=True,
-                    capture_output=True,
-                    cwd=working_dir,
-                    env=process_env,
-                    input=stdin,
-                )
+            # Standardowe wykonanie bez live output
+            completed_process = subprocess.run(
+                command,
+                shell=True,
+                text=True,
+                capture_output=True,
+                cwd=working_dir,
+                env=process_env,
+                input=stdin,
+            )
 
-                # Parsowanie wyniku
-                return self.parse_output(
-                    command,
-                    completed_process.stdout or "",
-                    completed_process.returncode,
-                    completed_process.stderr or "",
-                )
+            # Parsowanie wyniku
+            return self.parse_output(
+                command,
+                completed_process.stdout or "",
+                completed_process.returncode,
+                completed_process.stderr or "",
+            )
 
         except Exception as e:
             # Obsługa błędów

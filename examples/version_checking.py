@@ -14,7 +14,6 @@ Run this script with administrative privileges if you want to check tools that r
 import logging
 import os
 import sys
-from typing import Any, Dict
 
 # Configure logging
 logging.basicConfig(
@@ -31,11 +30,8 @@ from src.mancer.domain.service.tool_version_service import ToolVersionService
 
 # Create a sample version-adaptive command to demonstrate behavior changes
 from src.mancer.infrastructure.command.base_command import BaseCommand
-from src.mancer.infrastructure.command.system.cat_command import CatCommand
 from src.mancer.infrastructure.command.system.df_command import DfCommand
-from src.mancer.infrastructure.command.system.grep_command import GrepCommand
 from src.mancer.infrastructure.command.system.ls_command import LsCommand
-from src.mancer.infrastructure.command.system.ps_command import PsCommand
 
 logger = logging.getLogger(__name__)
 

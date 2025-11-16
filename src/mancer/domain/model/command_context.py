@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExecutionMode(Enum):
@@ -14,8 +15,7 @@ class ExecutionMode(Enum):
     REMOTE = auto()
 
 
-@dataclass
-class RemoteHostInfo:
+class RemoteHostInfo(BaseModel):
     """Remote host connection parameters.
 
     Attributes:
@@ -51,11 +51,10 @@ class RemoteHostInfo:
     use_sudo: bool = False
     sudo_password: Optional[str] = None
     # Extra SSH options
-    ssh_options: Dict[str, str] = field(default_factory=dict)
+    ssh_options: Dict[str, str] = Field(default_factory=dict)
 
 
-@dataclass
-class CommandContext:
+class CommandContext(BaseModel):
     """Command execution context.
 
     Attributes:
@@ -67,10 +66,12 @@ class CommandContext:
         remote_host: Remote host parameters when in REMOTE mode.
     """
 
+    model_config = ConfigDict(extra="allow")  # Allow extra fields for mocking in tests
+
     current_directory: str = "."
-    environment_variables: Dict[str, str] = field(default_factory=dict)
-    command_history: List[str] = field(default_factory=list)
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    environment_variables: Dict[str, str] = Field(default_factory=dict)
+    command_history: List[str] = Field(default_factory=list)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
     execution_mode: ExecutionMode = ExecutionMode.LOCAL
     remote_host: Optional[RemoteHostInfo] = None
 

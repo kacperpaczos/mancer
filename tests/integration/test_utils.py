@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 # Dodaj ścieżkę do Mancer
 sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
@@ -237,14 +237,13 @@ except Exception as e:
         try:
             if "MANCER_TEST_RESULTS:" in stdout:
                 json_part = stdout.split("MANCER_TEST_RESULTS:")[1].strip()
-                return json.loads(json_part)
-            else:
-                return {
-                    "error": "No test results found",
-                    "stdout": stdout,
-                    "stderr": stderr,
-                    "exit_code": exit_code,
-                }
+                return cast(Dict[str, Any], json.loads(json_part))
+            return {
+                "error": "No test results found",
+                "stdout": stdout,
+                "stderr": stderr,
+                "exit_code": exit_code,
+            }
         except json.JSONDecodeError:
             return {
                 "error": "Failed to parse test results",
@@ -300,7 +299,7 @@ except Exception as e:
         return metrics
 
     @staticmethod
-    def save_test_results(results: Dict, output_file: str = "mancer_docker_test_results.json"):
+    def save_test_results(results: Dict, output_file: str = "mancer_docker_test_results.json") -> None:
         """
         Zapisuje wyniki testów do pliku JSON
 

@@ -13,7 +13,6 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Dict, List
 
 # Dodanie ścieżki do modułów Mancer
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -27,7 +26,6 @@ from src.mancer.infrastructure.command.system.cat_command import CatCommand
 from src.mancer.infrastructure.command.system.df_command import DfCommand
 from src.mancer.infrastructure.command.system.grep_command import GrepCommand
 from src.mancer.infrastructure.command.system.ls_command import LsCommand
-from src.mancer.infrastructure.command.system.ps_command import PsCommand
 
 # Konfiguracja podstawowego loggera dla skryptu
 logging.basicConfig(

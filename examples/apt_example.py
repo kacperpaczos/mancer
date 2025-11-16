@@ -1,5 +1,3 @@
-import getpass
-import time
 from typing import Optional
 
 from mancer.application.commands.apt_command import AptCommand

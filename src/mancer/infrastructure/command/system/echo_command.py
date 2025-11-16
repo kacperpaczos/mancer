@@ -3,11 +3,13 @@ from typing import Optional
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
 from ....domain.model.data_format import DataFormat
-from ..base_command import BaseCommand
+from ..base_command import BaseCommand, ParamValue
 
 
 class EchoCommand(BaseCommand):
     """Command implementation for 'echo' to print text to stdout."""
+
+    command_str: Optional[str] = None
 
     def __init__(self, name: str = "echo", message: str = ""):
         """Initialize echo command.
@@ -16,10 +18,10 @@ class EchoCommand(BaseCommand):
             name: Command name (default: "echo").
             message: Optional text to print.
         """
-        super().__init__(name)
+        super().__init__(name=name)
         if message:
             # Bezpośrednio dodaj do _args zamiast używać add_arg (które wywołuje clone)
-            self._args.append(message)
+            self.args.append(message)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Execute the echo command."""
@@ -46,7 +48,7 @@ class EchoCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "EchoCommand":
+    def with_param(self, name: str, value: ParamValue) -> "EchoCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: EchoCommand = self.clone()
         new_instance.parameters[name] = value
@@ -67,7 +69,7 @@ class EchoCommand(BaseCommand):
     def add_arg(self, arg: str) -> "EchoCommand":
         """Return a new instance with an added positional argument."""
         new_instance: EchoCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "EchoCommand":
@@ -111,5 +113,5 @@ class EchoCommand(BaseCommand):
 
     def clone(self) -> "EchoCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: EchoCommand = super().clone()  # type: ignore
+        new_instance: EchoCommand = super().clone()
         return new_instance

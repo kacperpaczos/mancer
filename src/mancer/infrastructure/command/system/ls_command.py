@@ -1,4 +1,8 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import ClassVar, Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -9,7 +13,7 @@ class LsCommand(BaseCommand):
     """Command implementation for the 'ls' command"""
 
     # Zdefiniuj nazwę narzędzia
-    tool_name = "ls"
+    tool_name: ClassVar[str] = "ls"
 
     def __init__(self, name: str = "ls"):
         """Initialize ls command.
@@ -17,7 +21,7 @@ class LsCommand(BaseCommand):
         Args:
             name: Command name (default: "ls").
         """
-        super().__init__(name)
+        super().__init__(name=name)
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the ls command"""
@@ -53,10 +57,10 @@ class LsCommand(BaseCommand):
             metadata=metadata,
         )
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parse ls command output into structured format"""
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parse ls command output into polars DataFrame"""
         lines = raw_output.strip().split("\n")
-        results = []
+        records = []
 
         for line in lines:
             if not line.strip():
@@ -83,8 +87,9 @@ class LsCommand(BaseCommand):
             # if filename in ['.', '..']:
             #     continue
 
-            results.append(
+            records.append(
                 {
+                    "raw_line": line,  # Preserve original line for rendering
                     "permissions": permissions,
                     "links": links,
                     "owner": owner,
@@ -100,4 +105,4 @@ class LsCommand(BaseCommand):
                 }
             )
 
-        return results
+        return pl.DataFrame(records)

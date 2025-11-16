@@ -3,16 +3,39 @@ Model profilu SSH - przechowuje konfigurację połączenia
 """
 
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
+
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 
-@dataclass
-class SSHProfile:
+class SSHProfileDict(TypedDict, total=False):
+    """TypedDict representation of SSH profile for serialization."""
+
+    id: str
+    name: str
+    description: str
+    hostname: str
+    username: str
+    port: int
+    key_filename: Optional[str]
+    proxy_config: Optional[Dict[str, Any]]
+    ssh_options: Dict[str, str]
+    created_at: datetime
+    updated_at: datetime
+    last_used: Optional[datetime]
+    use_count: int
+    tags: List[str]
+    category: str
+    save_password: bool
+    password_hash: Optional[str]
+
+
+class SSHProfile(BaseModel):
     """Profil połączenia SSH"""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
     hostname: str = ""
@@ -20,95 +43,32 @@ class SSHProfile:
     port: int = 22
     key_filename: Optional[str] = None
     proxy_config: Optional[Dict[str, Any]] = None
-    ssh_options: Dict[str, str] = field(default_factory=dict)
+    ssh_options: Dict[str, str] = Field(default_factory=dict)
 
     # Metadane
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
     last_used: Optional[datetime] = None
     use_count: int = 0
 
     # Tagi i kategorie
-    tags: List[str] = field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
     category: str = "default"
 
     # Ustawienia bezpieczeństwa
     save_password: bool = False  # Czy zapisywać hasło
     password_hash: Optional[str] = None  # Hash hasła (nie same hasło)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> SSHProfileDict:
         """Konwertuje profil do słownika"""
-        # Bezpieczne konwersje dla proxy_config i ssh_options
-        safe_proxy_config = None
-        if self.proxy_config:
-            try:
-                # Konwertuj do prostych typów
-                safe_proxy_config = {}
-                for key, value in self.proxy_config.items():
-                    if isinstance(value, (str, int, float, bool, type(None))):
-                        safe_proxy_config[str(key)] = value
-                    else:
-                        safe_proxy_config[str(key)] = str(value)
-            except Exception:
-                safe_proxy_config = {"error": "Nie można skonwertować proxy_config"}
-
-        # Konwersja ssh_options do bezpiecznych typów bez zagnieżdżonych try/except
-        safe_ssh_options = {
-            str(key): (value if isinstance(value, (str, int, float, bool, type(None))) else str(value))
-            for key, value in (self.ssh_options or {}).items()
-        }
-
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "hostname": self.hostname,
-            "username": self.username,
-            "port": self.port,
-            "key_filename": self.key_filename,
-            "proxy_config": safe_proxy_config,
-            "ssh_options": safe_ssh_options,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "last_used": self.last_used.isoformat() if self.last_used else None,
-            "use_count": self.use_count,
-            "tags": self.tags,
-            "category": self.category,
-            "save_password": self.save_password,
-            "password_hash": self.password_hash,
-        }
+        return cast(SSHProfileDict, self.model_dump())
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SSHProfile":
+    def from_dict(cls, data: SSHProfileDict) -> "SSHProfile":
         """Tworzy profil ze słownika"""
-        profile = cls()
-        profile.id = data.get("id", str(uuid.uuid4()))
-        profile.name = data.get("name", "")
-        profile.description = data.get("description", "")
-        profile.hostname = data.get("hostname", "")
-        profile.username = data.get("username", "")
-        profile.port = data.get("port", 22)
-        profile.key_filename = data.get("key_filename")
-        profile.proxy_config = data.get("proxy_config")
-        profile.ssh_options = data.get("ssh_options", {})
+        return cls(**data)
 
-        # Parsuj daty
-        if "created_at" in data:
-            profile.created_at = datetime.fromisoformat(data["created_at"])
-        if "updated_at" in data:
-            profile.updated_at = datetime.fromisoformat(data["updated_at"])
-        if "last_used" in data and data["last_used"]:
-            profile.last_used = datetime.fromisoformat(data["last_used"])
-
-        profile.use_count = data.get("use_count", 0)
-        profile.tags = data.get("tags", [])
-        profile.category = data.get("category", "default")
-        profile.save_password = data.get("save_password", False)
-        profile.password_hash = data.get("password_hash")
-
-        return profile
-
-    def update_usage(self):
+    def update_usage(self) -> None:
         """Aktualizuje statystyki użycia"""
         self.last_used = datetime.now()
         self.use_count += 1
@@ -136,7 +96,7 @@ class SSHProfile:
         """Bezpieczny hash"""
         return hash(self.id)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Bezpieczne porównanie"""
         if not isinstance(other, SSHProfile):
             return False

@@ -1,8 +1,9 @@
 import threading
 import uuid
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 
-from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackend, SSHSession
+from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackendFactory, SSHSession, SSHSessionConfigDict
+from ..model.command_result import CommandResult
 from ..model.config_manager import ConfigManager
 
 if TYPE_CHECKING:
@@ -14,7 +15,7 @@ class SSHSessionService:
 
     def __init__(self, config_manager: Optional[ConfigManager] = None):
         self.config_manager = config_manager
-        self.ssh_backend = SshBackend()
+        self.ssh_backend = SshBackendFactory.create_backend()
         self.sessions: Dict[str, SSHSession] = {}
         self.transfers: Dict[str, SCPTransfer] = {}
         self.lock = threading.Lock()
@@ -47,7 +48,7 @@ class SSHSessionService:
         proxy_config: Optional[Dict[str, Any]] = None,
         request_password_callback: Optional[Callable] = None,
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: SSHSessionConfigDict,
     ) -> SSHSession:
         """Tworzy nową sesję SSH"""
         session_id = str(uuid.uuid4())
@@ -57,15 +58,33 @@ class SSHSessionService:
         if "fingerprint_callback" in kwargs_copy:
             del kwargs_copy["fingerprint_callback"]
 
+        # Wyciągnij timeout i sprawdź typ
+        timeout_value: object = kwargs_copy.get("timeout", 30)
+        timeout_int: int = 30
+        if isinstance(timeout_value, int):
+            timeout_int = timeout_value
+        elif isinstance(timeout_value, str):
+            try:
+                timeout_int = int(timeout_value)
+            except ValueError:
+                pass
+
         # Konfiguruj backend dla tej sesji
-        session_backend = SshBackend(
+        session_backend = SshBackendFactory.create_backend(
             hostname=hostname,
             username=username,
             port=port,
             key_filename=key_filename,
             password=password,
             proxy_config=proxy_config,
-            **kwargs_copy,
+            allow_agent=bool(kwargs_copy.get("allow_agent", True)),
+            look_for_keys=bool(kwargs_copy.get("look_for_keys", True)),
+            compress=bool(kwargs_copy.get("compress", False)),
+            timeout=timeout_int,
+            gssapi_auth=bool(kwargs_copy.get("gssapi_auth", False)),
+            gssapi_kex=bool(kwargs_copy.get("gssapi_kex", False)),
+            gssapi_delegate_creds=bool(kwargs_copy.get("gssapi_delegate_creds", False)),
+            ssh_options=self._extract_ssh_options(kwargs_copy),
         )
 
         # Ustaw fingerprint callback jeśli podano
@@ -237,7 +256,7 @@ class SSHSessionService:
         key_filename: Optional[str] = None,
         proxy_config: Optional[Dict[str, Any]] = None,
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Tuple[bool, Optional[str], Optional[str]]:
         """Check SSH host fingerprint - simplified approach
 
@@ -262,13 +281,22 @@ class SSHSessionService:
                 del kwargs_copy["fingerprint_callback"]
 
             # Stwórz backend do sprawdzenia klucza
-            backend = SshBackend(
+            backend = SshBackendFactory.create_backend(
                 hostname=hostname,
                 username=username,
                 port=port,
                 key_filename=key_filename,
                 proxy_config=proxy_config,
-                **kwargs_copy,
+                allow_agent=bool(kwargs_copy.get("allow_agent", True)),
+                look_for_keys=bool(kwargs_copy.get("look_for_keys", True)),
+                compress=bool(kwargs_copy.get("compress", False)),
+                timeout=(
+                    int(kwargs_copy.get("timeout", 30)) if isinstance(kwargs_copy.get("timeout"), (int, str)) else 30
+                ),
+                gssapi_auth=bool(kwargs_copy.get("gssapi_auth", False)),
+                gssapi_kex=bool(kwargs_copy.get("gssapi_kex", False)),
+                gssapi_delegate_creds=bool(kwargs_copy.get("gssapi_delegate_creds", False)),
+                ssh_options=self._extract_ssh_options(kwargs_copy),
             )
 
             # Sprawdź klucz hosta
@@ -331,7 +359,7 @@ class SSHSessionService:
                 else:
                     self.logger.error(f"Nie udało się dodać hosta {hostname}:{port} do known_hosts")
 
-            return success
+            return cast(bool, success)
 
         except Exception as e:
             if self.logger:
@@ -347,7 +375,7 @@ class SSHSessionService:
         key_filename: Optional[str],
         proxy_config: Optional[Dict[str, Any]],
         fingerprint_callback: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: SSHSessionConfigDict,
     ) -> bool:
         """Testuje połączenie SSH przed utworzeniem sesji z obsługą fingerprinta"""
         try:
@@ -356,15 +384,33 @@ class SSHSessionService:
             if "fingerprint_callback" in kwargs_copy:
                 del kwargs_copy["fingerprint_callback"]
 
+            # Wyciągnij timeout i sprawdź typ
+            timeout_value: object = kwargs_copy.get("timeout", 30)
+            timeout_int: int = 30
+            if isinstance(timeout_value, int):
+                timeout_int = timeout_value
+            elif isinstance(timeout_value, str):
+                try:
+                    timeout_int = int(timeout_value)
+                except ValueError:
+                    pass
+
             # Stwórz tymczasowy backend do testu
-            test_backend = SshBackend(
+            test_backend = SshBackendFactory.create_backend(
                 hostname=hostname,
                 username=username,
                 password=password,
                 port=port,
                 key_filename=key_filename,
                 proxy_config=proxy_config,
-                **kwargs_copy,
+                allow_agent=bool(kwargs_copy.get("allow_agent", True)),
+                look_for_keys=bool(kwargs_copy.get("look_for_keys", True)),
+                compress=bool(kwargs_copy.get("compress", False)),
+                timeout=timeout_int,
+                gssapi_auth=bool(kwargs_copy.get("gssapi_auth", False)),
+                gssapi_kex=bool(kwargs_copy.get("gssapi_kex", False)),
+                gssapi_delegate_creds=bool(kwargs_copy.get("gssapi_delegate_creds", False)),
+                ssh_options=self._extract_ssh_options(kwargs_copy),
             )
 
             # Ustaw fingerprint callback jeśli podano
@@ -390,7 +436,7 @@ class SSHSessionService:
         if not backend:
             return False
 
-        return backend.connect_session(session_id)
+        return cast(bool, backend.connect_session(session_id))
 
     def disconnect_session(self, session_id: str) -> bool:
         """Rozłącza sesję SSH"""
@@ -403,7 +449,7 @@ class SSHSessionService:
         if not backend:
             return False
 
-        return backend.disconnect_session(session_id)
+        return cast(bool, backend.disconnect_session(session_id))
 
     def execute_command(
         self,
@@ -412,7 +458,7 @@ class SSHSessionService:
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
         fingerprint_callback: Optional[Callable] = None,
-    ):
+    ) -> Optional[CommandResult]:
         """Execute command on SSH session with optional fingerprint handling"""
         if session_id not in self.sessions:
             return None
@@ -430,11 +476,14 @@ class SSHSessionService:
             except Exception:
                 pass
 
-        return backend.execute_command(
-            command=command,
-            session_id=session_id,
-            working_dir=working_dir,
-            env_vars=env_vars,
+        return cast(
+            Optional[CommandResult],
+            backend.execute_command(
+                command=command,
+                session_id=session_id,
+                working_dir=working_dir,
+                env_vars=env_vars,
+            ),
         )
 
     def scp_upload(self, local_path: str, remote_path: str, session_id: str) -> Optional[SCPTransfer]:
@@ -453,7 +502,7 @@ class SSHSessionService:
         with self.lock:
             self.transfers[transfer.id] = transfer
 
-        return transfer
+        return cast(Optional[SCPTransfer], transfer)
 
     def scp_download(self, remote_path: str, local_path: str, session_id: str) -> Optional[SCPTransfer]:
         """Download pliku przez SCP"""
@@ -471,7 +520,7 @@ class SSHSessionService:
         with self.lock:
             self.transfers[transfer.id] = transfer
 
-        return transfer
+        return cast(Optional[SCPTransfer], transfer)
 
     def get_session_status(self, session_id: str) -> Optional[str]:
         """Pobiera status sesji"""
@@ -517,6 +566,15 @@ class SSHSessionService:
             del self.sessions[session_id]
 
         return True
+
+    def _extract_ssh_options(self, kwargs_copy: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        """Extract SSH options from kwargs, ensuring they are properly typed."""
+        ssh_options = kwargs_copy.get("ssh_options")
+        if isinstance(ssh_options, dict) and all(
+            isinstance(k, str) and isinstance(v, str) for k, v in ssh_options.items()
+        ):
+            return ssh_options
+        return None
 
     def get_session_info(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Pobiera szczegółowe informacje o sesji"""

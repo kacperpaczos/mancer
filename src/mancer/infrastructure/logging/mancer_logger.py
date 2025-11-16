@@ -1,9 +1,9 @@
 import os
 import threading
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type, Union, cast
 
-from ...domain.service.log_backend_interface import LogBackendInterface, LogLevel
+from ...domain.service.log_backend_interface import LogBackendInterface, LogData, LogLevel
 from .icecream_backend import ICECREAM_AVAILABLE, IcecreamBackend
 from .standard_backend import StandardBackend
 
@@ -51,31 +51,43 @@ class MancerLogger:
         """
         if ICECREAM_AVAILABLE:
             return IcecreamBackend()
-        else:
-            return StandardBackend()
+        return StandardBackend()
 
-    def initialize(self, **kwargs) -> None:
+    def initialize(
+        self,
+        log_level: Optional[Union[int, str, LogLevel]] = None,
+        log_format: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        log_file: Optional[str] = None,
+        console_enabled: bool = True,
+        file_enabled: bool = False,
+        use_utc: bool = False,
+        force_standard: bool = False,
+        ic_prefix: Optional[str] = None,
+        ic_include_context: bool = True,
+        **kwargs: Any,
+    ) -> None:
         """
         Inicjalizuje system logowania z podanymi parametrami.
 
         Args:
-            **kwargs: Parametry konfiguracji logowania
                 log_level: Poziom logowania (LogLevel lub string 'debug', 'info', itd.)
                 log_format: Format wiadomości
                 log_dir: Katalog logów
                 log_file: Nazwa pliku logu
                 console_enabled: Czy logować do konsoli
                 file_enabled: Czy logować do pliku
+            use_utc: Czy używać UTC
                 force_standard: Czy wymusić użycie standardowego backendu
+            ic_prefix: Prefiks dla Icecream
+            ic_include_context: Czy włączyć kontekst w Icecream
         """
         with self._lock:
             # Sprawdź, czy mamy wymusić standardowy backend
-            force_standard = kwargs.pop("force_standard", False)
             if force_standard and isinstance(self._backend, IcecreamBackend):
                 self._backend = StandardBackend()
 
             # Konwersja poziomu logowania z stringa jeśli potrzeba
-            log_level = kwargs.get("log_level")
             if isinstance(log_level, str):
                 level_map = {
                     "debug": LogLevel.DEBUG,
@@ -84,10 +96,25 @@ class MancerLogger:
                     "error": LogLevel.ERROR,
                     "critical": LogLevel.CRITICAL,
                 }
-                kwargs["log_level"] = level_map.get(log_level.lower(), LogLevel.INFO)
+                converted_log_level = level_map.get(log_level.lower(), LogLevel.INFO)
+            elif isinstance(log_level, LogLevel):
+                converted_log_level = log_level
+            else:
+                converted_log_level = LogLevel.INFO
 
             # Inicjalizuj backend
-            self._backend.initialize(**kwargs)
+            self._backend.initialize(
+                log_level=converted_log_level,
+                log_format=log_format,
+                log_dir=log_dir,
+                log_file=log_file,
+                console_enabled=console_enabled,
+                file_enabled=file_enabled,
+                use_utc=use_utc,
+                force_standard=force_standard,
+                ic_prefix=ic_prefix,
+                ic_include_context=ic_include_context,
+            )
             self._initialized = True
 
     def debug(self, message: str, context: Optional[Dict[str, Any]] = None) -> None:
@@ -252,7 +279,7 @@ class MancerLogger:
                     }
                     break
 
-    def log_command_input(self, command_name: str, data: Any) -> None:
+    def log_command_input(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wejściowe komendy (dla pipeline).
 
@@ -269,7 +296,7 @@ class MancerLogger:
                 self._pipeline_data[command_name] = {}
             self._pipeline_data[command_name]["input"] = data
 
-    def log_command_output(self, command_name: str, data: Any) -> None:
+    def log_command_output(self, command_name: str, data: LogData) -> None:
         """
         Loguje dane wyjściowe komendy (dla pipeline).
 
@@ -334,9 +361,8 @@ class MancerLogger:
         """
         with self._lock:
             if command_name:
-                return self._pipeline_data.get(command_name, {})
-            else:
-                return self._pipeline_data.copy()
+                return cast(Dict[str, Any], self._pipeline_data.get(command_name, {}))
+            return self._pipeline_data.copy()
 
     def clear_pipeline_data(self) -> None:
         """Czyści wszystkie dane pipeline'a."""

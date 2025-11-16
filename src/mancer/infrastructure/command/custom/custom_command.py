@@ -1,6 +1,8 @@
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Optional
+
+import polars as pl
 
 from ....domain.model.command_context import CommandContext
 from ....domain.model.command_result import CommandResult
@@ -13,7 +15,7 @@ class CustomCommand(BaseCommand):
     """
 
     def __init__(self, command_name: str = ""):
-        super().__init__(command_name or "echo")
+        super().__init__(name=command_name or "echo")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Executes the custom command"""
@@ -46,13 +48,13 @@ class CustomCommand(BaseCommand):
             error_message=error_message,
         )
 
-    def _parse_output(self, raw_output: str) -> List[Dict[str, Any]]:
-        """Parse command output into structured format.
+    def _parse_output(self, raw_output: str) -> pl.DataFrame:
+        """Parse command output into polars DataFrame.
         Attempts to parse as JSON if the output looks like a JSON array or object.
         Otherwise, returns the raw output lines.
         """
         if not raw_output.strip():
-            return []
+            return pl.DataFrame()
 
         # Check if output is JSON
         try:
@@ -61,18 +63,18 @@ class CustomCommand(BaseCommand):
             ):
                 json_data = json.loads(raw_output)
 
-                # If JSON is a list, return it directly
+                # If JSON is a list, convert to DataFrame
                 if isinstance(json_data, list):
-                    return json_data
-                # If JSON is an object, wrap it in a list
-                elif isinstance(json_data, dict):
-                    return [json_data]
+                    return pl.DataFrame(json_data)
+                # If JSON is an object, wrap it in a list and convert
+                if isinstance(json_data, dict):
+                    return pl.DataFrame([json_data])
         except json.JSONDecodeError:
             pass  # Not valid JSON, continue with line-based parsing
 
         # Default line-based parsing
         lines = raw_output.strip().split("\n")
-        results = []
+        records = []
 
         for line in lines:
             if not line.strip():
@@ -83,9 +85,9 @@ class CustomCommand(BaseCommand):
             if kv_match:
                 key = kv_match.group(1).strip()
                 value = kv_match.group(2).strip()
-                results.append({key: value})
+                records.append({"raw_line": line, key: value})
             else:
                 # Just a plain line
-                results.append({"line": line.strip()})
+                records.append({"raw_line": line, "line": line.strip()})
 
-        return results
+        return pl.DataFrame(records)

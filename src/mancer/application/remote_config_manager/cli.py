@@ -490,9 +490,8 @@ class CLI:
                     self.print_success(f"Ustawiono profil '{args.name}' jako aktywny")
 
             return 0
-        else:
-            self.print_error(f"Nie udało się dodać profilu '{args.name}'")
-            return 1
+        self.print_error(f"Nie udało się dodać profilu '{args.name}'")
+        return 1
 
     def profile_list_command(self, args: argparse.Namespace) -> int:
         """
@@ -561,9 +560,8 @@ class CLI:
         if self.manager.delete_profile(args.name):
             self.print_success(f"Usunięto profil '{args.name}'")
             return 0
-        else:
-            self.print_error(f"Nie udało się usunąć profilu '{args.name}'")
-            return 1
+        self.print_error(f"Nie udało się usunąć profilu '{args.name}'")
+        return 1
 
     def profile_activate_command(self, args: argparse.Namespace) -> int:
         """
@@ -586,9 +584,8 @@ class CLI:
         if self.manager.set_active_profile(args.name):
             self.print_success(f"Aktywowano profil '{args.name}'")
             return 0
-        else:
-            self.print_error(f"Nie udało się aktywować profilu '{args.name}'")
-            return 1
+        self.print_error(f"Nie udało się aktywować profilu '{args.name}'")
+        return 1
 
     def profile_command(self, args: argparse.Namespace) -> int:
         """
@@ -602,15 +599,14 @@ class CLI:
         """
         if args.profile_command == "add":
             return self.profile_add_command(args)
-        elif args.profile_command == "list":
+        if args.profile_command == "list":
             return self.profile_list_command(args)
-        elif args.profile_command == "remove":
+        if args.profile_command == "remove":
             return self.profile_remove_command(args)
-        elif args.profile_command == "activate":
+        if args.profile_command == "activate":
             return self.profile_activate_command(args)
-        else:
-            self.print_error("Nieznane polecenie profilu")
-            return 1
+        self.print_error("Nieznane polecenie profilu")
+        return 1
 
     def run(self, args: Optional[List[str]] = None) -> int:
         """
@@ -633,17 +629,16 @@ class CLI:
         # Obsłuż polecenie
         if parsed_args.command == "connect":
             return self.connect_command(parsed_args)
-        elif parsed_args.command == "backup":
+        if parsed_args.command == "backup":
             return self.backup_command(parsed_args)
-        elif parsed_args.command == "diff":
+        if parsed_args.command == "diff":
             return self.diff_command(parsed_args)
-        elif parsed_args.command == "update":
+        if parsed_args.command == "update":
             return self.update_command(parsed_args)
-        elif parsed_args.command == "profile":
+        if parsed_args.command == "profile":
             return self.profile_command(parsed_args)
-        else:
-            self.print_error("Nieznane polecenie")
-            return 1
+        self.print_error("Nieznane polecenie")
+        return 1
 
 
 def main():

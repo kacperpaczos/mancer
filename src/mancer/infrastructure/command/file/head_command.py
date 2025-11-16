@@ -10,7 +10,7 @@ class HeadCommand(BaseCommand):
     """Komenda head - wyświetla początkowe linie pliku"""
 
     def __init__(self):
-        super().__init__("head")
+        super().__init__(name="head")
 
     def execute(self, context: CommandContext, input_result: Optional[CommandResult] = None) -> CommandResult:
         """Wykonuje komendę head"""
@@ -92,7 +92,7 @@ class HeadCommand(BaseCommand):
         new_instance.options.append(option)
         return new_instance
 
-    def with_param(self, name: str, value) -> "HeadCommand":
+    def with_param(self, name: str, value: Any) -> "HeadCommand":
         """Return a new instance with a named parameter (e.g., --name=value)."""
         new_instance: HeadCommand = self.clone()
         new_instance.parameters[name] = value
@@ -113,7 +113,7 @@ class HeadCommand(BaseCommand):
     def add_arg(self, arg: str) -> "HeadCommand":
         """Return a new instance with an added positional argument."""
         new_instance: HeadCommand = self.clone()
-        new_instance._args.append(arg)
+        new_instance.args.append(arg)
         return new_instance
 
     def with_data_format(self, format_type: DataFormat) -> "HeadCommand":
@@ -136,7 +136,7 @@ class HeadCommand(BaseCommand):
 
     def files(self, file_paths: List[str]) -> "HeadCommand":
         """Ustawia wiele plików do wyświetlenia"""
-        return self.add_args(file_paths)  # type: ignore
+        return self.add_args(file_paths)
 
     def lines(self, num_lines: int) -> "HeadCommand":
         """Opcja -n - określa liczbę linii do wyświetlenia"""
@@ -156,5 +156,5 @@ class HeadCommand(BaseCommand):
 
     def clone(self) -> "HeadCommand":
         """Tworzy kopię komendy z tą samą konfiguracją"""
-        new_instance: HeadCommand = super().clone()  # type: ignore
+        new_instance: HeadCommand = super().clone()
         return new_instance

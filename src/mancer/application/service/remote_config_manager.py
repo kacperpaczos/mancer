@@ -3,59 +3,33 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
+from pydantic import BaseModel, Field
+
 from ...domain.shared.config_balancer import ConfigBalancer, ConfigDiff, ConfigFormat, ConfigTemplate
 from ...domain.shared.profile_producer import ProfileProducer
 from ...infrastructure.shared.file_tracer import FileTracer
 from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
 
 
-class ConfigSyncTask:
+class ConfigSyncTask(BaseModel):
     """Represents a configuration synchronization task."""
 
-    def __init__(
-        self,
-        name: str,
-        source_profile: str,
-        source_path: str,
-        target_profiles: List[str],
-        target_path: str,
-        description: Optional[str] = None,
-        validate_before_sync: bool = True,
-    ):
-        """Initialize a synchronization task.
-
-        Args:
-            name: Task name.
-            source_profile: Source profile name.
-            source_path: Path to the source file.
-            target_profiles: List of target profile names.
-            target_path: Path to the target file.
-            description: Optional human-readable description.
-            validate_before_sync: Whether to validate before syncing.
-        """
-        self.name = name
-        self.source_profile = source_profile
-        self.source_path = source_path
-        self.target_profiles = target_profiles
-        self.target_path = target_path
-        self.description = description
-        self.validate_before_sync = validate_before_sync
-        self.created_at = datetime.datetime.now()
-        self.last_run: Optional[datetime.datetime] = None
+    name: str
+    source_profile: str
+    source_path: str
+    target_profiles: List[str]
+    target_path: str
+    description: Optional[str] = None
+    validate_before_sync: bool = True
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    last_run: Optional[datetime.datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the task to a dictionary."""
-        return {
-            "name": self.name,
-            "source_profile": self.source_profile,
-            "source_path": self.source_path,
-            "target_profiles": self.target_profiles,
-            "target_path": self.target_path,
-            "description": self.description,
-            "validate_before_sync": self.validate_before_sync,
-            "created_at": self.created_at.isoformat(),
-            "last_run": self.last_run.isoformat() if self.last_run is not None else None,
-        }
+        data = self.model_dump()
+        data["created_at"] = self.created_at.isoformat()
+        data["last_run"] = self.last_run.isoformat() if self.last_run is not None else None
+        return dict(data)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConfigSyncTask":
@@ -67,62 +41,29 @@ class ConfigSyncTask:
         Returns:
             ConfigSyncTask: New task instance.
         """
-        task = cls(
-            name=data["name"],
-            source_profile=data["source_profile"],
-            source_path=data["source_path"],
-            target_profiles=data["target_profiles"],
-            target_path=data["target_path"],
-            description=data.get("description"),
-            validate_before_sync=data.get("validate_before_sync", True),
-        )
-
-        if data.get("created_at"):
-            task.created_at = datetime.datetime.fromisoformat(data["created_at"])
-
-        if data.get("last_run"):
-            task.last_run = datetime.datetime.fromisoformat(data["last_run"])
-
-        return task
+        processed_data = data.copy()
+        if isinstance(processed_data.get("created_at"), str):
+            processed_data["created_at"] = datetime.datetime.fromisoformat(processed_data["created_at"])
+        if processed_data.get("last_run") and isinstance(processed_data["last_run"], str):
+            processed_data["last_run"] = datetime.datetime.fromisoformat(processed_data["last_run"])
+        return cls(**processed_data)
 
 
-class SyncResult:
+class SyncResult(BaseModel):
     """Represents the result of a synchronization for a single target profile."""
 
-    def __init__(
-        self,
-        task_name: str,
-        target_profile: str,
-        success: bool,
-        error_message: Optional[str] = None,
-        backup_path: Optional[str] = None,
-    ):
-        """Initialize a synchronization result item.
-
-        Args:
-            task_name: Synchronization task name.
-            target_profile: Target profile name.
-            success: Whether the synchronization succeeded.
-            error_message: Optional error message.
-            backup_path: Optional path to a created backup.
-        """
-        self.task_name = task_name
-        self.target_profile = target_profile
-        self.success = success
-        self.error_message = error_message
-        self.backup_path = backup_path
-        self.timestamp = datetime.datetime.now()
+    task_name: str
+    target_profile: str
+    success: bool
+    error_message: Optional[str] = None
+    backup_path: Optional[str] = None
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the synchronization result to a dictionary."""
-        return {
-            "task_name": self.task_name,
-            "target_profile": self.target_profile,
-            "success": self.success,
-            "error_message": self.error_message,
-            "backup_path": self.backup_path,
-            "timestamp": self.timestamp.isoformat(),
-        }
+        data = self.model_dump()
+        data["timestamp"] = self.timestamp.isoformat()
+        return dict(data)
 
 
 class RemoteConfigManager:
@@ -532,7 +473,7 @@ class RemoteConfigManager:
             template_content=content,
             format_type=format_type,
             description=description,
-            variables=variables,
+            variables=variables or {},
         )
 
         return self.config_balancer.add_template(template)

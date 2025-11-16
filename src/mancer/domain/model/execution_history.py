@@ -1,14 +1,14 @@
-from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional
+
+from pydantic import BaseModel, Field
 
 from .execution_step import ExecutionStep
 
 
-@dataclass
-class ExecutionHistory:
+class ExecutionHistory(BaseModel):
     """Command execution history model."""
 
-    steps: List[ExecutionStep] = field(default_factory=list)
+    steps: List[ExecutionStep] = Field(default_factory=list)
 
     def add_step(self, step: ExecutionStep) -> None:
         """Append a step to the history."""
@@ -36,22 +36,20 @@ class ExecutionHistory:
             return True
         return all(step.success for step in self.steps)
 
-    def __iter__(self) -> Iterator[ExecutionStep]:
+    def iter_steps(self) -> Iterator[ExecutionStep]:
         """Iterate over steps in order."""
         return iter(self.steps)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize history to a dictionary."""
         return {
-            "steps": [step.to_dict() for step in self.steps],
+            "steps": [step.model_dump() for step in self.steps],
             "total_steps": len(self.steps),
             "all_successful": self.all_successful(),
         }
 
-    @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "ExecutionHistory":
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ExecutionHistory":
         """Create history from a dictionary."""
-        history = ExecutionHistory()
-        for step_data in data.get("steps", []):
-            history.add_step(ExecutionStep.from_dict(step_data))
-        return history
+        steps = [ExecutionStep.model_validate(step_data) for step_data in data.get("steps", [])]
+        return cls(steps=steps)

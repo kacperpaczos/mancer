@@ -19,7 +19,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 # Importuj komponenty Mancer
 from src.mancer.domain.model.command_context import CommandContext
-from src.mancer.domain.model.data_format import DataFormat
 from src.mancer.domain.service.log_backend_interface import LogLevel
 from src.mancer.infrastructure.command.system.df_command import DfCommand
 from src.mancer.infrastructure.command.system.grep_command import GrepCommand

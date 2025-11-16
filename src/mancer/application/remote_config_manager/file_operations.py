@@ -4,13 +4,13 @@ Moduł implementujący operacje na plikach i struktury danych związane z plikam
 
 import difflib
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from pydantic import BaseModel
 
-@dataclass
-class FileInfo:
+
+class FileInfo(BaseModel):
     """
     Klasa przechowująca informacje o pliku konfiguracyjnym.
     """
@@ -23,8 +23,7 @@ class FileInfo:
     modified: str
 
 
-@dataclass
-class FileDiff:
+class FileDiff(BaseModel):
     """
     Klasa przechowująca informacje o różnicach między plikami.
     """
