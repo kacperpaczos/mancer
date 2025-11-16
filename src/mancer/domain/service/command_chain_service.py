@@ -429,7 +429,7 @@ class CommandChain:
         def value_counts_func(df):
             if column not in df.columns:
                 raise ValueError(f"Column '{column}' not found")
-            result = df.group_by(column).agg(pl.count().alias("count"))
+            result = df.group_by(column).agg(pl.len().alias("count"))
             if sort:
                 result = result.sort("count", descending=True)
             return result

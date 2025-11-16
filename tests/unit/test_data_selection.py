@@ -758,7 +758,7 @@ class TestBasicOperations(TestDataSelectionMethods):
 
     def test_group_by_with_agg(self, sample_result):
         """Test grupowania z agregacją"""
-        result = sample_result.group_by("is_directory", pl.count())
+        result = sample_result.group_by("is_directory", pl.len().alias("count"))
         assert result.success
         assert "count" in result.structured_output.columns
 

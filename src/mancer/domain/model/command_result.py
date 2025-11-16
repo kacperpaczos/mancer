@@ -598,9 +598,7 @@ class CommandResult(BaseModel):
             raise ValueError(f"Column '{column}' not found")
 
         value_counts = (
-            df.group_by(column).agg(pl.count().alias("count")).sort("count", descending=True)
-            if sort
-            else pl.DataFrame()
+            df.group_by(column).agg(pl.len().alias("count")).sort("count", descending=True) if sort else pl.DataFrame()
         )
 
         return CommandResult(

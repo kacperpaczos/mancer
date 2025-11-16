@@ -118,7 +118,7 @@ def main():
 
     # Group by user and count processes
     user_stats = (ps_result
-                  .group_by("USER", pl.count().alias("process_count"))
+                  .group_by("USER", pl.len().alias("process_count"))
                   .sort("process_count", descending=True)
                   .head(5))
 
@@ -156,7 +156,7 @@ def main():
 
     print("Process count by user (using fluent methods):")
     user_counts = (ps_result
-                   .group_by("USER", pl.count().alias("count"))
+                   .group_by("USER", pl.len().alias("count"))
                    .sort("count", descending=True)
                    .head(5))
     print(user_counts.structured_output)
