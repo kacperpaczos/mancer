@@ -1,0 +1,17 @@
+{
+  "test_users": [
+    {"id": 1, "name": "Alice", "email": "alice@example.com", "age": 25},
+    {"id": 2, "name": "Bob", "email": "bob@example.com", "age": 30},
+    {"id": 3, "name": "Charlie", "email": "charlie@example.com", "age": 35}
+  ],
+  "system_info": {
+    "hostname": "test-container",
+    "os": "Debian GNU/Linux",
+    "kernel": "5.10.0-0.bpo.5-amd64"
+  },
+  "test_files": [
+    {"name": "sample.txt", "content": "This is a sample text file for integration testing.\nIt contains multiple lines.\nLast line."},
+    {"name": "data.csv", "content": "id,name,value\n1,test1,100\n2,test2,200\n3,test3,300"},
+    {"name": "config.yaml", "content": "app:\n  name: mancer-test\n  version: '1.0'\n  debug: true\n"}
+  ]
+}
