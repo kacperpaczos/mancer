@@ -103,6 +103,9 @@ line_length = 120
 known_first_party = ["mancer"]
 src_paths = ["src", "tests"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["mancer"]
+
 # mypy – statyczne typowanie (lekko restrykcyjne, bez łamania istniejącego kodu)
 [tool.mypy]
 python_version = "3.9"
@@ -129,7 +132,7 @@ module = "yaml.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "tests.unit.test_command_cache_comprehensive"
+module = "tests.legacy.unit.test_command_cache_comprehensive"
 disable_error_code = ["unreachable", "unused-ignore"]
 
 [[tool.mypy.overrides]]
