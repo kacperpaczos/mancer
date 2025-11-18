@@ -5,50 +5,256 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  schedule:
+    # Nightly E2E tests at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: 'Run integration tests'
+        required: false
+        default: 'false'
+        type: boolean
+      run_e2e:
+        description: 'Run E2E tests'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHONPATH: src
 
 jobs:
-  test:
+  # Quality checks and unit tests - run on every PR/push
+  quality-and-unit:
+    name: Quality & Unit Tests
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-cov ruff black isort mypy build twine
-        
+        pip install pytest pytest-cov pytest-xdist ruff black isort mypy build twine
+
     - name: Lint with ruff
       run: |
         ruff check src/ tests/
-        
+
     - name: Format check with black
       run: |
         black --check src/ tests/
-        
+
     - name: Import sorting check with isort
       run: |
         isort --check-only src/ tests/
-        
+
     - name: Type check with mypy
       run: |
         mypy src/ tests/legacy/
-        
-    - name: Run tests
+
+    - name: Run unit tests
       run: |
-        PYTHONPATH=src pytest tests/unit/ -v --cov=src/mancer --cov-report=xml
-        
+        pytest tests/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-coverage
+        path: |
+          coverage.xml
+          htmlcov/
+        retention-days: 30
+
     - name: Build package
       run: |
         python -m build
-        
+
     - name: Check package
       run: |
         twine check dist/*
+
+  # Integration tests - run manually or on release branches
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run_integration == 'true' || contains(github.ref, 'release')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lxc lxc-utils lxc-templates bridge-utils
+
+    - name: Configure LXC
+      run: |
+        sudo systemctl start lxc-net
+        sudo usermod -aG lxc $USER
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xdist psutil
+
+    - name: Run integration tests
+      run: |
+        sudo -E pytest tests/integration/ --run-integration -v --tb=short --maxfail=5
+
+    - name: Upload integration test logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-logs
+        path: |
+          e2e_test.log
+          **/*.log
+        retention-days: 7
+
+  # E2E tests - run on workflow dispatch or nightly
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run_e2e == 'true' || github.event.schedule == '0 2 * * *'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lxc lxc-utils lxc-templates bridge-utils postgresql redis-server supervisor
+
+    - name: Configure LXC for E2E
+      run: |
+        sudo systemctl start lxc-net
+        sudo usermod -aG lxc $USER
+        echo "LXC capabilities configured"
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xdist psutil
+
+    - name: Create performance baseline directory
+      run: mkdir -p performance_baselines
+
+    - name: Run E2E tests with performance monitoring
+      run: |
+        sudo -E pytest tests/e2e/ --run-e2e -v --tb=short --performance-monitoring --maxfail=3
+
+    - name: Upload E2E test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-artifacts
+        path: |
+          performance_reports/
+          e2e_test.log
+          performance_baselines/
+          **/*.log
+          **/*_performance.json
+          **/*_regressions.txt
+        retention-days: 30
+
+    - name: Generate E2E test summary
+      if: always()
+      run: |
+        echo "# E2E Test Summary" > e2e_summary.md
+        echo "- Date: $(date)" >> e2e_summary.md
+        echo "- Commit: ${{ github.sha }}" >> e2e_summary.md
+        echo "- Run: ${{ github.run_id }}" >> e2e_summary.md
+        if [ -d performance_reports ]; then
+          echo "- Performance reports generated: $(ls performance_reports/ | wc -l)" >> e2e_summary.md
+        fi
+
+    - name: Upload E2E summary
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-summary
+        path: e2e_summary.md
+
+  # Test summary and notification
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [quality-and-unit, integration-tests, e2e-tests]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Generate test matrix summary
+      run: |
+        echo "# Mancer Test Suite Summary" > test_summary.md
+        echo "" >> test_summary.md
+        echo "## Test Results Matrix" >> test_summary.md
+        echo "" >> test_summary.md
+        echo "| Test Type | Status | Duration | Details |" >> test_summary.md
+        echo "|-----------|--------|----------|---------|" >> test_summary.md
+
+        # Quality & Unit Tests
+        if [ "${{ needs.quality-and-unit.result }}" == "success" ]; then
+          echo "| Quality & Unit | ✅ PASS | ~5-10min | Lint, type check, unit tests |" >> test_summary.md
+        else
+          echo "| Quality & Unit | ❌ FAIL | ~5-10min | Check logs for details |" >> test_summary.md
+        fi
+
+        # Integration Tests
+        if [ "${{ needs.integration-tests.result }}" == "success" ]; then
+          echo "| Integration | ✅ PASS | ~15-30min | LXC container tests |" >> test_summary.md
+        elif [ "${{ needs.integration-tests.result }}" == "skipped" ]; then
+          echo "| Integration | ⏭️ SKIP | - | Manual trigger only |" >> test_summary.md
+        else
+          echo "| Integration | ❌ FAIL | ~15-30min | Check integration logs |" >> test_summary.md
+        fi
+
+        # E2E Tests
+        if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+          echo "| E2E | ✅ PASS | ~45-90min | Multi-container scenarios |" >> test_summary.md
+        elif [ "${{ needs.e2e-tests.result }}" == "skipped" ]; then
+          echo "| E2E | ⏭️ SKIP | - | Manual/nightly trigger only |" >> test_summary.md
+        else
+          echo "| E2E | ❌ FAIL | ~45-90min | Check E2E artifacts |" >> test_summary.md
+        fi
+
+        echo "" >> test_summary.md
+        echo "## Test Coverage" >> test_summary.md
+        echo "" >> test_summary.md
+        echo "- **Unit Tests**: Core logic with mocks (fast, isolated)" >> test_summary.md
+        echo "- **Integration Tests**: Real LXC containers (moderate speed)" >> test_summary.md
+        echo "- **E2E Tests**: Full workflows, multi-container (slowest, most comprehensive)" >> test_summary.md
+        echo "" >> test_summary.md
+        echo "---" >> test_summary.md
+        echo "*Generated: $(date)*" >> test_summary.md
+
+    - name: Upload test summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-suite-summary
+        path: test_summary.md

@@ -12,7 +12,16 @@ addopts = [
     "--strict-markers"
 ]
 markers = [
-    "integration: Integration tests",
+    "unit: Unit tests with mocked dependencies",
+    "integration: Integration tests with real LXC containers",
+    "lxc: Tests requiring LXC container infrastructure",
+    "e2e: End-to-end tests with multi-container scenarios",
+    "slow: Tests that are slow to execute",
+    "performance: Tests that include performance monitoring",
+    "multi_container: Tests requiring multiple containers",
+    "data_pipeline: Data processing pipeline E2E scenarios",
+    "automation: Automation workflow E2E scenarios",
+    "error_handling: Error handling and recovery E2E scenarios",
     "privileged: Tests requiring root privileges"
 ]
 
