@@ -3,16 +3,30 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/legacy"]
 python_files = "test_*.py"
 pythonpath = ["src"]
+norecursedirs = ["tests/unit", "tests/integration", "tests/e2e", "prototypes"]
 addopts = [
     "-v",
     "--tb=short",
-    "--strict-markers"
+    "--strict-markers",
+    "--ignore=tests/unit",
+    "--ignore=tests/integration",
+    "--ignore=tests/e2e",
+    "--ignore=prototypes"
 ]
 markers = [
-    "integration: Integration tests",
+    "unit: Unit tests with mocked dependencies",
+    "integration: Integration tests with real LXC containers",
+    "lxc: Tests requiring LXC container infrastructure",
+    "e2e: End-to-end tests with multi-container scenarios",
+    "slow: Tests that are slow to execute",
+    "performance: Tests that include performance monitoring",
+    "multi_container: Tests requiring multiple containers",
+    "data_pipeline: Data processing pipeline E2E scenarios",
+    "automation: Automation workflow E2E scenarios",
+    "error_handling: Error handling and recovery E2E scenarios",
     "privileged: Tests requiring root privileges"
 ]
 
@@ -103,6 +117,9 @@ line_length = 120
 known_first_party = ["mancer"]
 src_paths = ["src", "tests"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["mancer"]
+
 # mypy – statyczne typowanie (lekko restrykcyjne, bez łamania istniejącego kodu)
 [tool.mypy]
 python_version = "3.9"
@@ -129,9 +146,13 @@ module = "yaml.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "tests.unit.test_command_cache_comprehensive"
+module = "tests.legacy.unit.test_command_cache_comprehensive"
 disable_error_code = ["unreachable", "unused-ignore"]
 
 [[tool.mypy.overrides]]
 module = "mancer.domain.service.ssh_session_service"
 disable_error_code = ["unreachable"]
+
+[[tool.mypy.overrides]]
+module = "tests.legacy.integration.test_bash_commands"
+disable_error_code = ["attr-defined"]

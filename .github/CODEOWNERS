@@ -1,0 +1,35 @@
+# Mancer Code Owners
+#
+# This file defines who owns what parts of the codebase for automatic
+# PR review assignment and notifications.
+
+# Global owners - get notified on all changes
+* @kacperpaczos
+
+# Core source code
+/src/ @kacperpaczos
+
+# Test infrastructure - unit tests
+/tests/unit/ @kacperpaczos
+
+# Test infrastructure - integration tests
+/tests/integration/ @kacperpaczos
+
+# Test infrastructure - E2E tests
+/tests/e2e/ @kacperpaczos
+
+# CI/CD and automation
+/.github/ @kacperpaczos
+
+# Documentation
+/docs/ @kacperpaczos
+README.md @kacperpaczos
+
+# Configuration files
+pyproject.toml @kacperpaczos
+requirements.txt @kacperpaczos
+setup.py @kacperpaczos
+
+# Build and release files
+/setup.py @kacperpaczos
+/MANIFEST.in @kacperpaczos

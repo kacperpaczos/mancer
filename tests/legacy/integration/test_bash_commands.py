@@ -8,7 +8,11 @@ import time
 from pathlib import Path
 
 import pytest
-from test_utils import MancerDockerTestUtils
+
+# Skip entire module if docker_compose plugin is not installed
+docker_compose = pytest.importorskip("docker_compose", reason="pytest-docker-compose not installed")
+
+from .test_utils import MancerDockerTestUtils  # noqa: E402
 
 # Aktywuj plugin docker-compose
 pytest_plugins = ["docker_compose"]
