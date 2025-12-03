@@ -152,3 +152,7 @@ disable_error_code = ["unreachable", "unused-ignore"]
 [[tool.mypy.overrides]]
 module = "mancer.domain.service.ssh_session_service"
 disable_error_code = ["unreachable"]
+
+[[tool.mypy.overrides]]
+module = "tests.legacy.integration.test_bash_commands"
+disable_error_code = ["attr-defined"]
