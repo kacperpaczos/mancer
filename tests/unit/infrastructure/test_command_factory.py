@@ -33,4 +33,3 @@ class TestCommandFactory:
     def test_get_command_unknown_alias_returns_none(self):
         factory = CommandFactory()
         assert factory.get_command("missing-alias") is None
-

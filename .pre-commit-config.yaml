@@ -5,21 +5,21 @@ repos:
       # Pre-commit (on commit) - auto-fix
       - id: ruff
         args: ["--fix"]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-commit]
 
       - id: ruff-format
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-commit]
 
       # Pre-push (on push) - check only, no fixes
       - id: ruff
         name: ruff (pre-push, check-only)
         args: ["--no-fix", "--select=E,F"]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-push]
 
   - repo: https://github.com/psf/black
@@ -27,16 +27,16 @@ repos:
     hooks:
       # Pre-commit (on commit) - auto format
       - id: black
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-commit]
 
       # Pre-push (on push) - check only
       - id: black
         name: black (pre-push, check)
         args: ["--check"]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-push]
 
   - repo: https://github.com/pycqa/isort
@@ -45,16 +45,16 @@ repos:
       # Pre-commit (on commit) - auto sort
       - id: isort
         args: ["--profile=black"]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-commit]
 
       # Pre-push (on push) - check only
       - id: isort
         name: isort (pre-push, check)
         args: ["--profile=black", "--check-only"]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|examples/|tests/unit/|tests/integration/|tests/e2e/|tools/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|examples/|tests/e2e/|tools/)
         stages: [pre-push]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -63,8 +63,8 @@ repos:
       # Pre-commit (on commit) - optional, skip by default
       - id: mypy
         additional_dependencies: [types-PyYAML>=6.0.0, types-requests>=2.31.0, pandas-stubs]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|tests/unit/|tests/integration/|tests/e2e/)
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|tests/e2e/)
         args: ["--ignore-missing-imports"]
         stages: [pre-commit]
 
@@ -72,19 +72,19 @@ repos:
       - id: mypy
         name: mypy (pre-push)
         additional_dependencies: [types-PyYAML>=6.0.0, types-requests>=2.31.0, pandas-stubs]
-        files: ^(src/|tests/legacy/).*\.py$
-        exclude: ^(prototypes/|tests/unit/|tests/integration/|tests/e2e/)
-        args: ["--ignore-missing-imports", "src/"]
+        files: ^(src/|tests/unit/|tests/legacy/integration/).*\.py$
+        exclude: ^(prototypes/|tests/e2e/)
+        args: ["--ignore-missing-imports", "src/", "tests/unit/", "tests/legacy/integration/"]
         stages: [pre-push]
         pass_filenames: false
 
-  # Local hook for running tests - only legacy tests
+  # Local hook for running tests - new unit tests
   - repo: local
     hooks:
       - id: pytest
         name: pytest (pre-push)
         language: python
-        entry: bash -c 'export PYTHONPATH=src && pytest -q tests/legacy/'
+        entry: bash -c 'export PYTHONPATH=src && pytest -q tests/unit/'
         additional_dependencies:
           - pytest>=7.0.0
           - polars>=0.20.0

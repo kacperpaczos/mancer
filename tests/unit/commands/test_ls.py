@@ -5,9 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import polars as pl
-import pytest
 
-from mancer.domain.model.command_context import CommandContext
 from mancer.infrastructure.command.file.ls_command import LsCommand
 
 

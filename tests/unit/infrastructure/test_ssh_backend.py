@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-import pytest
-
 from mancer.infrastructure.backend.ssh_backend import SshBackend, SshBackendFactory
 
 

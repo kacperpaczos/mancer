@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import polars as pl
 import pytest
@@ -39,7 +39,7 @@ class DummyCommand:
         return self._name
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def context() -> CommandContext:
     return CommandContext(current_directory="/tmp")
 
@@ -234,15 +234,8 @@ class TestCommandChainBuilder:
         cmd2 = DummyCommand("grep", "out")
         cmd3 = DummyCommand("wc", "out")
 
-        chain = (
-            CommandChain(cmd1)
-            .pipe(cmd2)
-            .then(cmd3)
-            .head(10)
-            .filter(pl.col("value").is_not_null())
-        )
+        chain = CommandChain(cmd1).pipe(cmd2).then(cmd3).head(10).filter(pl.col("value").is_not_null())
 
         assert isinstance(chain, CommandChain)
         # 3 commands + 2 transformations (None placeholders)
         assert len(chain.commands) >= 3
-

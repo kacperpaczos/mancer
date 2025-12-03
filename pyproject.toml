@@ -3,18 +3,17 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-testpaths = ["tests/legacy"]
+testpaths = ["tests/unit", "tests/legacy/integration"]
 python_files = "test_*.py"
 pythonpath = ["src"]
-norecursedirs = ["tests/unit", "tests/integration", "tests/e2e", "prototypes"]
+norecursedirs = ["tests/e2e", "prototypes", "tools"]
 addopts = [
     "-v",
     "--tb=short",
     "--strict-markers",
-    "--ignore=tests/unit",
-    "--ignore=tests/integration",
     "--ignore=tests/e2e",
-    "--ignore=prototypes"
+    "--ignore=prototypes",
+    "--ignore=tools"
 ]
 markers = [
     "unit: Unit tests with mocked dependencies",
@@ -97,6 +96,7 @@ select = [
 ]
 ignore = [
   "E722",  # Do not use bare except - ignoruję dla workflow CI
+  "E402",  # Module level import not at top of file - common in test files with fixtures
 ]
 
 [tool.ruff.format]
@@ -144,10 +144,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "yaml.*"
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.legacy.unit.test_command_cache_comprehensive"
-disable_error_code = ["unreachable", "unused-ignore"]
 
 [[tool.mypy.overrides]]
 module = "mancer.domain.service.ssh_session_service"

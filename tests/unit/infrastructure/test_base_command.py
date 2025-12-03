@@ -142,4 +142,3 @@ class TestBaseCommand:
     def test_str_returns_built_command(self) -> None:
         cmd = BaseCommand("ls").with_option("l").with_param("type", "f")
         assert str(cmd) == cmd.build_command()
-

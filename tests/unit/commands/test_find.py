@@ -2,7 +2,7 @@
 Unit tests for find command - all scenarios in one focused file
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -175,7 +175,11 @@ class TestFindCommand:
     def test_find_permission_denied(self, mock_get_backend, context):
         """Test find with permission denied"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (1, "./allowed_file.txt\nfind: '/root': Permission denied\n", "find: '/root': Permission denied")
+        mock_backend.execute.return_value = (
+            1,
+            "./allowed_file.txt\nfind: '/root': Permission denied\n",
+            "find: '/root': Permission denied",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = FindCommand("/root")

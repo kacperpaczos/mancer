@@ -94,4 +94,3 @@ class TestShellRunner:
         assert backend is backend_instance
         assert runner._context.execution_mode == ExecutionMode.REMOTE
         mock_logger.info.assert_called()
-

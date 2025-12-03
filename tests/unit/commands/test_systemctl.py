@@ -2,7 +2,7 @@
 Unit tests for systemctl command - all scenarios in one focused file
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -24,7 +24,11 @@ class TestSystemctlCommand:
         mock_backend = MagicMock()
         mock_backend.execute.return_value = (
             0,
-            "● ssh.service - OpenSSH Daemon\n   Loaded: loaded (/lib/systemd/system/ssh.service; enabled)\n   Active: active (running) since Mon 2024-01-01 10:00:00 UTC; 1h 30min ago\n",
+            (
+                "● ssh.service - OpenSSH Daemon\n"
+                "   Loaded: loaded (/lib/systemd/system/ssh.service; enabled)\n"
+                "   Active: active (running) since Mon 2024-01-01 10:00:00 UTC; 1h 30min ago\n"
+            ),
             "",
         )
         mock_get_backend.return_value = mock_backend
@@ -80,7 +84,14 @@ class TestSystemctlCommand:
     def test_systemctl_enable_service(self, mock_get_backend, context):
         """Test systemctl enable service"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Created symlink /etc/systemd/system/multi-user.target.wants/myapp.service → /lib/systemd/system/myapp.service.\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Created symlink /etc/systemd/system/multi-user.target.wants/myapp.service → "
+                "/lib/systemd/system/myapp.service.\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = SystemctlCommand().with_option("enable").with_option("myapp.service")
@@ -94,7 +105,11 @@ class TestSystemctlCommand:
     def test_systemctl_disable_service(self, mock_get_backend, context):
         """Test systemctl disable service"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Removed /etc/systemd/system/multi-user.target.wants/myapp.service.\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            "Removed /etc/systemd/system/multi-user.target.wants/myapp.service.\n",
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = SystemctlCommand().with_option("disable").with_option("myapp.service")
@@ -107,7 +122,15 @@ class TestSystemctlCommand:
     def test_systemctl_list_units(self, mock_get_backend, context):
         """Test systemctl list-units"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "UNIT                           LOAD   ACTIVE SUB     DESCRIPTION\nssh.service                    loaded active running OpenSSH Daemon\napache2.service                loaded active running The Apache HTTP Server\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "UNIT                           LOAD   ACTIVE SUB     DESCRIPTION\n"
+                "ssh.service                    loaded active running OpenSSH Daemon\n"
+                "apache2.service                loaded active running The Apache HTTP Server\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = SystemctlCommand().with_option("list-units")
@@ -122,7 +145,15 @@ class TestSystemctlCommand:
     def test_systemctl_list_unit_files(self, mock_get_backend, context):
         """Test systemctl list-unit-files"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "UNIT FILE                     STATE\nssh.service                    enabled\napache2.service                disabled\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "UNIT FILE                     STATE\n"
+                "ssh.service                    enabled\n"
+                "apache2.service                disabled\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = SystemctlCommand().with_option("list-unit-files")
@@ -177,7 +208,11 @@ class TestSystemctlCommand:
     def test_systemctl_show_service(self, mock_get_backend, context):
         """Test systemctl show service details"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Id=ssh.service\nNames=ssh.service\nDescription=OpenSSH Daemon\nLoadState=loaded\nActiveState=active\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            "Id=ssh.service\nNames=ssh.service\nDescription=OpenSSH Daemon\nLoadState=loaded\nActiveState=active\n",
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = SystemctlCommand().with_option("show").with_option("ssh.service")

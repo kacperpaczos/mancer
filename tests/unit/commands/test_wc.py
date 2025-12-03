@@ -2,7 +2,7 @@
 Unit tests for wc command - all scenarios in one focused file
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 

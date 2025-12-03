@@ -6,10 +6,9 @@ import subprocess
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import polars as pl
-import pytest
+import pytest  # noqa: E402
 
-from mancer.infrastructure.backend.bash_backend import BashBackend
+from mancer.infrastructure.backend.bash_backend import BashBackend  # noqa: E402
 
 
 class ImmediateThread:
@@ -67,7 +66,7 @@ class TestBashBackend:
         assert result.exit_code == -1
         assert "run failed" in (result.error_message or "")
 
-    @pytest.mark.skip(reason="Live output test requires complex threading mock - pending refactor")
+    @pytest.mark.skip(reason="Live output test requires complex threading mock - pending refactor")  # type: ignore[misc]
     def test_execute_command_live_output(self) -> None:
         """Test live output mode (complex threading - skipped for now)."""
         pass
@@ -149,4 +148,3 @@ class TestBashBackend:
         assert "--follow-symlinks" in command
         assert "--name='*.py'" in command
         assert "-d 2" in command
-

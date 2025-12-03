@@ -12,13 +12,13 @@ from mancer.domain.model.command_context import CommandContext
 from mancer.domain.model.command_result import CommandResult
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def context() -> CommandContext:
     """Standard command context fixture."""
     return CommandContext(current_directory="/tmp/test")
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def mock_backend() -> MagicMock:
     """Pre-configured mock backend returning success by default."""
     backend = MagicMock()
@@ -42,8 +42,7 @@ def make_result(
     )
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def result_factory() -> Callable[..., CommandResult]:
     """Factory fixture for creating CommandResult instances."""
     return make_result
-

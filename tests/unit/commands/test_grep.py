@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from mancer.domain.model.command_context import CommandContext
 from mancer.infrastructure.command.file.grep_command import GrepCommand
 
 

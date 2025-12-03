@@ -2,7 +2,7 @@
 Unit tests for df command - all scenarios in one focused file
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -22,7 +22,14 @@ class TestDfCommand:
     def test_df_basic_disk_usage(self, mock_get_backend, context):
         """Test basic df command showing disk usage"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 5000000  4500000  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 5000000  4500000  53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand()
@@ -39,7 +46,11 @@ class TestDfCommand:
     def test_df_human_readable(self, mock_get_backend, context):
         """Test df -h with human readable sizes"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        9.6G  4.8G  4.3G  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        9.6G  4.8G  4.3G  53% /\n",
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-h")
@@ -54,7 +65,11 @@ class TestDfCommand:
     def test_df_inode_usage(self, mock_get_backend, context):
         """Test df -i showing inode usage"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     Inodes IUsed IFree IUse% Mounted on\n/dev/sda1      1000000 50000 950000    5% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            "Filesystem     Inodes IUsed IFree IUse% Mounted on\n/dev/sda1      1000000 50000 950000    5% /\n",
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-i")
@@ -70,7 +85,14 @@ class TestDfCommand:
     def test_df_specific_filesystem(self, mock_get_backend, context):
         """Test df for specific filesystem"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 5000000  4500000  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 5000000  4500000  53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand("/dev/sda1")
@@ -83,7 +105,15 @@ class TestDfCommand:
     def test_df_all_filesystems(self, mock_get_backend, context):
         """Test df -a showing all filesystems"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 5000000  4500000  53% /\ntmpfs             512000        0   512000   0% /tmp\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 5000000  4500000  53% /\n"
+                "tmpfs             512000        0   512000   0% /tmp\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-a")
@@ -98,7 +128,14 @@ class TestDfCommand:
     def test_df_local_filesystems_only(self, mock_get_backend, context):
         """Test df -l showing only local filesystems"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 5000000  4500000  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 5000000  4500000  53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-l")
@@ -111,7 +148,14 @@ class TestDfCommand:
     def test_df_filesystem_type(self, mock_get_backend, context):
         """Test df -T showing filesystem types"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     Type 1K-blocks  Used Available Use% Mounted on\n/dev/sda1      ext4 10000000 5000000  4500000  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     Type 1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1      ext4 10000000 5000000  4500000  53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-T")
@@ -125,7 +169,14 @@ class TestDfCommand:
     def test_df_portability_mode(self, mock_get_backend, context):
         """Test df -P with POSIX output format"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem         1024-blocks  Used Available Capacity Mounted on\n/dev/sda1              9765625 4882812  4394531      53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem         1024-blocks  Used Available Capacity Mounted on\n"
+                "/dev/sda1              9765625 4882812  4394531      53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand().with_option("-P")
@@ -138,7 +189,14 @@ class TestDfCommand:
     def test_df_specific_mount_point(self, mock_get_backend, context):
         """Test df for specific mount point"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 5000000  4500000  53% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 5000000  4500000  53% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand("/")
@@ -151,7 +209,14 @@ class TestDfCommand:
     def test_df_no_space_left(self, mock_get_backend, context):
         """Test df when filesystem is full"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "Filesystem     1K-blocks  Used Available Use% Mounted on\n/dev/sda1       10000000 10000000        0 100% /\n", "")
+        mock_backend.execute.return_value = (
+            0,
+            (
+                "Filesystem     1K-blocks  Used Available Use% Mounted on\n"
+                "/dev/sda1       10000000 10000000        0 100% /\n"
+            ),
+            "",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = DfCommand()

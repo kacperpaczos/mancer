@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import polars as pl
+import pytest
 
 from mancer.application.command_cache import CommandCache
 from mancer.domain.model.command_result import CommandResult
@@ -70,11 +71,11 @@ class TestCommandCache:
         assert "cmd" in exported["results"]
         assert exported["results"]["cmd"]["metadata"]["metadata"]["user"] == "dev"
 
-    def test_set_auto_refresh_toggles_state(self, monkeypatch) -> None:
+    def test_set_auto_refresh_toggles_state(self, monkeypatch: pytest.MonkeyPatch) -> None:
         cache = CommandCache(auto_refresh=False)
         started = {"called": False}
 
-        def fake_start():
+        def fake_start() -> None:
             started["called"] = True
             cache._refresh_thread = MagicMock()
 
@@ -99,4 +100,3 @@ class TestCommandCache:
 
         assert len(cache) == 0
         assert cache.get_history() == []
-
