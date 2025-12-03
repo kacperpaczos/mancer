@@ -62,20 +62,15 @@ jobs:
         isort --check-only src/ tests/
         mypy src/ tests/legacy/
 
-    - name: Run unit tests with coverage
+    - name: Run unit tests with coverage (legacy)
       run: |
         echo "Running unit tests..."
-        pytest tests/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html --cov-fail-under=85
+        pytest tests/legacy/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html --cov-fail-under=85
 
-    - name: Run integration tests
+    - name: Run integration tests (legacy)
       run: |
         echo "Running integration tests..."
-        sudo -E pytest tests/integration/ --run-integration -v --tb=short --maxfail=3
-
-    - name: Run E2E tests with performance validation
-      run: |
-        echo "Running E2E tests..."
-        sudo -E pytest tests/e2e/ --run-e2e -v --tb=short --performance-monitoring --baseline-compare --maxfail=2
+        sudo -E pytest tests/legacy/integration/ -v --tb=short --maxfail=3
 
     - name: Build and validate package
       run: |

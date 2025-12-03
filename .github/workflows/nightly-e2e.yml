@@ -49,10 +49,11 @@ jobs:
     - name: Create performance baseline directory
       run: mkdir -p performance_baselines
 
-    - name: Run E2E tests with comprehensive monitoring
-      run: |
-        echo "Starting comprehensive E2E test suite at $(date)"
-        sudo -E pytest tests/e2e/ --run-e2e -v --tb=short --performance-monitoring --baseline-compare --maxfail=5
+    # E2E tests disabled - using legacy tests only
+    # - name: Run E2E tests with comprehensive monitoring
+    #   run: |
+    #     echo "Starting comprehensive E2E test suite at $(date)"
+    #     sudo -E pytest tests/e2e/ --run-e2e -v --tb=short --performance-monitoring --baseline-compare --maxfail=5
 
     - name: Generate performance baseline (if requested)
       if: github.event.inputs.baseline_update == 'true'

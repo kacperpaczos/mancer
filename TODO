@@ -38,3 +38,5 @@ potrzbne nowa werjsa ulozenia katalgow w tym proejckie, bo nie wiem co i jak
 
 compgen -c
 Jesli mamy adapter, a nie ma komendy, adapter musi to wykrywać
+
+usunąć wszystkie ignore z testów
