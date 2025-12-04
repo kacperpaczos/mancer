@@ -99,3 +99,23 @@ class HostnameCommand(BaseCommand):
     def ip_address(self) -> "HostnameCommand":
         """Opcja -i - pokazuje adresy IP hosta"""
         return self.with_option("-i")
+
+    def short(self) -> "HostnameCommand":
+        """Opcja -s - pokazuje krótką nazwę hosta"""
+        return self.with_option("-s")
+
+    def aliases(self) -> "HostnameCommand":
+        """Opcja -a - pokazuje aliasy nazw hosta"""
+        return self.with_option("-a")
+
+    def all_ip_addresses(self) -> "HostnameCommand":
+        """Opcja -I - pokazuje wszystkie adresy IP hosta"""
+        return self.with_option("-I")
+
+    def nis_domain(self) -> "HostnameCommand":
+        """Opcja -y - pokazuje nazwę domeny NIS/YP"""
+        return self.with_option("-y")
+
+    def boot_id(self) -> "HostnameCommand":
+        """Opcja -b - ustawia domyślną nazwę hosta jeśli nie jest dostępna"""
+        return self.with_option("-b")
