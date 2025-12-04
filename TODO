@@ -40,3 +40,5 @@ compgen -c
 Jesli mamy adapter, a nie ma komendy, adapter musi to wykrywać
 
 usunąć wszystkie ignore z testów
+
+Trzeba napisac skrypt bash, ktory odpali wszystkie komendyw kazdje kolejnosci i zbiere z nich mozliwe outputy., zebyto mockowac.

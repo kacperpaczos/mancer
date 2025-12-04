@@ -2,11 +2,12 @@
 Unit tests for hostname command - all scenarios in one focused file
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from mancer.domain.model.command_context import CommandContext
+from mancer.domain.model.command_result import CommandResult
 from mancer.infrastructure.command.system.hostname_command import HostnameCommand
 
 
@@ -22,7 +23,12 @@ class TestHostnameCommand:
     def test_hostname_basic(self, mock_get_backend, context):
         """Test basic hostname command"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "myhost\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="myhost\n",
+            success=True,
+            structured_output=["myhost"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand()
@@ -36,7 +42,12 @@ class TestHostnameCommand:
     def test_hostname_short_name(self, mock_get_backend, context):
         """Test hostname -s showing short hostname"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "myhost\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="myhost\n",
+            success=True,
+            structured_output=["myhost"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().short()
@@ -49,7 +60,12 @@ class TestHostnameCommand:
     def test_hostname_domain_name(self, mock_get_backend, context):
         """Test hostname -d showing domain name"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "example.com\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="example.com\n",
+            success=True,
+            structured_output=["example.com"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().domain()
@@ -62,7 +78,12 @@ class TestHostnameCommand:
     def test_hostname_fqdn(self, mock_get_backend, context):
         """Test hostname -f showing fully qualified domain name"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "myhost.example.com\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="myhost.example.com\n",
+            success=True,
+            structured_output=["myhost.example.com"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().fqdn()
@@ -75,7 +96,12 @@ class TestHostnameCommand:
     def test_hostname_ip_address(self, mock_get_backend, context):
         """Test hostname -i showing IP address"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "192.168.1.100\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="192.168.1.100\n",
+            success=True,
+            structured_output=["192.168.1.100"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().ip_address()
@@ -88,7 +114,12 @@ class TestHostnameCommand:
     def test_hostname_all_ip_addresses(self, mock_get_backend, context):
         """Test hostname -I showing all IP addresses"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "192.168.1.100 10.0.0.50\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="192.168.1.100 10.0.0.50\n",
+            success=True,
+            structured_output=["192.168.1.100 10.0.0.50"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().all_ip_addresses()
@@ -102,7 +133,12 @@ class TestHostnameCommand:
     def test_hostname_aliases(self, mock_get_backend, context):
         """Test hostname -a showing aliases"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "alias1 alias2\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="alias1 alias2\n",
+            success=True,
+            structured_output=["alias1 alias2"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().aliases()
@@ -116,7 +152,12 @@ class TestHostnameCommand:
     def test_hostname_nis_domain(self, mock_get_backend, context):
         """Test hostname -y showing NIS domain name"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "nisdomain\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="nisdomain\n",
+            success=True,
+            structured_output=["nisdomain"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().nis_domain()
@@ -129,7 +170,12 @@ class TestHostnameCommand:
     def test_hostname_boot_id(self, mock_get_backend, context):
         """Test hostname -b showing boot ID (if supported)"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "boot-id-123\n", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="boot-id-123\n",
+            success=True,
+            structured_output=["boot-id-123"],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().boot_id()
@@ -142,7 +188,12 @@ class TestHostnameCommand:
     def test_hostname_set_hostname(self, mock_get_backend, context):
         """Test hostname setting new hostname"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (0, "", "")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="",
+            success=True,
+            structured_output=[],
+            exit_code=0,
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand("newhostname")
@@ -155,7 +206,13 @@ class TestHostnameCommand:
     def test_hostname_permission_denied(self, mock_get_backend, context):
         """Test hostname when permission denied for setting"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (1, "", "hostname: you must be root to change the host name")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="",
+            success=False,
+            structured_output=[],
+            exit_code=1,
+            error_message="hostname: you must be root to change the host name",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand("newhostname")
@@ -169,7 +226,13 @@ class TestHostnameCommand:
     def test_hostname_invalid_option(self, mock_get_backend, context):
         """Test hostname with invalid option"""
         mock_backend = MagicMock()
-        mock_backend.execute.return_value = (1, "", "hostname: invalid option -- 'z'")
+        mock_backend.execute_command.return_value = CommandResult(
+            raw_output="",
+            success=False,
+            structured_output=[],
+            exit_code=1,
+            error_message="hostname: invalid option -- 'z'",
+        )
         mock_get_backend.return_value = mock_backend
 
         cmd = HostnameCommand().with_option("-z")

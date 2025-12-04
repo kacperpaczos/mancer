@@ -59,11 +59,11 @@ jobs:
 
     - name: Type check with mypy
       run: |
-        mypy src/ tests/legacy/
+        mypy src/ tests/unit/ tests/legacy/integration/
 
-    - name: Run unit tests (legacy)
+    - name: Run unit tests
       run: |
-        pytest tests/legacy/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html
+        pytest tests/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html
 
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4

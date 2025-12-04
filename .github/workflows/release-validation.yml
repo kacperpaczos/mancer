@@ -60,12 +60,12 @@ jobs:
         ruff check src/ tests/ --output-format=github
         black --check src/ tests/
         isort --check-only src/ tests/
-        mypy src/ tests/legacy/
+        mypy src/ tests/unit/ tests/legacy/integration/
 
-    - name: Run unit tests with coverage (legacy)
+    - name: Run unit tests with coverage
       run: |
         echo "Running unit tests..."
-        pytest tests/legacy/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html --cov-fail-under=85
+        pytest tests/unit/ -v --cov=src/mancer --cov-report=xml --cov-report=html --cov-fail-under=85
 
     - name: Run integration tests (legacy)
       run: |
