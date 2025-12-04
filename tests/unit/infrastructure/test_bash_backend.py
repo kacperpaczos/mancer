@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-"""Testy jednostkowe BashBackend z pełnym mockowaniem subprocess."""
-
 import subprocess
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import pytest  # noqa: E402
+import pytest
 
-from mancer.infrastructure.backend.bash_backend import BashBackend  # noqa: E402
+from mancer.infrastructure.backend.bash_backend import BashBackend
+
+"""Testy jednostkowe BashBackend z pełnym mockowaniem subprocess."""
 
 
 class ImmediateThread:

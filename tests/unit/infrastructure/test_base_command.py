@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Testy jednostkowe dla BaseCommand w nowym pakiecie tests/unit."""
-
 from unittest.mock import Mock, patch
 
 import polars as pl
@@ -10,6 +8,8 @@ import pytest
 from mancer.application.commands.base_command import BaseCommand
 from mancer.domain.model.command_context import CommandContext, ExecutionMode
 from mancer.domain.model.command_result import CommandResult
+
+"""Testy jednostkowe dla BaseCommand w nowym pakiecie tests/unit."""
 
 
 @pytest.fixture()  # type: ignore[misc]
