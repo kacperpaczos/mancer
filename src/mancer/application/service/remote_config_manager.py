@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from ...domain.shared.config_balancer import ConfigBalancer, ConfigDiff, ConfigFormat, ConfigTemplate
 from ...domain.shared.profile_producer import ProfileProducer
 from ...infrastructure.shared.file_tracer import FileTracer
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
+from ...infrastructure.shared.file_tracer_adapter import FileTracerContentProvider
+from ...infrastructure.shared.ssh_connecticer import SSHConnecticer, create_ssh_from_profile
 
 
 class ConfigSyncTask(BaseModel):
@@ -114,13 +115,12 @@ class RemoteConfigManager:
         if profile_name in self.connections:
             return self.connections[profile_name].is_alive()
 
-        # Pobierz profil
-        profile = self.profile_producer.get_profile(profile_name)
+        # Pobierz profil i utwórz połączenie przez fabrykę z infrastructure
+        profile = self.profile_producer.get_connection_profile(profile_name)
         if not profile:
             return False
 
-        # Utwórz połączenie
-        connection = profile.create_ssh_connection()
+        connection = create_ssh_from_profile(profile)
 
         # Sprawdź połączenie
         if not connection.check_connection():
@@ -213,12 +213,20 @@ class RemoteConfigManager:
                 is_target_remote=True,
             )
 
-        # Porównaj pliki
+        # Buduj dostawców zawartości z infrastructure i porównaj
+        source_provider = FileTracerContentProvider(
+            FileTracer(self.connections[source_profile]), is_remote=True
+        )
+        target_provider = FileTracerContentProvider(
+            FileTracer(self.connections[target_profile]), is_remote=True
+        )
         return self.config_balancer.compare_configs(
             source_path=source_path,
             target_path=target_path,
-            source_ssh=self.connections[source_profile],
-            target_ssh=self.connections[target_profile],
+            source_provider=source_provider,
+            target_provider=target_provider,
+            is_source_remote=True,
+            is_target_remote=True,
         )
 
     def sync_config_file(
@@ -245,12 +253,20 @@ class RemoteConfigManager:
         if not self._ensure_connection(source_profile) or not self._ensure_connection(target_profile):
             return False, "Błąd połączenia z jednym z serwerów"
 
-        # Synchronizuj plik
+        # Buduj dostawców zawartości i synchronizuj
+        source_provider = FileTracerContentProvider(
+            FileTracer(self.connections[source_profile]), is_remote=True
+        )
+        target_provider = FileTracerContentProvider(
+            FileTracer(self.connections[target_profile]), is_remote=True
+        )
         return self.config_balancer.sync_config(
             source_path=source_path,
             target_path=target_path,
-            source_ssh=self.connections[source_profile],
-            target_ssh=self.connections[target_profile],
+            source_provider=source_provider,
+            target_provider=target_provider,
+            is_source_remote=True,
+            is_target_remote=True,
             make_backup=make_backup,
         )
 

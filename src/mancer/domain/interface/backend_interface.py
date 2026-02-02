@@ -5,7 +5,7 @@ from ..model.command_result import CommandResult
 
 
 class BackendInterface(ABC):
-    """Interfejs dla backendów wykonujących komendy"""
+    """Interfejs dla backendów wykonujących komendy."""
 
     @abstractmethod
     def execute_command(
@@ -13,8 +13,20 @@ class BackendInterface(ABC):
         command: str,
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        context_params: Optional[Dict[str, Any]] = None,
+        stdin: Optional[str] = None,
+        **kwargs: Any,
     ) -> CommandResult:
-        """Wykonuje komendę na danym backendzie"""
+        """Wykonuje komendę na danym backendzie.
+
+        Args:
+            command: Ciąg komendy do wykonania.
+            working_dir: Opcjonalny katalog roboczy.
+            env_vars: Opcjonalne zmienne środowiskowe.
+            context_params: Opcjonalne parametry kontekstu (np. live_output).
+            stdin: Opcjonalne dane wejściowe (stdin).
+            **kwargs: Parametry specyficzne dla backendu (np. session_id dla SSH).
+        """
         pass
 
     @abstractmethod

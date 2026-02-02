@@ -9,7 +9,7 @@ from ...domain.model.command_context import CommandContext, ExecutionMode, Remot
 from ...domain.shared.profile_producer import ConnectionProfile, ProfileProducer
 from ...infrastructure.command.system.systemctl_command import SystemctlCommand
 from ...infrastructure.shared.command_enforcer import CommandEnforcer
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
+from ...infrastructure.shared.ssh_connecticer import SSHConnecticer, create_ssh_from_profile
 
 
 class SystemdUnit(BaseModel):
@@ -101,13 +101,12 @@ class SystemdInspector:
         Returns:
             bool: Czy połączenie się powiodło
         """
-        # Pobierz profil
-        profile = self.profile_producer.get_profile(profile_name)
+        # Pobierz profil i utwórz połączenie przez fabrykę z infrastructure
+        profile = self.profile_producer.get_connection_profile(profile_name)
         if not profile:
             return False
 
-        # Utwórz połączenie
-        self.active_connection = profile.create_ssh_connection()
+        self.active_connection = create_ssh_from_profile(profile)
         self.active_profile = profile
 
         # Sprawdź połączenie

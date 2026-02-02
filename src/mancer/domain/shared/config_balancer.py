@@ -7,8 +7,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import yaml
 from pydantic import BaseModel, Field
 
-from ...infrastructure.shared.file_tracer import FileTracer
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
+from ..interface.file_content_provider import FileContentProvider
 
 
 class ConfigDiff(BaseModel):
@@ -186,7 +185,6 @@ class ConfigBalancer:
         os.makedirs(self.templates_dir, exist_ok=True)
         os.makedirs(self.history_dir, exist_ok=True)
 
-        self.file_tracer = FileTracer()
         self._templates: Dict[str, ConfigTemplate] = {}
         self._validators: Dict[str, ConfigValidator] = {}
 
@@ -197,32 +195,27 @@ class ConfigBalancer:
         self,
         source_path: str,
         target_path: str,
-        source_ssh: Optional[SSHConnecticer] = None,
-        target_ssh: Optional[SSHConnecticer] = None,
+        source_provider: FileContentProvider,
+        target_provider: FileContentProvider,
+        is_source_remote: bool = False,
+        is_target_remote: bool = False,
     ) -> ConfigDiff:
         """
-        Porównuje dwie konfiguracje.
+        Porównuje dwie konfiguracje przy użyciu dostawców zawartości (wstrzykiwanych z application/infrastructure).
 
         Args:
             source_path: Ścieżka do pliku źródłowego
             target_path: Ścieżka do pliku docelowego
-            source_ssh: Opcjonalne połączenie SSH do źródła
-            target_ssh: Opcjonalne połączenie SSH do celu
+            source_provider: Dostawca zawartości źródła
+            target_provider: Dostawca zawartości celu
+            is_source_remote: Czy źródło jest zdalne (do metadanych ConfigDiff)
+            is_target_remote: Czy cel jest zdalny (do metadanych ConfigDiff)
 
         Returns:
             ConfigDiff: Obiekt różnic
         """
-        # Konfiguruj FileTracer dla źródła
-        source_tracer = FileTracer(source_ssh) if source_ssh else FileTracer()
-        is_source_remote = source_ssh is not None
-
-        # Konfiguruj FileTracer dla celu
-        target_tracer = FileTracer(target_ssh) if target_ssh else FileTracer()
-        is_target_remote = target_ssh is not None
-
-        # Pobierz zawartość plików
         try:
-            source_content = source_tracer._get_file_content(source_path, is_source_remote)
+            source_content = source_provider.get_content(source_path)
         except Exception as e:
             return ConfigDiff(
                 source_path=source_path,
@@ -233,7 +226,7 @@ class ConfigBalancer:
             )
 
         try:
-            target_content = target_tracer._get_file_content(target_path, is_target_remote)
+            target_content = target_provider.get_content(target_path)
         except Exception as e:
             return ConfigDiff(
                 source_path=source_path,
@@ -243,7 +236,6 @@ class ConfigBalancer:
                 is_target_remote=is_target_remote,
             )
 
-        # Porównaj zawartość
         if source_content == target_content:
             return ConfigDiff(
                 source_path=source_path,
@@ -253,7 +245,6 @@ class ConfigBalancer:
                 is_target_remote=is_target_remote,
             )
 
-        # Generuj różnice
         import difflib
 
         differ = difflib.Differ()
@@ -271,56 +262,52 @@ class ConfigBalancer:
         self,
         source_path: str,
         target_path: str,
-        source_ssh: Optional[SSHConnecticer] = None,
-        target_ssh: Optional[SSHConnecticer] = None,
+        source_provider: FileContentProvider,
+        target_provider: FileContentProvider,
+        is_source_remote: bool = False,
+        is_target_remote: bool = False,
         make_backup: bool = True,
     ) -> Tuple[bool, Optional[str]]:
         """
-        Synchronizuje konfigurację z źródła do celu.
+        Synchronizuje konfigurację z źródła do celu przy użyciu dostawców zawartości.
 
         Args:
             source_path: Ścieżka do pliku źródłowego
             target_path: Ścieżka do pliku docelowego
-            source_ssh: Opcjonalne połączenie SSH do źródła
-            target_ssh: Opcjonalne połączenie SSH do celu
+            source_provider: Dostawca zawartości źródła
+            target_provider: Dostawca zawartości celu
+            is_source_remote: Czy źródło jest zdalne
+            is_target_remote: Czy cel jest zdalny
             make_backup: Czy utworzyć backup przed synchronizacją
 
         Returns:
             Tuple[bool, Optional[str]]: (sukces, ścieżka do backupu lub komunikat błędu)
         """
-        # Konfiguruj FileTracer dla źródła
-        source_tracer = FileTracer(source_ssh) if source_ssh else FileTracer()
-        is_source_remote = source_ssh is not None
-
-        # Konfiguruj FileTracer dla celu
-        target_tracer = FileTracer(target_ssh) if target_ssh else FileTracer()
-        is_target_remote = target_ssh is not None
-
-        # Najpierw zrób backup jeśli wymagany
         backup_path = None
         if make_backup:
             try:
-                backup_path = target_tracer.backup_file(target_path, is_target_remote, "before_sync")
+                backup_path = target_provider.backup_file(target_path, "before_sync")
             except Exception:
-                # Kontynuuj nawet jeśli backup się nie powiedzie
                 pass
 
-        # Pobierz zawartość pliku źródłowego
         try:
-            source_content = source_tracer._get_file_content(source_path, is_source_remote)
+            source_content = source_provider.get_content(source_path)
         except Exception as e:
             return False, f"Błąd odczytu źródła: {str(e)}"
 
-        # Zapisz zawartość do pliku docelowego
         try:
-            success = target_tracer._set_file_content(target_path, source_content, is_target_remote)
+            success = target_provider.set_content(target_path, source_content)
             if not success:
                 return False, "Błąd zapisu do pliku docelowego"
         except Exception as e:
             return False, f"Błąd zapisu do celu: {str(e)}"
 
-        # Zapisz historię operacji
-        diff = self.compare_configs(source_path, target_path, source_ssh, target_ssh)
+        diff = self.compare_configs(
+            source_path, target_path,
+            source_provider, target_provider,
+            is_source_remote=is_source_remote,
+            is_target_remote=is_target_remote,
+        )
         self._save_sync_history(diff, backup_path)
 
         return True, backup_path

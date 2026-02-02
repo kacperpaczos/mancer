@@ -1,13 +1,15 @@
+"""Serwis orkiestracji sesji SSH i transferów SCP (warstwa application)."""
+
 import threading
 import uuid
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 
 from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackendFactory, SSHSession, SSHSessionConfigDict
-from ..model.command_result import CommandResult
-from ..model.config_manager import ConfigManager
+from ...domain.model.command_result import CommandResult
+from ...domain.model.config_manager import ConfigManager
 
 if TYPE_CHECKING:
-    from ..model.ssh_profile import SSHProfile
+    from ...domain.model.ssh_profile import SSHProfile
 
 
 class SSHSessionService:
@@ -25,7 +27,7 @@ class SSHSessionService:
         self._setup_logger()
 
         # Inicjalizacja CredentialStore
-        from ..model.credential_store import CredentialStore
+        from ...domain.model.credential_store import CredentialStore
 
         self.credential_store: Optional[Any] = CredentialStore()
 
@@ -150,83 +152,9 @@ class SSHSessionService:
                     self.logger.warning(f"Nie udało się pobrać hasła dla profilu {profile.name}: {e}")
 
         # Stwórz sesję używając parametrów z profilu
-        # Usuń fingerprint_callback z ssh_options żeby nie trafiło do create_session
         ssh_options = profile.ssh_options.copy() if profile.ssh_options else {}
         if "fingerprint_callback" in ssh_options:
             del ssh_options["fingerprint_callback"]
-
-        # Konwertuj ssh_options na odpowiednie typy
-        converted_options = {}
-        for key, value in ssh_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            converted_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w converted_options
-        if "fingerprint_callback" in converted_options:
-            del converted_options["fingerprint_callback"]
-
-        # Konwertuj converted_options na odpowiednie typy
-        final_options = {}
-        for key, value in converted_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            final_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w final_options
-        if "fingerprint_callback" in final_options:
-            del final_options["fingerprint_callback"]
-
-        # Konwertuj final_options na odpowiednie typy
-        clean_options = {}
-        for key, value in final_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            clean_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w clean_options
-        if "fingerprint_callback" in clean_options:
-            del clean_options["fingerprint_callback"]
-
-        # Konwertuj clean_options na odpowiednie typy
-        final_clean_options = {}
-        for key, value in clean_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            final_clean_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w final_clean_options
-        if "fingerprint_callback" in final_clean_options:
-            del final_clean_options["fingerprint_callback"]
-
-        # Konwertuj final_clean_options na odpowiednie typy
-        ultimate_clean_options = {}
-        for key, value in final_clean_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            ultimate_clean_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w ultimate_clean_options
-        if "fingerprint_callback" in ultimate_clean_options:
-            del ultimate_clean_options["fingerprint_callback"]
-
-        # Konwertuj ultimate_clean_options na odpowiednie typy
-        final_ultimate_clean_options = {}
-        for key, value in ultimate_clean_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            final_ultimate_clean_options[key] = value
-
-        # Upewnij się że fingerprint_callback nie jest w final_ultimate_clean_options
-        if "fingerprint_callback" in final_ultimate_clean_options:
-            del final_ultimate_clean_options["fingerprint_callback"]
-
-        # Konwertuj final_ultimate_clean_options na odpowiednie typy
-        final_final_ultimate_clean_options = {}
-        for key, value in final_ultimate_clean_options.items():
-            if key == "fingerprint_callback":
-                continue  # Skip fingerprint_callback
-            final_final_ultimate_clean_options[key] = value
 
         session = self.create_session(
             hostname=profile.hostname,
@@ -258,29 +186,12 @@ class SSHSessionService:
         fingerprint_callback: Optional[Callable] = None,
         **kwargs: Any,
     ) -> Tuple[bool, Optional[str], Optional[str]]:
-        """Check SSH host fingerprint - simplified approach
-
-        Args:
-            hostname: Host address
-            username: Username
-            port: SSH port (default 22)
-            key_filename: Path to private key
-            proxy_config: Proxy configuration
-            **kwargs: Additional SSH options
-
-        Returns:
-            Tuple (is_known, key_type, fingerprint)
-            - is_known: True if host is known in known_hosts
-            - key_type: Key type (e.g., "ED25519", "RSA")
-            - fingerprint: Key fingerprint (always None in simplified approach)
-        """
+        """Check SSH host fingerprint - simplified approach"""
         try:
-            # Usuń fingerprint_callback z kwargs żeby nie trafiło do konstruktora SshBackend
             kwargs_copy = kwargs.copy()
             if "fingerprint_callback" in kwargs_copy:
                 del kwargs_copy["fingerprint_callback"]
 
-            # Stwórz backend do sprawdzenia klucza
             backend = SshBackendFactory.create_backend(
                 hostname=hostname,
                 username=username,
@@ -299,7 +210,6 @@ class SSHSessionService:
                 ssh_options=self._extract_ssh_options(kwargs_copy),
             )
 
-            # Sprawdź klucz hosta
             is_known, key_type, fingerprint = backend.check_host_key()
 
             if self.logger:
@@ -308,11 +218,7 @@ class SSHSessionService:
                 else:
                     self.logger.info(f"Host {hostname}:{port} is not known - will be handled during connection")
 
-            return (
-                is_known,
-                key_type,
-                None,
-            )  # Simplified approach - no fingerprint extraction
+            return (is_known, key_type, None)
 
         except Exception as e:
             if self.logger:
@@ -320,37 +226,21 @@ class SSHSessionService:
             return False, None, None
 
     def add_host_to_known_hosts(self, hostname: str, port: int, key_type: str, fingerprint: str) -> bool:
-        """Dodaje host do known_hosts
-
-        Args:
-            hostname: Adres hosta
-            port: Port SSH
-            key_type: Typ klucza
-            fingerprint: Fingerprint klucza
-
-        Returns:
-            True jeśli dodano pomyślnie
-        """
+        """Dodaje host do known_hosts"""
         try:
-            # Import tutaj żeby uniknąć circular imports
             import sys
             from pathlib import Path
 
-            # Dodaj ścieżkę do prototypów
             prototype_path = Path(__file__).parent.parent.parent.parent.parent / "prototypes" / "mancer-terminal"
             sys.path.insert(0, str(prototype_path))
 
             try:
                 from gui.ssh_fingerprint_dialog import SSHHostKeyManager
             finally:
-                # Usuń ścieżkę po imporcie
                 if str(prototype_path) in sys.path:
                     sys.path.remove(str(prototype_path))
 
-            # Użyj managera kluczy
             key_manager = SSHHostKeyManager()
-
-            # Dodaj klucz (fingerprint zawiera już pełne dane klucza)
             success = key_manager.add_host_key(hostname, port, key_type, fingerprint)
 
             if self.logger:
@@ -379,12 +269,10 @@ class SSHSessionService:
     ) -> bool:
         """Testuje połączenie SSH przed utworzeniem sesji z obsługą fingerprinta"""
         try:
-            # Usuń fingerprint_callback z kwargs żeby nie trafiło do konstruktora SshBackend
             kwargs_copy = kwargs.copy()
             if "fingerprint_callback" in kwargs_copy:
                 del kwargs_copy["fingerprint_callback"]
 
-            # Wyciągnij timeout i sprawdź typ
             timeout_value: object = kwargs_copy.get("timeout", 30)
             timeout_int: int = 30
             if isinstance(timeout_value, int):
@@ -395,7 +283,6 @@ class SSHSessionService:
                 except ValueError:
                     pass
 
-            # Stwórz tymczasowy backend do testu
             test_backend = SshBackendFactory.create_backend(
                 hostname=hostname,
                 username=username,
@@ -413,11 +300,9 @@ class SSHSessionService:
                 ssh_options=self._extract_ssh_options(kwargs_copy),
             )
 
-            # Ustaw fingerprint callback jeśli podano
             if fingerprint_callback:
                 test_backend.set_fingerprint_callback(fingerprint_callback)
 
-            # Spróbuj połączyć się
             return test_backend.test_connection()
 
         except Exception as e:
@@ -469,7 +354,6 @@ class SSHSessionService:
         if not backend:
             return None
 
-        # Jeśli przekazano fingerprint_callback, ustaw go na backendzie
         if fingerprint_callback:
             try:
                 backend.set_fingerprint_callback(fingerprint_callback)
@@ -558,10 +442,8 @@ class SSHSessionService:
         if session_id not in self.sessions:
             return False
 
-        # Rozłącz sesję
         self.disconnect_session(session_id)
 
-        # Usuń sesję
         with self.lock:
             del self.sessions[session_id]
 
@@ -595,7 +477,6 @@ class SSHSessionService:
             "active_transfers": [],
         }
 
-        # Dodaj aktywne transfery dla tej sesji
         for transfer in self.transfers.values():
             if transfer.status in ["pending", "transferring"]:
                 info["active_transfers"].append(

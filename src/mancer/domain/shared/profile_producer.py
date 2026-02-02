@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional
 from cryptography.fernet import Fernet
 from pydantic import BaseModel
 
-from ...infrastructure.shared.ssh_connecticer import SSHConnecticer
-
 
 class ConnectionProfile(BaseModel):
     """Model profilu połączenia."""
@@ -54,24 +52,6 @@ class ConnectionProfile(BaseModel):
             ConnectionProfile: Utworzony profil
         """
         return cls(**data)
-
-    def create_ssh_connection(self) -> SSHConnecticer:
-        """
-        Tworzy obiekt połączenia SSH na podstawie profilu.
-
-        Returns:
-            SSHConnecticer: Obiekt połączenia SSH
-        """
-        return SSHConnecticer(
-            hostname=self.hostname,
-            username=self.username,
-            port=self.port,
-            password=self.password,
-            key_filename=self.key_filename,
-            passphrase=self.passphrase,
-            ssh_options=self.ssh_options,
-            session_name=self.name,
-        )
 
 
 class ProfileProducer:
@@ -231,20 +211,18 @@ class ProfileProducer:
 
         return sorted(list(groups))
 
-    def create_connection(self, profile_name: str) -> Optional[SSHConnecticer]:
+    def get_connection_profile(self, profile_name: str) -> Optional[ConnectionProfile]:
         """
-        Tworzy połączenie SSH na podstawie profilu.
+        Zwraca profil połączenia o podanej nazwie (do utworzenia połączenia
+        w warstwie application/infrastructure).
 
         Args:
             profile_name: Nazwa profilu
 
         Returns:
-            Optional[SSHConnecticer]: Obiekt połączenia SSH lub None
+            Optional[ConnectionProfile]: Profil połączenia lub None
         """
-        profile = self.get_profile(profile_name)
-        if profile:
-            return profile.create_ssh_connection()
-        return None
+        return self.get_profile(profile_name)
 
     def _save_profile(self, profile: ConnectionProfile) -> bool:
         """

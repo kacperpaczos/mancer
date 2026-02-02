@@ -15,7 +15,11 @@ ParamValue: TypeAlias = Union[str, int, float, bool, pathlib.Path, List[str], No
 
 
 class BaseCommand(CommandInterface[T]):
-    """Bazowa klasa dla wszystkich komend w frameworku"""
+    """Bazowa klasa dla wszystkich komend w frameworku.
+
+    LEGACY: Kanoniczna baza komend jest w mancer.infrastructure.command.base_command.
+    Ta klasa nie jest używana przez ShellRunner/CommandFactory.
+    """
 
     def __init__(self, command_name: str):
         """

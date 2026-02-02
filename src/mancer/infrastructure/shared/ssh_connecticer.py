@@ -1,8 +1,25 @@
 import os
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from ...domain.model.command_result import CommandResult
 from ..backend.ssh_backend import SshBackend
+
+if TYPE_CHECKING:
+    from ...domain.shared.profile_producer import ConnectionProfile
+
+
+def create_ssh_from_profile(profile: "ConnectionProfile") -> "SSHConnecticer":
+    """Tworzy SSHConnecticer na podstawie profilu połączenia (używane z warstwy application)."""
+    return SSHConnecticer(
+        hostname=profile.hostname,
+        username=profile.username,
+        port=profile.port,
+        password=profile.password,
+        key_filename=profile.key_filename,
+        passphrase=profile.passphrase,
+        ssh_options=profile.ssh_options or {},
+        session_name=profile.name,
+    )
 
 
 class SSHConnecticer(SshBackend):

@@ -322,11 +322,14 @@ class SshBackend(BackendInterface):
         command: str,
         working_dir: Optional[str] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        context_params: Optional[Dict[str, Any]] = None,
+        stdin: Optional[str] = None,
         session_id: Optional[str] = None,
+        **kwargs: Any,
     ) -> CommandResult:
         """Execute a command over SSH on the remote host."""
-        # Użyj aktywnej sesji lub podanej
-        target_session = session_id or self.active_session
+        # session_id może być w kwargs dla zgodności z interfejsem
+        target_session = session_id or kwargs.get("session_id") or self.active_session
         if not target_session or target_session not in self.sessions:
             return CommandResult(
                 success=False,
