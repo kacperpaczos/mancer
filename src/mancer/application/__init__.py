@@ -1,12 +1,5 @@
 # Import modułów aplikacji
-from .service import (
-    ConfigSyncTask,
-    RemoteConfigManager,
-    SSHSessionService,
-    SyncResult,
-    SystemdInspector,
-    SystemdUnit,
-)
+from .service import ConfigSyncTask, RemoteConfigManager, SSHSessionService, SyncResult, SystemdInspector, SystemdUnit
 
 __all__ = [
     "SystemdInspector",
