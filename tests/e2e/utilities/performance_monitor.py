@@ -12,14 +12,12 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+from typing import Any, Dict, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from tests.e2e.lxc.monitoring import PerformanceMonitor, PerformanceReport
-
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +77,7 @@ class E2EPerformanceMonitor:
 
     def _generate_summary_report(self, report: PerformanceReport, output_file: Path) -> None:
         """Generate a human-readable summary report."""
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             f.write("=" * 60 + "\n")
             f.write(f"E2E Performance Summary: {report.test_name}\n")
             f.write("=" * 60 + "\n\n")
@@ -119,7 +117,7 @@ class E2EPerformanceMonitor:
 
     def _generate_regression_report(self, report: PerformanceReport, output_file: Path) -> None:
         """Generate detailed regression analysis."""
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             f.write("=" * 60 + "\n")
             f.write(f"PERFORMANCE REGRESSIONS: {report.test_name}\n")
             f.write("=" * 60 + "\n\n")
@@ -148,25 +146,27 @@ class E2EPerformanceMonitor:
 
         logger.warning(f"Generated regression report: {output_file}")
 
-    def generate_comparison_report(self, test_name: str, current_report: PerformanceReport,
-                                 baseline_file: Optional[Path] = None) -> None:
+    def generate_comparison_report(
+        self, test_name: str, current_report: PerformanceReport, baseline_file: Optional[Path] = None
+    ) -> None:
         """Generate comparison report with baseline."""
         if not self.baseline_dir or not baseline_file:
             return
 
         from tests.e2e.utilities.baseline_collector import BaselineCollector
+
         collector = BaselineCollector(self.baseline_dir)
 
         current_metrics = {
             "average_cpu": current_report.average_cpu_usage,
             "peak_memory": current_report.peak_memory_usage,
-            "duration": current_report.duration
+            "duration": current_report.duration,
         }
 
         comparison = collector.compare_with_baseline(test_name, current_metrics)
 
         comparison_file = self.output_dir / f"{test_name}_comparison.json"
-        with open(comparison_file, 'w') as f:
+        with open(comparison_file, "w") as f:
             json.dump(comparison, f, indent=2, default=str)
 
         if comparison["regressions"]:
@@ -175,8 +175,9 @@ class E2EPerformanceMonitor:
             logger.info(f"Performance comparison completed: {comparison_file}")
 
 
-def monitor_test_execution(test_name: str, test_function, output_dir: Path,
-                          baseline_dir: Optional[Path] = None, snapshot_interval: int = 5) -> PerformanceReport:
+def monitor_test_execution(
+    test_name: str, test_function, output_dir: Path, baseline_dir: Optional[Path] = None, snapshot_interval: int = 5
+) -> PerformanceReport:
     """Monitor a test function execution with performance tracking."""
     monitor = E2EPerformanceMonitor(output_dir, baseline_dir)
     monitor.start_test(test_name)
@@ -215,11 +216,13 @@ def main():
     """Main entry point for performance monitoring."""
     parser = argparse.ArgumentParser(description="Monitor E2E test performance")
     parser.add_argument("--test-name", required=True, help="Name of the test to monitor")
-    parser.add_argument("--output-dir", type=Path, default=Path("performance_reports"),
-                       help="Directory to save performance reports")
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path("performance_reports"), help="Directory to save performance reports"
+    )
     parser.add_argument("--baseline-dir", type=Path, help="Directory containing baseline files")
-    parser.add_argument("--snapshot-interval", type=int, default=5,
-                       help="Interval in seconds between performance snapshots")
+    parser.add_argument(
+        "--snapshot-interval", type=int, default=5, help="Interval in seconds between performance snapshots"
+    )
     parser.add_argument("--command", help="Command to execute and monitor")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
@@ -236,6 +239,7 @@ def main():
     def test_function():
         """Execute the provided command."""
         import subprocess
+
         result = subprocess.run(args.command, shell=True, capture_output=True, text=True)
         if result.returncode != 0:
             logger.error(f"Command failed: {result.stderr}")
@@ -243,11 +247,7 @@ def main():
 
     # Monitor the command execution
     report = monitor_test_execution(
-        args.test_name,
-        test_function,
-        args.output_dir,
-        args.baseline_dir,
-        args.snapshot_interval
+        args.test_name, test_function, args.output_dir, args.baseline_dir, args.snapshot_interval
     )
 
     # Print summary

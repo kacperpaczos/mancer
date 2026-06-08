@@ -4,9 +4,9 @@ import threading
 import uuid
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 
-from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackendFactory, SSHSession, SSHSessionConfigDict
 from ...domain.model.command_result import CommandResult
 from ...domain.model.config_manager import ConfigManager
+from ...infrastructure.backend.ssh_backend import SCPTransfer, SshBackendFactory, SSHSession, SSHSessionConfigDict
 
 if TYPE_CHECKING:
     from ...domain.model.ssh_profile import SSHProfile

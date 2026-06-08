@@ -303,8 +303,10 @@ class ConfigBalancer:
             return False, f"Błąd zapisu do celu: {str(e)}"
 
         diff = self.compare_configs(
-            source_path, target_path,
-            source_provider, target_provider,
+            source_path,
+            target_path,
+            source_provider,
+            target_provider,
             is_source_remote=is_source_remote,
             is_target_remote=is_target_remote,
         )

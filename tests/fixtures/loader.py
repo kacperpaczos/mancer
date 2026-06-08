@@ -15,11 +15,6 @@ def load_coreutils_output(command: str, scenario_id: str) -> dict[str, Any]:
     path = FIXTURES_DIR / command / f"{scenario_id}.json"
     if not path.exists():
         available = sorted((FIXTURES_DIR / command).glob("*.json"))
-        raise FileNotFoundError(
-            f"No fixture for {command}/{scenario_id}. "
-            f"Available: {[p.stem for p in available]}"
-        )
+        raise FileNotFoundError(f"No fixture for {command}/{scenario_id}. " f"Available: {[p.stem for p in available]}")
     data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     return data
-
-

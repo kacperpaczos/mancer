@@ -8,9 +8,9 @@ This test validates batch processing capabilities:
 4. Resource cleanup and optimization
 """
 
-import pytest
 import time
-from pathlib import Path
+
+import pytest
 
 
 @pytest.mark.e2e
@@ -32,9 +32,7 @@ class TestBatchProcessingE2E:
 
         # Execute batch processing
         with performance_monitor.time_operation("batch_processing"):
-            batch_result = self._execute_batch_processing(
-                app_container, worker_container, batch_config
-            )
+            batch_result = self._execute_batch_processing(app_container, worker_container, batch_config)
 
         # Validate batch results
         validation_result = self._validate_batch_results(app_container, batch_result)
@@ -54,17 +52,11 @@ class TestBatchProcessingE2E:
         worker_container = e2e_environment.get_container("worker")
 
         # Setup parallel batch configuration
-        parallel_config = {
-            "worker_count": 3,
-            "batch_size": 500,
-            "total_records": 5000
-        }
+        parallel_config = {"worker_count": 3, "batch_size": 500, "total_records": 5000}
 
         # Execute parallel processing
         with performance_monitor.time_operation("parallel_processing"):
-            parallel_result = self._execute_parallel_batch_processing(
-                app_container, worker_container, parallel_config
-            )
+            parallel_result = self._execute_parallel_batch_processing(app_container, worker_container, parallel_config)
 
         # Verify parallel efficiency
         speedup = parallel_result["sequential_time"] / parallel_result["parallel_time"]
@@ -102,7 +94,7 @@ class TestBatchProcessingE2E:
             "batch_count": 5,
             "total_records": batch_size * 5,
             "data_type": "transaction_records",
-            "time_budget": 120  # seconds
+            "time_budget": 120,  # seconds
         }
 
     def _execute_batch_processing(self, app_container, worker_container, batch_config):
@@ -116,7 +108,7 @@ class TestBatchProcessingE2E:
             "processing_time": 45.2,
             "average_batch_time": 9.04,
             "resource_peak": 75.5,
-            "errors": []
+            "errors": [],
         }
 
     def _validate_batch_results(self, app_container, batch_result):
@@ -125,7 +117,7 @@ class TestBatchProcessingE2E:
             "success_rate": 0.998,
             "data_integrity_score": 1.0,
             "result_consistency": True,
-            "output_validation_passed": True
+            "output_validation_passed": True,
         }
 
     def _verify_batch_resource_usage(self, performance_monitor):
@@ -149,16 +141,12 @@ class TestBatchProcessingE2E:
             "sequential_time": 65.2,
             "worker_utilization": [85, 78, 82],
             "resource_utilization": 81.7,
-            "communication_overhead": 2.1
+            "communication_overhead": 2.1,
         }
 
     def _setup_batch_data_for_recovery(self, app_container, batch_count):
         """Setup batch data for failure recovery testing."""
-        return {
-            "batch_count": batch_count,
-            "checkpoint_interval": 2,
-            "recovery_enabled": True
-        }
+        return {"batch_count": batch_count, "checkpoint_interval": 2, "recovery_enabled": True}
 
     def _start_batch_processing_async(self, app_container, batch_config):
         """Start asynchronous batch processing."""
@@ -172,5 +160,5 @@ class TestBatchProcessingE2E:
             "failed_batches": 1,
             "recovery_time": 8.5,
             "data_integrity_maintained": True,
-            "checkpoint_restored": True
+            "checkpoint_restored": True,
         }

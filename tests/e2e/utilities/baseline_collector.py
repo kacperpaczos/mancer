@@ -10,16 +10,14 @@ import argparse
 import json
 import logging
 import sys
-import time
-from pathlib import Path
-from typing import Dict, Any, List
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from tests.e2e.lxc.monitoring import PerformanceMonitor, collect_system_baseline
-
+from tests.e2e.lxc.monitoring import collect_system_baseline
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +37,7 @@ class BaselineCollector:
 
         # Save baseline
         baseline_file = self.baseline_dir / f"{test_name}_baseline.json"
-        with open(baseline_file, 'w') as f:
+        with open(baseline_file, "w") as f:
             json.dump(baseline, f, indent=2, default=str)
 
         logger.info(f"Saved baseline to {baseline_file}")
@@ -49,11 +47,7 @@ class BaselineCollector:
         """Collect baselines for all tests in a scenario."""
         logger.info(f"Collecting baselines for scenario: {scenario}")
 
-        scenario_baselines = {
-            "scenario": scenario,
-            "collected_at": datetime.now().isoformat(),
-            "tests": {}
-        }
+        scenario_baselines = {"scenario": scenario, "collected_at": datetime.now().isoformat(), "tests": {}}
 
         for test in tests:
             try:
@@ -66,7 +60,7 @@ class BaselineCollector:
 
         # Save scenario baseline
         scenario_file = self.baseline_dir / f"{scenario}_scenario_baseline.json"
-        with open(scenario_file, 'w') as f:
+        with open(scenario_file, "w") as f:
             json.dump(scenario_baselines, f, indent=2, default=str)
 
         logger.info(f"Saved scenario baseline to {scenario_file}")
@@ -81,7 +75,7 @@ class BaselineCollector:
             return {"comparison": "no_baseline", "regressions": []}
 
         try:
-            with open(baseline_file, 'r') as f:
+            with open(baseline_file, "r") as f:
                 baseline = json.load(f)
         except (json.JSONDecodeError, IOError) as e:
             logger.error(f"Failed to load baseline: {e}")
@@ -95,11 +89,7 @@ class BaselineCollector:
         current_cpu = current_metrics.get("average_cpu", 0)
         baseline_cpu = baseline.get("average_cpu", 0)
         cpu_diff = ((current_cpu - baseline_cpu) / baseline_cpu) * 100 if baseline_cpu > 0 else 0
-        comparisons["cpu"] = {
-            "current": current_cpu,
-            "baseline": baseline_cpu,
-            "difference_percent": cpu_diff
-        }
+        comparisons["cpu"] = {"current": current_cpu, "baseline": baseline_cpu, "difference_percent": cpu_diff}
         if cpu_diff > 15:  # 15% regression threshold
             regressions.append(f"CPU usage increased by {cpu_diff:.1f}%")
 
@@ -107,11 +97,7 @@ class BaselineCollector:
         current_mem = current_metrics.get("peak_memory", 0)
         baseline_mem = baseline.get("peak_memory", 0)
         mem_diff = ((current_mem - baseline_mem) / baseline_mem) * 100 if baseline_mem > 0 else 0
-        comparisons["memory"] = {
-            "current": current_mem,
-            "baseline": baseline_mem,
-            "difference_percent": mem_diff
-        }
+        comparisons["memory"] = {"current": current_mem, "baseline": baseline_mem, "difference_percent": mem_diff}
         if mem_diff > 10:  # 10% regression threshold
             regressions.append(f"Memory usage increased by {mem_diff:.1f}%")
 
@@ -123,7 +109,7 @@ class BaselineCollector:
             comparisons["duration"] = {
                 "current": current_duration,
                 "baseline": baseline_duration,
-                "difference_percent": duration_diff
+                "difference_percent": duration_diff,
             }
             if duration_diff > 20:  # 20% regression threshold
                 regressions.append(f"Duration increased by {duration_diff:.1f}%")
@@ -133,7 +119,7 @@ class BaselineCollector:
             "regressions": regressions,
             "comparisons": comparisons,
             "baseline_date": baseline.get("collected_at"),
-            "current_date": datetime.now().isoformat()
+            "current_date": datetime.now().isoformat(),
         }
 
         if regressions:
@@ -149,14 +135,16 @@ class BaselineCollector:
 
         for baseline_file in self.baseline_dir.glob("*_baseline.json"):
             try:
-                with open(baseline_file, 'r') as f:
+                with open(baseline_file, "r") as f:
                     baseline = json.load(f)
-                baselines.append({
-                    "name": baseline_file.stem.replace("_baseline", ""),
-                    "file": str(baseline_file),
-                    "collected_at": baseline.get("collected_at", "unknown"),
-                    "scenario": baseline.get("scenario", "single_test")
-                })
+                baselines.append(
+                    {
+                        "name": baseline_file.stem.replace("_baseline", ""),
+                        "file": str(baseline_file),
+                        "collected_at": baseline.get("collected_at", "unknown"),
+                        "scenario": baseline.get("scenario", "single_test"),
+                    }
+                )
             except (json.JSONDecodeError, IOError):
                 continue
 
@@ -164,7 +152,6 @@ class BaselineCollector:
 
     def cleanup_old_baselines(self, days: int = 30) -> int:
         """Clean up baselines older than specified days."""
-        import shutil
         from datetime import datetime, timedelta
 
         cutoff_date = datetime.now() - timedelta(days=days)
@@ -172,12 +159,12 @@ class BaselineCollector:
 
         for baseline_file in self.baseline_dir.glob("*_baseline.json"):
             try:
-                with open(baseline_file, 'r') as f:
+                with open(baseline_file, "r") as f:
                     baseline = json.load(f)
 
                 collected_at = baseline.get("collected_at")
                 if collected_at:
-                    collected_date = datetime.fromisoformat(collected_at.replace('Z', '+00:00'))
+                    collected_date = datetime.fromisoformat(collected_at.replace("Z", "+00:00"))
                     if collected_date < cutoff_date:
                         baseline_file.unlink()
                         removed_count += 1
@@ -191,15 +178,14 @@ class BaselineCollector:
 def main():
     """Main entry point for baseline collection."""
     parser = argparse.ArgumentParser(description="Collect performance baselines for E2E tests")
-    parser.add_argument("--baseline-dir", type=Path, default=Path("tests/e2e/baselines"),
-                       help="Directory to store baseline files")
+    parser.add_argument(
+        "--baseline-dir", type=Path, default=Path("tests/e2e/baselines"), help="Directory to store baseline files"
+    )
     parser.add_argument("--test-name", help="Specific test to collect baseline for")
     parser.add_argument("--scenario", help="Scenario to collect baselines for")
-    parser.add_argument("--duration", type=int, default=60,
-                       help="Duration in seconds to collect baseline")
+    parser.add_argument("--duration", type=int, default=60, help="Duration in seconds to collect baseline")
     parser.add_argument("--list", action="store_true", help="List available baselines")
-    parser.add_argument("--cleanup", type=int, metavar="DAYS",
-                       help="Clean up baselines older than DAYS")
+    parser.add_argument("--cleanup", type=int, metavar="DAYS", help="Clean up baselines older than DAYS")
     parser.add_argument("--compare", help="Compare current run with baseline")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
@@ -228,21 +214,17 @@ def main():
     elif args.scenario:
         # Define tests for each scenario
         scenario_tests = {
-            "data_pipeline": [
-                "test_data_ingestion_e2e",
-                "test_batch_processing_e2e",
-                "test_data_transformation_e2e"
-            ],
+            "data_pipeline": ["test_data_ingestion_e2e", "test_batch_processing_e2e", "test_data_transformation_e2e"],
             "automation_workflows": [
                 "test_deployment_workflow_e2e",
                 "test_backup_workflow_e2e",
-                "test_monitoring_workflow_e2e"
+                "test_monitoring_workflow_e2e",
             ],
             "error_handling": [
                 "test_failure_recovery_e2e",
                 "test_graceful_degradation_e2e",
-                "test_chaos_engineering_e2e"
-            ]
+                "test_chaos_engineering_e2e",
+            ],
         }
 
         if args.scenario not in scenario_tests:

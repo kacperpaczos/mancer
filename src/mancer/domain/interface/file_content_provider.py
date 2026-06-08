@@ -1,4 +1,7 @@
-"""Abstrakcja dostępu do zawartości plików (lokalnych lub zdalnych). Umożliwia warstwie domain użycie dostawcy bez zależności od infrastructure."""
+"""Abstrakcja dostępu do zawartości plików (lokalnych lub zdalnych).
+
+Umożliwia warstwie domain użycie dostawcy bez zależności od infrastructure.
+"""
 
 from typing import Optional, Protocol
 

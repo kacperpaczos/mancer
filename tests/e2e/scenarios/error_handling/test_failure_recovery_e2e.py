@@ -8,9 +8,9 @@ This test validates system recovery from various failure conditions:
 4. Resource exhaustion scenarios
 """
 
-import pytest
 import time
-from pathlib import Path
+
+import pytest
 
 
 @pytest.mark.e2e
@@ -144,7 +144,7 @@ class TestFailureRecoveryE2E:
         return {
             "app_data": {"status": "active", "connections": 5},
             "db_data": {"records": 100, "connections": 3},
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
     def _verify_failure_detection(self, app_container):
@@ -154,11 +154,7 @@ class TestFailureRecoveryE2E:
 
     def _verify_system_recovery(self, app_container, db_container, initial_state):
         """Verify system recovery after failure."""
-        return {
-            "recovered": True,
-            "data_preserved": True,
-            "recovery_time": 12.5
-        }
+        return {"recovered": True, "data_preserved": True, "recovery_time": 12.5}
 
     def _setup_network_operations(self, app_container, db_container):
         """Setup network-dependent operations."""
@@ -205,7 +201,7 @@ class TestFailureRecoveryE2E:
         return {
             "services": ["app", "db", "worker"],
             "interdependencies": ["app->db", "app->worker"],
-            "data_flow": "app -> db -> worker"
+            "data_flow": "app -> db -> worker",
         }
 
     def _verify_multi_failure_stability(self, scenario_state):

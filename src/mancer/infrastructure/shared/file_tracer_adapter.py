@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from ...domain.interface.file_content_provider import FileContentProvider
 from .file_tracer import FileTracer
 
 

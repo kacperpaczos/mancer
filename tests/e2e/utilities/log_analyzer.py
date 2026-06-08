@@ -7,15 +7,13 @@ errors, performance issues, and provide insights for debugging.
 """
 
 import argparse
-import re
 import json
 import logging
-import sys
+import re
+from collections import Counter
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Pattern, Optional, Tuple
-from datetime import datetime, timedelta
-from collections import defaultdict, Counter
-
+from typing import Any, Dict, List, Optional, Pattern, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +32,14 @@ class LogAnalyzer:
             # Error patterns
             "error": re.compile(r"(?i)(error|exception|fail|critical)", re.IGNORECASE),
             "warning": re.compile(r"(?i)(warning|warn)", re.IGNORECASE),
-
             # Performance patterns
             "performance": re.compile(r"(?i)(performance|latency|throughput|bottleneck)", re.IGNORECASE),
             "timing": re.compile(r"(\d+\.?\d*)\s*(ms|s|seconds?)", re.IGNORECASE),
-
             # Container patterns
             "container_start": re.compile(r"(?i)(container.*start|starting.*container)", re.IGNORECASE),
             "container_stop": re.compile(r"(?i)(container.*stop|stopping.*container)", re.IGNORECASE),
-
             # Network patterns
             "network_error": re.compile(r"(?i)(connection.*fail|network.*error|timeout)", re.IGNORECASE),
-
             # Test patterns
             "test_start": re.compile(r"(?i)(test.*start|starting.*test)", re.IGNORECASE),
             "test_end": re.compile(r"(?i)(test.*end|finished.*test)", re.IGNORECASE),
@@ -62,7 +56,7 @@ class LogAnalyzer:
             logger.info(f"Parsing log file: {log_file}")
 
             try:
-                with open(log_file, 'r', encoding='utf-8', errors='replace') as f:
+                with open(log_file, "r", encoding="utf-8", errors="replace") as f:
                     for line_num, line in enumerate(f, 1):
                         entry = self._parse_log_line(line.strip(), log_file.name, line_num)
                         if entry:
@@ -96,8 +90,8 @@ class LogAnalyzer:
                 timestamp_str, message = match.groups()
                 try:
                     # Try to parse timestamp
-                    if 'T' in timestamp_str:
-                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                    if "T" in timestamp_str:
+                        timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
                     else:
                         timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
@@ -115,7 +109,7 @@ class LogAnalyzer:
             "categories": categories,
             "file": filename,
             "line": line_num,
-            "raw": line
+            "raw": line,
         }
 
     def _classify_log_level(self, message: str) -> str:
@@ -124,14 +118,13 @@ class LogAnalyzer:
 
         if any(word in message_lower for word in ["error", "exception", "critical", "fatal"]):
             return "ERROR"
-        elif any(word in message_lower for word in ["warning", "warn"]):
+        if any(word in message_lower for word in ["warning", "warn"]):
             return "WARNING"
-        elif any(word in message_lower for word in ["info", "information"]):
+        if any(word in message_lower for word in ["info", "information"]):
             return "INFO"
-        elif any(word in message_lower for word in ["debug", "trace"]):
+        if any(word in message_lower for word in ["debug", "trace"]):
             return "DEBUG"
-        else:
-            return "UNKNOWN"
+        return "UNKNOWN"
 
     def _categorize_message(self, message: str) -> List[str]:
         """Categorize message based on patterns."""
@@ -181,31 +174,29 @@ class LogAnalyzer:
                 "time_span": str(time_span) if time_span else None,
                 "log_files": len(self.log_files),
                 "levels": dict(level_counts),
-                "categories": dict(category_counts)
+                "categories": dict(category_counts),
             },
             "errors": {
                 "count": len(errors),
                 "patterns": error_patterns[:10],  # Top 10 patterns
-                "sample_errors": [e["message"] for e in errors[:5]]  # First 5 errors
+                "sample_errors": [e["message"] for e in errors[:5]],  # First 5 errors
             },
             "performance": {
                 "entries_count": len(performance_entries),
                 "timing_entries": len(timing_entries),
-                "bottlenecks": self._identify_bottlenecks()
+                "bottlenecks": self._identify_bottlenecks(),
             },
             "containers": container_events,
             "network": {
                 "issues_count": len(network_issues),
-                "sample_issues": [e["message"] for e in network_issues[:3]]
+                "sample_issues": [e["message"] for e in network_issues[:3]],
             },
-            "recommendations": self._generate_recommendations(
-                errors, performance_entries, network_issues
-            ),
-            "generated_at": datetime.now().isoformat()
+            "recommendations": self._generate_recommendations(errors, performance_entries, network_issues),
+            "generated_at": datetime.now().isoformat(),
         }
 
         # Save report
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
         logger.info(f"Generated log analysis report: {output_file}")
@@ -243,7 +234,7 @@ class LogAnalyzer:
         return {
             "starts": len(container_starts),
             "stops": len(container_stops),
-            "active_containers": len(container_starts) - len(container_stops)
+            "active_containers": len(container_starts) - len(container_stops),
         }
 
     def _identify_bottlenecks(self) -> List[str]:
@@ -266,8 +257,7 @@ class LogAnalyzer:
 
         return bottlenecks
 
-    def _generate_recommendations(self, errors: List[Dict], performance: List[Dict],
-                                network: List[Dict]) -> List[str]:
+    def _generate_recommendations(self, errors: List[Dict], performance: List[Dict], network: List[Dict]) -> List[str]:
         """Generate recommendations based on analysis."""
         recommendations = []
 
@@ -275,7 +265,9 @@ class LogAnalyzer:
             recommendations.append("High error rate detected. Review error handling and retry logic.")
 
         if len(network) > 5:
-            recommendations.append("Network connectivity issues detected. Check network configuration and firewall rules.")
+            recommendations.append(
+                "Network connectivity issues detected. Check network configuration and firewall rules."
+            )
 
         if len(performance) > 0:
             recommendations.append("Performance monitoring active. Review timing data for optimization opportunities.")
@@ -291,9 +283,9 @@ class LogAnalyzer:
 
     def print_summary(self, report: Dict[str, Any]) -> None:
         """Print a human-readable summary of the analysis."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("E2E LOG ANALYSIS SUMMARY")
-        print("="*60)
+        print("=" * 60)
 
         summary = report["summary"]
         print(f"\nTotal Log Entries: {summary['total_entries']}")
@@ -324,7 +316,7 @@ class LogAnalyzer:
         network = report["network"]
         print(f"\nNetwork Issues: {network['issues_count']}")
 
-        print(f"\nRecommendations:")
+        print("\nRecommendations:")
         for rec in report["recommendations"]:
             print(f"  • {rec}")
 
@@ -332,12 +324,11 @@ class LogAnalyzer:
 def main():
     """Main entry point for log analysis."""
     parser = argparse.ArgumentParser(description="Analyze E2E test logs")
-    parser.add_argument("--log-files", nargs="+", required=True, type=Path,
-                       help="Log files to analyze")
-    parser.add_argument("--output", type=Path, default=Path("log_analysis_report.json"),
-                       help="Output file for analysis report")
-    parser.add_argument("--summary-only", action="store_true",
-                       help="Print summary without saving detailed report")
+    parser.add_argument("--log-files", nargs="+", required=True, type=Path, help="Log files to analyze")
+    parser.add_argument(
+        "--output", type=Path, default=Path("log_analysis_report.json"), help="Output file for analysis report"
+    )
+    parser.add_argument("--summary-only", action="store_true", help="Print summary without saving detailed report")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
     args = parser.parse_args()

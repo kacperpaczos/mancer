@@ -6,15 +6,15 @@ monitoring resource usage, and detecting performance regressions
 during end-to-end test execution.
 """
 
-import time
-import psutil
+import json
 import logging
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
-import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PerformanceMetric:
     """Individual performance metric."""
+
     name: str
     value: float
     unit: str
@@ -32,6 +33,7 @@ class PerformanceMetric:
 @dataclass
 class PerformanceSnapshot:
     """Snapshot of system performance at a point in time."""
+
     timestamp: datetime
     cpu_percent: float
     memory_percent: float
@@ -43,6 +45,7 @@ class PerformanceSnapshot:
 @dataclass
 class PerformanceReport:
     """Comprehensive performance report for a test run."""
+
     test_name: str
     start_time: datetime
     end_time: datetime
@@ -110,7 +113,7 @@ class PerformanceMonitor:
             total_network_io=total_network,
             operation_timings=self.operation_timings.copy(),
             snapshots=self.snapshots.copy(),
-            regressions_detected=regressions
+            regressions_detected=regressions,
         )
 
         logger.info(f"Generated performance report for {self.test_name}")
@@ -140,7 +143,7 @@ class PerformanceMonitor:
             "bytes_sent": network_io.bytes_sent,
             "bytes_recv": network_io.bytes_recv,
             "packets_sent": network_io.packets_sent,
-            "packets_recv": network_io.packets_recv
+            "packets_recv": network_io.packets_recv,
         }
 
         snapshot = PerformanceSnapshot(
@@ -149,7 +152,7 @@ class PerformanceMonitor:
             memory_percent=memory_percent,
             disk_usage=disk_usage,
             network_io=network_stats,
-            container_stats=container_stats or {}
+            container_stats=container_stats or {},
         )
 
         self.snapshots.append(snapshot)
@@ -161,8 +164,9 @@ class PerformanceMonitor:
 
     def time_operation(self, operation_name: str):
         """Context manager for timing operations."""
+
         class Timer:
-            def __init__(self, monitor: 'PerformanceMonitor', name: str):
+            def __init__(self, monitor: "PerformanceMonitor", name: str):
                 self.monitor = monitor
                 self.name = name
                 self.start_time = None
@@ -182,7 +186,7 @@ class PerformanceMonitor:
         """Load baseline performance data."""
         if self.baseline_file.exists():
             try:
-                with open(self.baseline_file, 'r') as f:
+                with open(self.baseline_file, "r") as f:
                     self.baseline_data = json.load(f)
                 logger.info(f"Loaded baseline data from {self.baseline_file}")
             except (json.JSONDecodeError, IOError) as e:
@@ -226,10 +230,10 @@ class PerformanceMonitor:
             "total_network_io": report.total_network_io,
             "operation_timings": report.operation_timings,
             "regressions_detected": report.regressions_detected,
-            "snapshot_count": len(report.snapshots)
+            "snapshot_count": len(report.snapshots),
         }
 
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(report_data, f, indent=2, default=str)
 
         logger.info(f"Saved performance report to {output_file}")
@@ -244,10 +248,10 @@ class PerformanceMonitor:
             "total_network_bytes_sent": report.total_network_io["bytes_sent"],
             "total_network_bytes_recv": report.total_network_io["bytes_recv"],
             "operation_timings": report.operation_timings,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
 
-        with open(self.baseline_file, 'w') as f:
+        with open(self.baseline_file, "w") as f:
             json.dump(baseline_data, f, indent=2, default=str)
 
         logger.info(f"Updated baseline data in {self.baseline_file}")
@@ -269,7 +273,7 @@ class ContainerMonitor:
             "disk_read_bytes": 1024 * 1024,
             "disk_write_bytes": 512 * 1024,
             "network_rx_bytes": 64 * 1024,
-            "network_tx_bytes": 32 * 1024
+            "network_tx_bytes": 32 * 1024,
         }
 
 
@@ -295,7 +299,7 @@ def collect_system_baseline(test_name: str, duration: int = 60) -> Dict[str, Any
         "peak_memory": report.peak_memory_usage,
         "average_network_bytes_sent": report.total_network_io["bytes_sent"] / duration,
         "average_network_bytes_recv": report.total_network_io["bytes_recv"] / duration,
-        "collected_at": datetime.now().isoformat()
+        "collected_at": datetime.now().isoformat(),
     }
 
     return baseline

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -91,9 +91,15 @@ class TestProfileProducerNoInfrastructure:
         # Sprawdź, że moduł domain nie importuje pakietu infrastructure
         source = inspect.getsource(mod)
         assert "from " in source
-        lines = [line.strip() for line in source.splitlines() if line.strip().startswith("from ") or line.strip().startswith("import ")]
+        lines = [
+            line.strip()
+            for line in source.splitlines()
+            if line.strip().startswith("from ") or line.strip().startswith("import ")
+        ]
         for line in lines:
-            assert "infrastructure" not in line and "ssh_connecticer" not in line, f"domain should not import infrastructure: {line}"
+            assert (
+                "infrastructure" not in line and "ssh_connecticer" not in line
+            ), f"domain should not import infrastructure: {line}"
 
 
 class TestBackendInterfaceContract:

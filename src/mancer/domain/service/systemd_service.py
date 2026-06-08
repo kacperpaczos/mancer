@@ -39,7 +39,7 @@ class SystemdService:
 
         # Funkcja do wykonania dla każdego serwera
         def fetch_units(profile_name: str) -> Dict[str, Any]:
-            conn = self.profile_producer.create_connection(profile_name)
+            conn = self.profile_producer.get_profile(profile_name)
             if not conn:
                 return {
                     "profile_name": profile_name,
@@ -158,7 +158,7 @@ class SystemdService:
                 "error": f"Nieprawidłowa akcja: {action}. Dostępne: {', '.join(valid_actions)}",
             }
 
-        conn = self.profile_producer.create_connection(profile_name)
+        conn = self.profile_producer.get_profile(profile_name)
         if not conn:
             return {
                 "profile_name": profile_name,

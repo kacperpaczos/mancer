@@ -16,6 +16,7 @@ class BashBackend(BackendInterface):
         env_vars: Optional[Dict[str, str]] = None,
         context_params: Optional[Dict[str, Any]] = None,
         stdin: Optional[str] = None,
+        **kwargs: Any,
     ) -> CommandResult:
         """Execute a command in bash."""
         try:

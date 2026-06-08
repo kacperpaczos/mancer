@@ -8,10 +8,9 @@ This test validates the complete data ingestion workflow:
 4. Cleanup and verification
 """
 
-import pytest
-import json
 import time
-from pathlib import Path
+
+import pytest
 
 
 @pytest.mark.e2e
@@ -106,13 +105,13 @@ class TestDataIngestionE2E:
             "users": [
                 {"id": 1, "name": "Alice", "email": "alice@test.com", "status": "active"},
                 {"id": 2, "name": "Bob", "email": "bob@test.com", "status": "active"},
-                {"id": 3, "name": "Charlie", "email": "charlie@test.com", "status": "inactive"}
+                {"id": 3, "name": "Charlie", "email": "charlie@test.com", "status": "inactive"},
             ],
             "orders": [
                 {"id": 1, "user_id": 1, "amount": 100.50, "status": "completed"},
                 {"id": 2, "user_id": 2, "amount": 250.00, "status": "pending"},
-                {"id": 3, "user_id": 1, "amount": 75.25, "status": "completed"}
-            ]
+                {"id": 3, "user_id": 1, "amount": 75.25, "status": "completed"},
+            ],
         }
 
         # Create data files in container
@@ -125,24 +124,20 @@ class TestDataIngestionE2E:
     def _process_data_pipeline(self, app_container, db_container):
         """Execute data processing pipeline."""
         # Simulate data extraction from database
-        extraction_result = {
-            "extracted_records": 6,
-            "extraction_time": 1.2,
-            "success": True
-        }
+        extraction_result = {"extracted_records": 6, "extraction_time": 1.2, "success": True}
 
         # Simulate data transformation
         transformation_result = {
             "transformed_records": 6,
             "transformations_applied": ["status_normalization", "amount_calculation"],
-            "success": True
+            "success": True,
         }
 
         # Simulate data loading/output
         loading_result = {
             "loaded_records": 6,
             "output_files": ["processed_users.json", "processed_orders.json"],
-            "success": True
+            "success": True,
         }
 
         return {
@@ -151,7 +146,7 @@ class TestDataIngestionE2E:
             "transformation": transformation_result,
             "loading": loading_result,
             "total_processing_time": 3.5,
-            "error": None
+            "error": None,
         }
 
     def _validate_processing_results(self, app_container, processing_result):
@@ -162,7 +157,7 @@ class TestDataIngestionE2E:
             "data_quality_score": 0.98,
             "validation_errors": [],
             "output_files_verified": True,
-            "data_consistent": True
+            "data_consistent": True,
         }
 
     def _generate_large_dataset(self, db_container, record_count):
@@ -173,12 +168,7 @@ class TestDataIngestionE2E:
     def _process_large_dataset(self, app_container, db_container):
         """Process large dataset."""
         # Simulate large data processing
-        return {
-            "processing_time": 45.2,
-            "memory_usage_peak": 65.5,
-            "success_rate": 0.997,
-            "records_processed": 10000
-        }
+        return {"processing_time": 45.2, "memory_usage_peak": 65.5, "success_rate": 0.997, "records_processed": 10000}
 
     def _verify_performance_requirements(self, performance_monitor):
         """Verify performance requirements are met."""

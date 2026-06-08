@@ -11,10 +11,9 @@ import logging
 import shutil
 import subprocess
 import sys
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
-
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +43,7 @@ class CleanupManager:
 
         try:
             # Get list of containers
-            result = subprocess.run(
-                ["lxc-ls", "-1"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = subprocess.run(["lxc-ls", "-1"], capture_output=True, text=True, check=True)
 
             containers = result.stdout.strip().split("\n")
             containers_to_cleanup = [c for c in containers if c and container_pattern.replace("*", "") in c]
@@ -59,11 +53,7 @@ class CleanupManager:
                 if self._cleanup_single_container(container):
                     cleaned.append(container)
 
-            return {
-                "containers_found": len(containers_to_cleanup),
-                "containers_cleaned": len(cleaned),
-                "success": True
-            }
+            return {"containers_found": len(containers_to_cleanup), "containers_cleaned": len(cleaned), "success": True}
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to list containers: {e}")
@@ -80,15 +70,13 @@ class CleanupManager:
         try:
             # Stop container if running
             try:
-                subprocess.run(["sudo", "lxc-stop", "-n", container_name],
-                             capture_output=True, timeout=30)
+                subprocess.run(["sudo", "lxc-stop", "-n", container_name], capture_output=True, timeout=30)
                 logger.debug(f"Stopped container: {container_name}")
             except subprocess.CalledProcessError:
                 logger.debug(f"Container {container_name} was not running")
 
             # Destroy container
-            subprocess.run(["sudo", "lxc-destroy", "-n", container_name],
-                         capture_output=True, check=True)
+            subprocess.run(["sudo", "lxc-destroy", "-n", container_name], capture_output=True, check=True)
             logger.info(f"Destroyed container: {container_name}")
 
             return True
@@ -154,7 +142,7 @@ class CleanupManager:
             "files_cleaned": cleaned_files,
             "directories_cleaned": cleaned_dirs,
             "errors": errors,
-            "success": len(errors) == 0
+            "success": len(errors) == 0,
         }
 
         logger.info(f"File cleanup completed: {cleaned_files} files, {cleaned_dirs} directories")
@@ -173,12 +161,7 @@ class CleanupManager:
 
         try:
             # Get process list
-            result = subprocess.run(
-                ["ps", "aux"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = subprocess.run(["ps", "aux"], capture_output=True, text=True, check=True)
 
             lines = result.stdout.strip().split("\n")[1:]  # Skip header
 
@@ -204,11 +187,7 @@ class CleanupManager:
         except subprocess.CalledProcessError as e:
             errors.append(f"Failed to get process list: {e}")
 
-        return {
-            "processes_killed": killed_processes,
-            "errors": errors,
-            "success": len(errors) == 0
-        }
+        return {"processes_killed": killed_processes, "errors": errors, "success": len(errors) == 0}
 
     def cleanup_network(self, bridge_name: str = "lxcbr0") -> Dict[str, Any]:
         """Clean up network bridges and rules."""
@@ -224,18 +203,13 @@ class CleanupManager:
 
         try:
             # Check if bridge exists
-            result = subprocess.run(
-                ["ip", "link", "show", bridge_name],
-                capture_output=True
-            )
+            result = subprocess.run(["ip", "link", "show", bridge_name], capture_output=True)
 
             if result.returncode == 0:
                 # Bridge exists, try to remove it
                 try:
-                    subprocess.run(["sudo", "ip", "link", "set", bridge_name, "down"],
-                                 capture_output=True, check=True)
-                    subprocess.run(["sudo", "ip", "link", "delete", bridge_name],
-                                 capture_output=True, check=True)
+                    subprocess.run(["sudo", "ip", "link", "set", bridge_name, "down"], capture_output=True, check=True)
+                    subprocess.run(["sudo", "ip", "link", "delete", bridge_name], capture_output=True, check=True)
                     logger.info(f"Removed network bridge: {bridge_name}")
                     return {"success": True, "bridge_removed": True}
                 except subprocess.CalledProcessError as e:
@@ -262,22 +236,21 @@ class CleanupManager:
 
         # Cleanup files
         if config.get("cleanup_files", True):
-            cleanup_paths = config.get("cleanup_paths", [
-                Path("/tmp/e2e_workspace"),
-                Path("/tmp/integration_workspace"),
-                Path("performance_reports"),
-                Path("e2e_test.log")
-            ])
+            cleanup_paths = config.get(
+                "cleanup_paths",
+                [
+                    Path("/tmp/e2e_workspace"),
+                    Path("/tmp/integration_workspace"),
+                    Path("performance_reports"),
+                    Path("e2e_test.log"),
+                ],
+            )
             age_days = config.get("cleanup_age_days")
             results["files"] = self.cleanup_files(cleanup_paths, age_days)
 
         # Cleanup processes
         if config.get("cleanup_processes", True):
-            process_patterns = config.get("process_patterns", [
-                "pytest.*e2e",
-                "lxc-attach",
-                "container_setup.sh"
-            ])
+            process_patterns = config.get("process_patterns", ["pytest.*e2e", "lxc-attach", "container_setup.sh"])
             results["processes"] = self.cleanup_processes(process_patterns)
 
         # Cleanup network
@@ -286,8 +259,7 @@ class CleanupManager:
             results["network"] = self.cleanup_network(bridge_name)
 
         # Overall success
-        all_success = all(r.get("success", False) for r in results.values()
-                         if isinstance(r, dict) and "success" in r)
+        all_success = all(r.get("success", False) for r in results.values() if isinstance(r, dict) and "success" in r)
 
         results["overall_success"] = all_success
 
@@ -298,32 +270,26 @@ class CleanupManager:
 def main():
     """Main entry point for cleanup operations."""
     parser = argparse.ArgumentParser(description="Clean up E2E test resources")
-    parser.add_argument("--containers", action="store_true",
-                       help="Clean up LXC containers")
-    parser.add_argument("--container-pattern", default="mancer-e2e-*",
-                       help="Pattern for containers to cleanup")
-    parser.add_argument("--files", action="store_true",
-                       help="Clean up test files and directories")
-    parser.add_argument("--cleanup-paths", nargs="+", type=Path,
-                       default=[Path("/tmp/e2e_workspace"), Path("performance_reports")],
-                       help="Paths to cleanup")
-    parser.add_argument("--age-days", type=int,
-                       help="Only cleanup files older than this many days")
-    parser.add_argument("--processes", action="store_true",
-                       help="Clean up test processes")
-    parser.add_argument("--process-patterns", nargs="+",
-                       default=["pytest.*e2e", "lxc-attach"],
-                       help="Process patterns to cleanup")
-    parser.add_argument("--network", action="store_true",
-                       help="Clean up network bridges")
-    parser.add_argument("--bridge-name", default="lxcbr0",
-                       help="Network bridge to cleanup")
-    parser.add_argument("--comprehensive", action="store_true",
-                       help="Perform comprehensive cleanup of all resources")
-    parser.add_argument("--dry-run", action="store_true",
-                       help="Show what would be cleaned without actually doing it")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Verbose logging")
+    parser.add_argument("--containers", action="store_true", help="Clean up LXC containers")
+    parser.add_argument("--container-pattern", default="mancer-e2e-*", help="Pattern for containers to cleanup")
+    parser.add_argument("--files", action="store_true", help="Clean up test files and directories")
+    parser.add_argument(
+        "--cleanup-paths",
+        nargs="+",
+        type=Path,
+        default=[Path("/tmp/e2e_workspace"), Path("performance_reports")],
+        help="Paths to cleanup",
+    )
+    parser.add_argument("--age-days", type=int, help="Only cleanup files older than this many days")
+    parser.add_argument("--processes", action="store_true", help="Clean up test processes")
+    parser.add_argument(
+        "--process-patterns", nargs="+", default=["pytest.*e2e", "lxc-attach"], help="Process patterns to cleanup"
+    )
+    parser.add_argument("--network", action="store_true", help="Clean up network bridges")
+    parser.add_argument("--bridge-name", default="lxcbr0", help="Network bridge to cleanup")
+    parser.add_argument("--comprehensive", action="store_true", help="Perform comprehensive cleanup of all resources")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be cleaned without actually doing it")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
     args = parser.parse_args()
 
@@ -344,7 +310,7 @@ def main():
             "cleanup_processes": True,
             "process_patterns": args.process_patterns,
             "cleanup_network": True,
-            "bridge_name": args.bridge_name
+            "bridge_name": args.bridge_name,
         }
 
         results = manager.comprehensive_cleanup(config)
@@ -390,8 +356,7 @@ def main():
 
     # Exit with appropriate code
     if not args.dry_run:
-        success = all(r.get("success", True) for r in results.values()
-                     if isinstance(r, dict))
+        success = all(r.get("success", True) for r in results.values() if isinstance(r, dict))
         sys.exit(0 if success else 1)
 
 

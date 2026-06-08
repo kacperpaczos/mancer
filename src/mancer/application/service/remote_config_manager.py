@@ -214,12 +214,8 @@ class RemoteConfigManager:
             )
 
         # Buduj dostawców zawartości z infrastructure i porównaj
-        source_provider = FileTracerContentProvider(
-            FileTracer(self.connections[source_profile]), is_remote=True
-        )
-        target_provider = FileTracerContentProvider(
-            FileTracer(self.connections[target_profile]), is_remote=True
-        )
+        source_provider = FileTracerContentProvider(FileTracer(self.connections[source_profile]), is_remote=True)
+        target_provider = FileTracerContentProvider(FileTracer(self.connections[target_profile]), is_remote=True)
         return self.config_balancer.compare_configs(
             source_path=source_path,
             target_path=target_path,
@@ -254,12 +250,8 @@ class RemoteConfigManager:
             return False, "Błąd połączenia z jednym z serwerów"
 
         # Buduj dostawców zawartości i synchronizuj
-        source_provider = FileTracerContentProvider(
-            FileTracer(self.connections[source_profile]), is_remote=True
-        )
-        target_provider = FileTracerContentProvider(
-            FileTracer(self.connections[target_profile]), is_remote=True
-        )
+        source_provider = FileTracerContentProvider(FileTracer(self.connections[source_profile]), is_remote=True)
+        target_provider = FileTracerContentProvider(FileTracer(self.connections[target_profile]), is_remote=True)
         return self.config_balancer.sync_config(
             source_path=source_path,
             target_path=target_path,

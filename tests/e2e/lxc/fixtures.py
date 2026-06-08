@@ -5,13 +5,13 @@ This module provides fixtures for managing multiple interconnected
 LXC containers in end-to-end test scenarios.
 """
 
-import pytest
-import time
 import logging
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+import time
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import pytest
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ContainerInfo:
     """Information about a test container."""
+
     name: str
     ip: str
     role: str
@@ -29,6 +30,7 @@ class ContainerInfo:
 @dataclass
 class MultiContainerEnvironment:
     """Multi-container test environment."""
+
     containers: Dict[str, ContainerInfo]
     network_bridge: str
     workspace_base: Path
@@ -49,15 +51,11 @@ class MultiContainerEnvironment:
         # This would use the LXCContainerManager from integration fixtures
         # For now, return mock result
         logger.info(f"Executing in {container_name}: {command}")
-        return {
-            "returncode": 0,
-            "stdout": "mock output",
-            "stderr": "",
-            "success": True
-        }
+        return {"returncode": 0, "stdout": "mock output", "stderr": "", "success": True}
 
-    def copy_between_containers(self, source_container: str, source_path: str,
-                              dest_container: str, dest_path: str) -> None:
+    def copy_between_containers(
+        self, source_container: str, source_path: str, dest_container: str, dest_path: str
+    ) -> None:
         """Copy files between containers."""
         logger.info(f"Copying from {source_container}:{source_path} to {dest_container}:{dest_path}")
 
@@ -84,20 +82,20 @@ class E2EMultiContainerManager:
                 "ip": "10.0.3.10",
                 "role": "application",
                 "services": ["nginx", "python-app"],
-                "workspace": "/opt/mancer"
+                "workspace": "/opt/mancer",
             },
             "mancer-e2e-db": {
                 "ip": "10.0.3.11",
                 "role": "database",
                 "services": ["postgresql", "redis"],
-                "workspace": "/var/lib/db-data"
+                "workspace": "/var/lib/db-data",
             },
             "mancer-e2e-worker": {
                 "ip": "10.0.3.12",
                 "role": "worker",
                 "services": ["supervisor", "cron"],
-                "workspace": "/opt/worker"
-            }
+                "workspace": "/opt/worker",
+            },
         }
 
         # Initialize containers
@@ -109,13 +107,11 @@ class E2EMultiContainerManager:
                     ip=config["ip"],
                     role=config["role"],
                     services=config["services"],
-                    workspace=config["workspace"]
+                    workspace=config["workspace"],
                 )
 
         return MultiContainerEnvironment(
-            containers=self.containers,
-            network_bridge=self.network_bridge,
-            workspace_base=self.workspace_base
+            containers=self.containers, network_bridge=self.network_bridge, workspace_base=self.workspace_base
         )
 
     def teardown_environment(self) -> None:
@@ -127,6 +123,7 @@ class E2EMultiContainerManager:
             container_workspace = self.workspace_base / container.name
             if container_workspace.exists():
                 import shutil
+
                 shutil.rmtree(container_workspace)
 
         self.containers.clear()
@@ -270,16 +267,13 @@ def e2e_test_data(e2e_environment):
         "users": [
             {"id": 1, "name": "Alice", "email": "alice@test.com"},
             {"id": 2, "name": "Bob", "email": "bob@test.com"},
-            {"id": 3, "name": "Charlie", "email": "charlie@test.com"}
+            {"id": 3, "name": "Charlie", "email": "charlie@test.com"},
         ],
-        "products": [
-            {"id": 1, "name": "Widget A", "price": 10.99},
-            {"id": 2, "name": "Widget B", "price": 15.49}
-        ],
+        "products": [{"id": 1, "name": "Widget A", "price": 10.99}, {"id": 2, "name": "Widget B", "price": 15.49}],
         "orders": [
             {"id": 1, "user_id": 1, "product_id": 1, "quantity": 2},
-            {"id": 2, "user_id": 2, "product_id": 2, "quantity": 1}
-        ]
+            {"id": 2, "user_id": 2, "product_id": 2, "quantity": 1},
+        ],
     }
 
     # Distribute data to appropriate containers
